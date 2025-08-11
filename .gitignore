@@ -1,0 +1,5 @@
+build
+__pycache__
+.vscode
+file_structure_printer.ipynb
+main.cpp
