@@ -1,6 +1,6 @@
 #include "hcle/environment/hcle_environment.hpp"
+#include "hcle/common/exceptions.hpp"
 #include "hcle/games/smb1.hpp"
-#include <opencv2/opencv.hpp>
 #include <stdexcept>
 
 namespace hcle
@@ -16,6 +16,19 @@ namespace hcle
             game_logic_->initialize(nes_.get());
             this->reset();
             this->current_step_ = 0;
+
+            if (render_mode_ == "human")
+            {
+                display_ = std::make_unique<hcle::common::Display>("HCLEnvironment", 256, 240, 3);
+            }
+            else if (render_mode != "rgb_array")
+            {
+                throw std::invalid_argument("Unsupported render mode: " + render_mode);
+            }
+            else
+            {
+                display_ = nullptr;
+            }
         }
 
         void HCLEnvironment::createGameLogic(const std::string &game_name)
@@ -66,7 +79,25 @@ namespace hcle
             this->current_step_++;
             game_logic_->updateRAM();
             game_logic_->onStep();
+
+            if (this->render_mode_ == "human")
+            {
+                this->render();
+            }
             return game_logic_->getReward();
+        }
+
+        void HCLEnvironment::render()
+        {
+            if (this->display_)
+            {
+                this->display_->update(nes_->get_frame_buffer());
+
+                if (this->display_->processEvents())
+                {
+                    throw hcle::common::WindowClosedException();
+                }
+            }
         }
 
         bool HCLEnvironment::isDone()

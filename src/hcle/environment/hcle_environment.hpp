@@ -32,9 +32,13 @@ namespace hcle
       std::unique_ptr<hcle::games::GameLogic> game_logic_; // Use full namespace for clarity
       void createGameLogic(const std::string &game_name);
 
+      std::unique_ptr<hcle::common::Display> display_;
+
       std::string rom_path_;
       std::string game_name_;
       std::string render_mode_;
+
+      bool should_close_;
     };
 
   } // namespace environment

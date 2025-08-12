@@ -3,7 +3,8 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
-#include "hcle/environment/hcle_environment.hpp" // This header should define hcle::environment::HCLEnvironment
+#include "hcle/environment/hcle_environment.hpp"
+#include "hcle/common/exceptions.hpp"
 
 namespace py = pybind11;
 
@@ -45,4 +46,5 @@ PYBIND11_MODULE(_hcle_py, m)
             // Return the populated NumPy array
             return obs; });
     init_vector_bindings(m);
+    py::register_exception<hcle::common::WindowClosedException>(m, "WindowClosedException");
 }
