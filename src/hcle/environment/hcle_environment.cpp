@@ -7,7 +7,15 @@ namespace hcle
     namespace environment
     {
 
-        HCLEnvironment::HCLEnvironment() {}
+        HCLEnvironment::HCLEnvironment(const std::string &rom_path, const std::string &game_name, const std::string &render_mode)
+            : rom_path_(rom_path), game_name_(game_name), render_mode_(render_mode)
+        {
+            nes_ = std::make_unique<cynes::NES>(rom_path.c_str(), render_mode_);
+            createGameLogic(game_name);
+            game_logic_->initialize(nes_.get());
+            this->reset();
+            this->current_step_ = 0;
+        }
 
         void HCLEnvironment::createGameLogic(const std::string &game_name)
         {
@@ -19,15 +27,6 @@ namespace hcle
             {
                 throw std::runtime_error("Unsupported game: " + game_name);
             }
-        }
-
-        void HCLEnvironment::loadROM(const std::string &rom_path, const std::string &game_name, const std::string &render_mode)
-        {
-            nes_ = std::make_unique<cynes::NES>(rom_path.c_str(), render_mode);
-            createGameLogic(game_name);
-            game_logic_->initialize(nes_.get());
-            this->reset();
-            this->current_step_ = 0;
         }
 
         void HCLEnvironment::reset()

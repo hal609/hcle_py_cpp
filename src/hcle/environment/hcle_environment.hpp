@@ -15,9 +15,8 @@ namespace hcle
     class HCLEnvironment
     {
     public:
-      HCLEnvironment();
+      HCLEnvironment(const std::string &rom_path, const std::string &game_name, const std::string &render_mode);
 
-      void loadROM(const std::string &rom_path, const std::string &game_name, const std::string &render_mode);
       float act(uint8_t action_index);
       void reset();
 
@@ -32,6 +31,10 @@ namespace hcle
       std::unique_ptr<cynes::NES> nes_;
       std::unique_ptr<hcle::games::GameLogic> game_logic_; // Use full namespace for clarity
       void createGameLogic(const std::string &game_name);
+
+      std::string rom_path_;
+      std::string game_name_;
+      std::string render_mode_;
     };
 
   } // namespace environment

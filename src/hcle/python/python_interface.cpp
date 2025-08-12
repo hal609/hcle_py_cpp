@@ -26,9 +26,9 @@ PYBIND11_MODULE(_hcle_py, m)
 {
     // Use the fully qualified name: hcle::environment::HCLEnvironment
     py::class_<hcle::environment::HCLEnvironment>(m, "HCLEnvironment")
-        .def(py::init())
+        .def(py::init<std::string, std::string, std::string>(),
+             py::arg("rom_path"), py::arg("game_name"), py::arg("render_mode"))
         // Use the ::& operator to get the address of the member function
-        .def("load_rom", &hcle::environment::HCLEnvironment::loadROM, "Loads a ROM and initializes game logic")
         .def("act", &hcle::environment::HCLEnvironment::act, "Performs an action and returns the reward")
         .def("reset", &hcle::environment::HCLEnvironment::reset, "Resets the environment")
         .def("is_done", &hcle::environment::HCLEnvironment::isDone, "Checks if the episode is terminated")

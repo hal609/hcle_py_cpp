@@ -24,7 +24,8 @@ namespace hcle
             HCLEVectorEnvironment(
                 int num_envs,
                 const std::string &rom_path,
-                const std::string &game_name);
+                const std::string &game_name,
+                const std::string &render_mode);
 
             // Resets all environments and returns the initial observations
             void reset(uint8_t *obs_buffer);
@@ -42,6 +43,7 @@ namespace hcle
 
         private:
             int num_envs_;
+            std::string render_mode_;
             std::vector<std::unique_ptr<HCLEnvironment>> envs_;
             hcle::common::ThreadPool thread_pool_;
         };

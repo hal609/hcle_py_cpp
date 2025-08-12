@@ -15,4 +15,3 @@ src/hcle/python/hcle_py.egg-info/dependency_links.txt
 src/hcle/python/hcle_py.egg-info/not-zip-safe
 src/hcle/python/hcle_py.egg-info/top_level.txt
 src/hcle/python/hcle_py/roms/__init__.py
-tests/test_env.py

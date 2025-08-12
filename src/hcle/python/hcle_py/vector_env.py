@@ -3,19 +3,22 @@ from gymnasium.vector import VectorEnv
 from gymnasium.spaces import Box, Discrete
 from gymnasium.spaces.space import MaskNDArray, Space
 import numpy as np
+import time
 from hcle_py import roms
 from . import _hcle_py
 
 class HCLEVectorEnv(VectorEnv):
     """Gymnasium VectorEnv wrapper for the C++ HCLEVectorEnvironment."""
 
-    def __init__(self, game: str, num_envs: int = 2):
-        print(roms.get_rom_path(game))
+    def __init__(self, game: str, num_envs: int = 2, render_mode: str = "human", fps_limit:int = -1):
         self.vec_hcle = _hcle_py.HCLEVectorEnvironment(
             num_envs=num_envs,
             rom_path=roms.get_rom_path(game),
-            game_name=game
+            game_name=game,
+            render_mode=render_mode
         )
+        
+        self.fps_limit = fps_limit
 
         self.single_observation_space = Box(low=0, high=255, shape=(240, 256, 3), dtype=np.uint8)
         
@@ -37,7 +40,10 @@ class HCLEVectorEnv(VectorEnv):
 
     def step(self, actions):
         actions = np.asarray(actions, dtype=np.uint8)
+        start_time = time.time()
         obs, rewards, dones = self.vec_hcle.step(actions)
+        if self.fps_limit > 0:
+            time.sleep(max(0, 1/self.fps_limit - (time.time() - start_time)))
         truncateds = np.zeros(self.num_envs, dtype=np.bool_)
         infos = {}
         return np.copy(obs), rewards, dones, truncateds, infos

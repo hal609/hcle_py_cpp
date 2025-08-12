@@ -13,11 +13,12 @@ void init_vector_bindings(py::module_ &m)
     py::class_<hcle::environment::HCLEVectorEnvironment>(m, "HCLEVectorEnvironment")
         // The type arguments here MUST match the C++ constructor's order:
         // int, string, string
-        .def(py::init<int, std::string, std::string>(),
+        .def(py::init<int, std::string, std::string, std::string>(),
              // The py::arg names must ALSO be in the same order.
              py::arg("num_envs"),
              py::arg("rom_path"),
-             py::arg("game_name"))
+             py::arg("game_name"),
+             py::arg("render_mode"))
 
         .def("get_action_space_size", &hcle::environment::HCLEVectorEnvironment::getActionSpaceSize)
 

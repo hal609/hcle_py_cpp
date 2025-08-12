@@ -8,10 +8,10 @@ def run_test():
     print("--- HCLE Test Script ---")
 
     env_id = "HCLE/SuperMarioBros-v0"
-    num_envs = 64
+    num_envs = 1
     try:
         print(f"Creating env: {env_id}")
-        envs = HCLEVectorEnv(game="smb1", num_envs=num_envs)
+        envs = HCLEVectorEnv(game="smb1", num_envs=num_envs, render_mode="human", fps_limit=60)
         print("Environment created successfully. ✅")
     except Exception as e:
         print(f"❌ Error creating environment: {e}")

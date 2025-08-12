@@ -8,10 +8,7 @@ class HCLEnv(gym.Env):
 
     def __init__(self, game: str, rom_path: str, render_mode: str = "rgb_array", **kwargs):
         # 1. Instantiate the C++ environment
-        self.hcle = _hcle_py.HCLEnvironment()
-        
-        # 2. Load the ROM, which also initializes the correct game logic in C++
-        self.hcle.load_rom(rom_path, game, render_mode)
+        self.hcle = _hcle_py.HCLEnvironment(rom_path, game, render_mode)
         
         # 3. Get the available actions from C++ to build the action space
         self._action_set = self.hcle.get_action_set()
