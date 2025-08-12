@@ -22,7 +22,7 @@ namespace cynes
         // TODO maybe allow to use a constructor with a raw byte ptr.
         /// Initialize the NES.
         /// @param path Path to the ROM.
-        NES(const char *path, const std::string &render_mode);
+        NES(const char *path);
 
         /// Default destructor.
         ~NES() = default;
@@ -143,9 +143,6 @@ namespace cynes
 
         uint8_t _controller_status[0x2];
         uint8_t _controller_shifters[0x2];
-
-        std::string render_mode_;
-        std::unique_ptr<hcle::common::Display> display_;
 
     private:
         void load_controller_shifter(bool polling);

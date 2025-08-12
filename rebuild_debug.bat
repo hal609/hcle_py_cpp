@@ -1,0 +1,24 @@
+@echo off
+echo --- Cleaning previous build...
+if exist build rmdir /s /q build
+
+echo --- Configuring CMake for DEBUG...
+mkdir build
+rem The only change needed for CMake is here: 
+cmake -S . -B build -A x64 -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=C:/dev/vcpkg/scripts/buildsystems/vcpkg.cmake
+
+if %errorlevel% neq 0 (
+    echo CMake configuration failed.
+    exit /b %errorlevel%
+)
+
+echo --- Building DEBUG target...
+rem And here, we specify the Debug configuration for the build step.
+cmake --build build --config Debug --target hcle_test
+
+if %errorlevel% neq 0 (
+    echo Build failed.
+    exit /b %errorlevel%
+)
+
+echo --- Debug build complete! ---

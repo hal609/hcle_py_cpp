@@ -11,7 +11,7 @@ constexpr uint8_t PALETTE_RAM_BOOT_VALUES[0x20] = {
     0x09, 0x01, 0x34, 0x03, 0x00, 0x04, 0x00, 0x14,
     0x08, 0x3A, 0x00, 0x02, 0x00, 0x20, 0x2C, 0x08};
 
-cynes::NES::NES(const char *path, const std::string &render_mode)
+cynes::NES::NES(const char *path)
     : cpu{*this}, ppu{*this}, apu{*this}, _mapper{Mapper::load_mapper(static_cast<NES &>(*this), path)}, _memory_cpu{new uint8_t[0x800]}, _memory_oam{new uint8_t[0x100]}, _memory_palette{new uint8_t[0x20]}
 {
     cpu.power();
@@ -27,29 +27,6 @@ cynes::NES::NES(const char *path, const std::string &render_mode)
     for (int i = 0; i < 8; i++)
     {
         dummy_read();
-    }
-
-    this->render_mode_ = render_mode;
-    if (render_mode == "human")
-    {
-        display_ = std::make_unique<hcle::common::Display>("HCLEnvironment", 256, 240, 3);
-    }
-    else if (render_mode != "rgb_array")
-    {
-        throw std::invalid_argument("Unsupported render mode: " + render_mode);
-    }
-    else
-    {
-        display_ = nullptr;
-    }
-}
-
-void cynes::NES::render()
-{
-    if (this->display_)
-    {
-        this->display_->update(this->get_frame_buffer());
-        this->display_->processEvents(); // Handles window events like closing
     }
 }
 
@@ -256,11 +233,6 @@ bool cynes::NES::step(uint16_t controllers, unsigned int frames)
                 return true;
             }
         }
-    }
-
-    if (this->render_mode_ == "human")
-    {
-        this->render();
     }
 
     return false;

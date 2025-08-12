@@ -9,8 +9,9 @@ namespace hcle
 
         // These are the valid button combinations for this game
         const std::vector<uint8_t> SMB1_ACTION_SET = {
-            NES_INPUT_RIGHT | NES_INPUT_B,
-            NES_INPUT_RIGHT | NES_INPUT_B | NES_INPUT_A,
+            NES_INPUT_NONE
+            // NES_INPUT_RIGHT | NES_INPUT_B,
+            // NES_INPUT_RIGHT | NES_INPUT_B | NES_INPUT_A,
         };
 
         SMB1Logic::SMB1Logic()

@@ -1,6 +1,5 @@
 #include "hcle/environment/hcle_environment.hpp"
 #include "hcle/games/smb1.hpp"
-#include <opencv2/opencv.hpp>
 #include <stdexcept>
 
 namespace hcle
