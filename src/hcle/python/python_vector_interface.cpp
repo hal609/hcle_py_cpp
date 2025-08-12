@@ -17,7 +17,6 @@ void init_vector_bindings(py::module_ &m)
              // The py::arg names must ALSO be in the same order.
              py::arg("num_envs"),
              py::arg("rom_path"),
-             py::arg("game_name"),
              py::arg("render_mode"))
 
         .def("get_action_space_size", &hcle::environment::HCLEVectorEnvironment::getActionSpaceSize)

@@ -14,7 +14,6 @@ class HCLEVectorEnv(VectorEnv):
         self.vec_hcle = _hcle_py.HCLEVectorEnvironment(
             num_envs=num_envs,
             rom_path=roms.get_rom_path(game),
-            game_name=game,
             render_mode=render_mode
         )
         

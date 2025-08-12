@@ -24,9 +24,9 @@ set(HCLE_CORE_SOURCES
     src/hcle/emucore/ppu.cpp
     src/hcle/emucore/apu.cpp
     src/hcle/emucore/mapper.cpp
+    src/hcle/environment/preprocessed_env.cpp
     src/hcle/environment/hcle_environment.cpp
     src/hcle/common/display.cpp
-    src/hcle/environment/game_logic.cpp
     src/hcle/common/thread_pool.cpp
     src/hcle/environment/hcle_vector_environment.cpp
     src/hcle/games/smb1.cpp

@@ -10,11 +10,14 @@ namespace hcle
         class SMB1Logic : public GameLogic
         {
         public:
-            SMB1Logic(); // Constructor can set up the action set
+            SMB1Logic() { action_set_ = {NES_INPUT_RIGHT | NES_INPUT_B,
+                                         NES_INPUT_RIGHT | NES_INPUT_B | NES_INPUT_A}; }
+
+            GameLogic *SMB1Logic::clone() const override { return new SMB1Logic(*this); }
             float getReward() override;
             bool isDone() override;
             void onStep() override; // For checking if in-game to make savestate
-            void onReset() override;
+            bool onReset() override;
             const std::vector<uint8_t> &getActionSet() override { return action_set_; }
 
         private:

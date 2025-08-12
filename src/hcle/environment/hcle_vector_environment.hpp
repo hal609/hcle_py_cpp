@@ -24,13 +24,12 @@ namespace hcle
             HCLEVectorEnvironment(
                 int num_envs,
                 const std::string &rom_path,
-                const std::string &game_name,
                 const std::string &render_mode);
 
             // Resets all environments and returns the initial observations
             void reset(uint8_t *obs_buffer);
 
-            int getActionSpaceSize() const;
+            size_t getActionSpaceSize() const;
 
             // Steps all environments in parallel
             void step(

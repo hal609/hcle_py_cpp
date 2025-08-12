@@ -10,7 +10,6 @@ namespace hcle
         HCLEVectorEnvironment::HCLEVectorEnvironment(
             int num_envs,
             const std::string &rom_path,
-            const std::string &game_name,
             const std::string &render_mode) : num_envs_(num_envs), thread_pool_(num_envs), render_mode_(render_mode_)
         {
 
@@ -21,7 +20,8 @@ namespace hcle
             // Create 'num_envs' separate environment instances
             for (int i = 0; i < num_envs_; ++i)
             {
-                auto env = std::make_unique<HCLEnvironment>(rom_path, game_name, "rgb_array");
+                auto env = std::make_unique<HCLEnvironment>();
+                env->loadROM(rom_path, render_mode);
                 envs_.push_back(std::move(env));
             }
         }
@@ -40,7 +40,7 @@ namespace hcle
             thread_pool_.wait_for_completion(num_envs_);
         }
 
-        int HCLEVectorEnvironment::getActionSpaceSize() const
+        size_t HCLEVectorEnvironment::getActionSpaceSize() const
         {
             if (envs_.empty())
             {

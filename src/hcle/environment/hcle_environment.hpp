@@ -15,30 +15,33 @@ namespace hcle
     class HCLEnvironment
     {
     public:
-      HCLEnvironment(const std::string &rom_path, const std::string &game_name, const std::string &render_mode);
+      HCLEnvironment();
 
+      void loadROM(const std::string &rom_path, const std::string &render_mode);
       float act(uint8_t action_index);
+
+      const std::vector<uint8_t> &getActionSet() const;
+      std::vector<uint8_t> getRAM();
+      void getScreenRGB(uint8_t *buffer) const;
+
+      void render();
+      bool isDone();
       void reset();
 
-      void getScreenRGB(uint8_t *buffer) const;
-      std::vector<uint8_t> getRAM();
-      void render();
-      const std::vector<uint8_t> &getActionSet();
-      bool isDone();
+      std::unique_ptr<cynes::NES> emu;
+      std::unique_ptr<hcle::games::GameLogic> game_logic;
 
     private:
-      uint64_t current_step_;
-      std::unique_ptr<cynes::NES> nes_;
-      std::unique_ptr<hcle::games::GameLogic> game_logic_; // Use full namespace for clarity
-      void createGameLogic(const std::string &game_name);
-
-      std::unique_ptr<hcle::common::Display> display_;
+      hcle::games::GameLogic *createGameLogic(const std::string &rom_path);
 
       std::string rom_path_;
       std::string game_name_;
       std::string render_mode_;
 
-      bool should_close_;
+      std::unique_ptr<hcle::games::GameLogic> game_logic_;
+      std::unique_ptr<hcle::common::Display> display_;
+
+      uint64_t current_step_;
     };
 
   } // namespace environment

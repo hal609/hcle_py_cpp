@@ -4,7 +4,7 @@
 #include <vector>
 #include <thread>
 
-#include "hcle/environment/hcle_vector_environment.hpp"
+#include "hcle/environment/preprocessed_env.hpp"
 
 int main(int argc, char **argv)
 {
@@ -20,7 +20,7 @@ int main(int argc, char **argv)
     try
     {
         std::cout << "Creating HCLEEnvironment (num_envs=" << num_envs << ")...\n";
-        hcle::environment::HCLEnvironment env(rom_path, game_name, render_mode);
+        hcle::environment::PreprocessedEnv env(rom_path, game_name, render_mode);
 
         const int H = 240, W = 256, C = 3;
         size_t obs_size = static_cast<size_t>(num_envs) * H * W * C;
@@ -44,7 +44,7 @@ int main(int argc, char **argv)
         {
             action = static_cast<uint8_t>(action_dist(rng));
 
-            reward = env.act(action);
+            reward = env.step(action);
             done = env.isDone();
             env.getScreenRGB(obs.data());
 
