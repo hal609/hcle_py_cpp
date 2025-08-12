@@ -4,7 +4,5 @@ __pycache__
 file_structure_printer.ipynb
 main.cpp
 *.pyc
-*.pyd
 *.pdb
-hcle_py.egg-info
-hcle_py.egg-info/*
+hcle_py.egg-info/

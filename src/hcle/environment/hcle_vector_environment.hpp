@@ -22,9 +22,16 @@ namespace hcle
         {
         public:
             HCLEVectorEnvironment(
-                int num_envs,
+                const int num_envs,
                 const std::string &rom_path,
-                const std::string &render_mode);
+                const std::string &game_name,
+                const std::string &render_mode,
+                const uint8_t obs_height = 84,
+                const uint8_t obs_width = 84,
+                const uint8_t frame_skip = 4,
+                const bool maxpool = true,
+                const bool grayscale = true,
+                const uint8_t stack_num = 4);
 
             // Resets all environments and returns the initial observations
             void reset(uint8_t *obs_buffer);
@@ -41,8 +48,17 @@ namespace hcle
             int getNumEnvs() const { return num_envs_; }
 
         private:
-            int num_envs_;
-            std::string render_mode_;
+            const int num_envs_;
+            const std::string &rom_path_;
+            const std::string &game_name_;
+            const std::string &render_mode_;
+            const uint8_t obs_height_;
+            const uint8_t obs_width_;
+            const uint8_t frame_skip_;
+            const bool maxpool_;
+            const bool grayscale_;
+            const uint8_t stack_num_;
+
             std::vector<std::unique_ptr<HCLEnvironment>> envs_;
             hcle::common::ThreadPool thread_pool_;
         };

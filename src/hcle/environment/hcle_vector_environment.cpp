@@ -8,11 +8,28 @@ namespace hcle
     {
 
         HCLEVectorEnvironment::HCLEVectorEnvironment(
-            int num_envs,
+            const int num_envs,
             const std::string &rom_path,
-            const std::string &render_mode) : num_envs_(num_envs), thread_pool_(num_envs), render_mode_(render_mode_)
+            const std::string &game_name,
+            const std::string &render_mode,
+            const uint8_t obs_height,
+            const uint8_t obs_width,
+            const uint8_t frame_skip,
+            const bool maxpool,
+            const bool grayscale,
+            const uint8_t stack_num)
+            : rom_path_(rom_path),
+              game_name_(game_name),
+              render_mode_(render_mode),
+              obs_height_(obs_height),
+              obs_width_(obs_width),
+              frame_skip_(frame_skip),
+              maxpool_(maxpool),
+              grayscale_(grayscale),
+              stack_num_(stack_num),
+              num_envs_(num_envs),
+              thread_pool_(num_envs)
         {
-
             if (num_envs <= 0)
             {
                 throw std::invalid_argument("Number of environments must be positive.");

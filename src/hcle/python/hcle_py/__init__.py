@@ -12,7 +12,7 @@ import warnings
 # from .env import HCLEnv
 
 # __all__ = ["CNesInterface", "NesEnv"]
-# __all__ = ["HCLEnv"]
+__all__ = ["HCLEnv", "HCLEVectorEnv"]
 
 try:
     from .registration import register_hcle_envs

@@ -1,11 +1,6 @@
 [build-system]
-requires = [
-    "setuptools>=61.0",
-    "pybind11>=2.10",
-    "cmake>=3.18"
-]
-
-build-backend = "setuptools.build_meta"
+requires = ["scikit-build-core", "pybind11"]
+build-backend = "scikit_build_core.build"
 
 [tool.ruff]
 exclude = [
@@ -57,3 +52,24 @@ skip-magic-trailing-comma = true
 line-ending = "auto"
 docstring-code-format = true
 docstring-code-line-length = "dynamic"
+
+[project]
+name = "hcle_py"
+version = "0.1.0"
+description = "A High-performance C++ Learning Environment"
+authors = [
+    { name = "Hal Kolb", email = "hal@kolb.com" }
+]
+dependencies = ["numpy", "gymnasium"]
+
+[tool.scikit-build]
+build-dir = "build/{wheel_tag}"
+
+[tool.scikit-build.wheel]
+packages = ["src/hcle/python/hcle_py"]
+
+[tool.scikit-build.cmake]
+args = ["-DPython_EXECUTABLE:FILEPATH={python_executable}"]
+
+[tool.scikit-build.editable]
+mode = "inplace"

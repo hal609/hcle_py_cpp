@@ -11,13 +11,17 @@ namespace py = pybind11;
 void init_vector_bindings(py::module_ &m)
 {
     py::class_<hcle::environment::HCLEVectorEnvironment>(m, "HCLEVectorEnvironment")
-        // The type arguments here MUST match the C++ constructor's order:
-        // int, string, string
-        .def(py::init<int, std::string, std::string, std::string>(),
-             // The py::arg names must ALSO be in the same order.
+        .def(py::init<int, std::string, std::string, std::string, uint8_t, uint8_t, uint8_t, bool, bool, uint8_t>(),
              py::arg("num_envs"),
              py::arg("rom_path"),
-             py::arg("render_mode"))
+             py::arg("game_name"),
+             py::arg("render_mode"),
+             py::arg("obs_height"),
+             py::arg("obs_width"),
+             py::arg("frame_skip"),
+             py::arg("maxpool"),
+             py::arg("grayscale"),
+             py::arg("stack_num"))
 
         .def("get_action_space_size", &hcle::environment::HCLEVectorEnvironment::getActionSpaceSize)
 

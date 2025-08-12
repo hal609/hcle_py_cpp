@@ -10,11 +10,29 @@ from . import _hcle_py
 class HCLEVectorEnv(VectorEnv):
     """Gymnasium VectorEnv wrapper for the C++ HCLEVectorEnvironment."""
 
-    def __init__(self, game: str, num_envs: int = 2, render_mode: str = "human", fps_limit:int = -1):
+    def __init__(
+            self, 
+            game: str, 
+            num_envs: int = 2, 
+            render_mode: str = "rgb_array", 
+            obs_height: int = 84,
+            obs_width: int = 84,
+            frame_skip: int = 4,
+            maxpool: bool = True,
+            grayscale: bool = True,
+            stack_num: int = 4,
+            fps_limit:int = -1):
         self.vec_hcle = _hcle_py.HCLEVectorEnvironment(
             num_envs=num_envs,
             rom_path=roms.get_rom_path(game),
-            render_mode=render_mode
+            game_name=game,
+            render_mode=render_mode,
+            obs_height=obs_height,
+            obs_width=obs_width,
+            frame_skip=frame_skip,
+            maxpool=maxpool,
+            grayscale=grayscale,
+            stack_num=stack_num
         )
         
         self.fps_limit = fps_limit
