@@ -17,6 +17,8 @@ namespace hcle
     public:
       HCLEnvironment();
 
+      static void WelcomeMessage();
+
       void loadROM(const std::string &rom_path, const std::string &render_mode);
       float act(uint8_t action_index);
 
@@ -32,6 +34,7 @@ namespace hcle
       std::unique_ptr<hcle::games::GameLogic> game_logic;
 
     private:
+      static bool was_welcomed;
       hcle::games::GameLogic *createGameLogic(const std::string &rom_path);
 
       std::string rom_path_;

@@ -10,10 +10,20 @@ namespace hcle
     namespace environment
     {
 
+        bool HCLEnvironment::was_welcomed = false;
+
         HCLEnvironment::HCLEnvironment()
         {
+            this->WelcomeMessage();
+        }
+
+        void HCLEnvironment::WelcomeMessage()
+        {
+            if (!was_welcomed)
+                return;
             std::cout << "H.C.L.E: Home Console Learning Environment (version " << HCLE_VERSION << ")" << std::endl;
             std::cout << "[Powered by cynes]" << std::endl;
+            was_welcomed = true;
         }
 
         void HCLEnvironment::loadROM(const std::string &rom_path, const std::string &render_mode)

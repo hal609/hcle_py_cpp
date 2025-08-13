@@ -3,62 +3,80 @@
 #include <random>
 #include <vector>
 #include <thread>
+#include <chrono>
 
-#include "hcle/environment/preprocessed_env.hpp"
+#include "hcle/environment/hcle_vector_environment.hpp"
 
 int main(int argc, char **argv)
 {
-    int num_envs = 1;
+    // Basic CLI-ish defaults (you can enhance parsing)
+    int num_envs = 64;
     std::string rom_path = "C:\\Users\\offan\\Downloads\\hcle_py_cpp\\src\\hcle\\python\\hcle_py\\roms\\smb1.bin";
     std::string game_name = "smb1";
-    std::string render_mode = "human";
+    std::string render_mode = "rgb_array";
+    int fps_limit = -1;
     int num_steps = 1000;
-    std::vector<uint8_t> obs(240 * 256 * 3);
 
     std::vector<uint8_t> backup_state_;
 
     try
     {
-        std::cout << "Creating HCLEEnvironment (num_envs=" << num_envs << ")...\n";
-        hcle::environment::PreprocessedEnv env(rom_path, game_name, render_mode);
+        std::cout << "Creating HCLEVectorEnvironment (num_envs=" << num_envs << ")...\n";
+        hcle::environment::HCLEVectorEnvironment env(num_envs, rom_path, game_name, render_mode);
 
         const int H = 240, W = 256, C = 3;
-        size_t obs_size = static_cast<size_t>(num_envs) * H * W * C;
-        std::vector<uint8_t> obs(obs_size);
+        size_t obs_bytes = static_cast<size_t>(num_envs) * H * W * C;
+        std::vector<uint8_t> obs(obs_bytes);
 
-        env.reset();
-        std::cout << "Initial environment reset complete.\n";
+        // reset (fills the obs buffer)
+        env.reset(obs.data());
+        std::cout << "Environment reset complete.\n";
 
-        size_t action_space = env.getActionSet().size();
+        size_t action_space = env.getActionSpaceSize();
         std::mt19937 rng(std::random_device{}());
         std::uniform_int_distribution<int> action_dist(0, (int)action_space - 1);
 
-        uint8_t action;
-        float reward;
-        bool done;
+        std::vector<uint8_t> actions(num_envs);
+        std::vector<float> rewards(num_envs);
+        // Many C++ implementations expect a bool* for dones; vector<bool> is not contiguous.
+        // We allocate a uint8_t buffer and reinterpret as bool* (common practice; sizeof(bool)==1 on mainstream platforms).
+        std::vector<uint8_t> dones_u8(num_envs);
+        bool *dones_ptr = reinterpret_cast<bool *>(dones_u8.data());
 
         double total_reward = 0.0;
+        using clock = std::chrono::steady_clock;
+        auto run_start = clock::now();
 
-        uint8_t step = 0;
-        while (true)
+        for (int step = 0; step < num_steps; ++step)
         {
-            action = static_cast<uint8_t>(action_dist(rng));
+            // random actions
+            for (int i = 0; i < num_envs; ++i)
+                actions[i] = static_cast<uint8_t>(action_dist(rng));
 
-            reward = env.step(action);
-            done = env.isDone();
-            env.getScreenRGB(obs.data());
+            // call step (fills obs, rewards, dones)
+            env.step(actions, obs.data(), rewards.data(), dones_u8.data());
 
-            total_reward += reward;
+            // unsigned int state_size = env.nes_->size();
+            // backup_state_.resize(state_size);
+            // env.nes_->save(backup_state_.data());
+            // printf("Backup size: %u\n", state_size);
+
+            // simple reporting
+            double mean_reward = 0.0;
+            for (float r : rewards)
+                mean_reward += r;
+            mean_reward /= (double)num_envs;
+            total_reward += mean_reward;
 
             if ((step + 1) % 20 == 0)
             {
-                std::cout << "Step " << (step + 1) << " mean reward = " << total_reward / (step + 1)
+                std::cout << "Step " << (step + 1) << " mean reward = " << mean_reward
                           << " total reward = " << total_reward << "\n";
             }
-            ++step;
         }
+        auto elapsed = std::chrono::duration_cast<std::chrono::duration<double>>(clock::now() - run_start).count();
 
-        std::cout << "Run complete. Closing.\n";
+        std::cout << "Run complete in " << elapsed << " seconds. Average fps = " << ((num_steps * num_envs) / elapsed) << ". Closing.\n";
     }
     catch (const std::exception &ex)
     {

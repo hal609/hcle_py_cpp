@@ -1,15 +1,33 @@
 #pragma once
 
-#include "hcle/environment/hcle_environment.hpp"
-#include "hcle/common/thread_pool.hpp"
 #include <vector>
 #include <memory>
 #include <string>
+
+#include "hcle/environment/hcle_environment.hpp"
+#include "hcle/environment/preprocessed_env.hpp"
+#include "hcle/common/thread_safe_queue.hpp"
 
 namespace hcle
 {
     namespace environment
     {
+        // Struct to send work to worker threads
+        struct Action
+        {
+            int env_id;
+            uint8_t action_value;
+            bool force_reset = false; // Flag to signal a reset
+        };
+
+        // Struct to receive results from worker threads
+        struct Result
+        {
+            int env_id;
+            float reward;
+            bool done;
+            // The observation is moved into the buffer directly, so not needed here
+        };
 
         struct StepResult
         {
@@ -33,17 +51,26 @@ namespace hcle
                 const bool grayscale = true,
                 const uint8_t stack_num = 4);
 
+            ~HCLEVectorEnvironment();
+
             // Resets all environments and returns the initial observations
             void reset(uint8_t *obs_buffer);
 
             size_t getActionSpaceSize() const;
+            const std::tuple<int, int, int, int> get_observation_shape() const;
+
+            // Asynchronously sends actions to the environments
+            void step_async(const std::vector<uint8_t> &actions);
+
+            // Synchronously waits for and receives results from the environments
+            void step_wait(uint8_t *obs_buffer, float *reward_buffer, uint8_t *done_buffer);
 
             // Steps all environments in parallel
             void step(
                 const std::vector<uint8_t> &actions,
                 uint8_t *obs_buffer,
                 float *reward_buffer,
-                bool *done_buffer);
+                uint8_t *done_buffer);
 
             int getNumEnvs() const { return num_envs_; }
 
@@ -59,8 +86,16 @@ namespace hcle
             const bool grayscale_;
             const uint8_t stack_num_;
 
-            std::vector<std::unique_ptr<HCLEnvironment>> envs_;
-            hcle::common::ThreadPool thread_pool_;
+            std::vector<std::unique_ptr<PreprocessedEnv>> envs_;
+
+            // Private worker function for threads
+            void worker_function();
+
+            // --- NEW MEMBERS FOR PIPELINE ---
+            common::ThreadSafeQueue<Action> action_queue_;
+            common::ThreadSafeQueue<Result> result_queue_;
+            std::vector<std::thread> workers_;
+            std::atomic<bool> stop_;
         };
 
     } // namespace environment

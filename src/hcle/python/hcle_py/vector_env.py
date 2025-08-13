@@ -22,6 +22,7 @@ class HCLEVectorEnv(VectorEnv):
             grayscale: bool = True,
             stack_num: int = 4,
             fps_limit:int = -1):
+        
         self.vec_hcle = _hcle_py.HCLEVectorEnvironment(
             num_envs=num_envs,
             rom_path=roms.get_rom_path(game),
@@ -40,7 +41,7 @@ class HCLEVectorEnv(VectorEnv):
         self.single_observation_space = Box(low=0, high=255, shape=(240, 256, 3), dtype=np.uint8)
         
         action_space_size = self.vec_hcle.get_action_space_size()
-        self.single_action_space = Box(low=0, high=action_space_size-1 , shape=(), dtype=np.uint8)
+        self.single_action_space = Discrete(action_space_size)
 
         self.num_envs = num_envs
         self.batch_size = num_envs
@@ -52,15 +53,24 @@ class HCLEVectorEnv(VectorEnv):
         )
 
     def reset(self, *, seed=None, options=None):
-        self.vec_hcle.reset()
-        return #np.copy(obs), {}
+        obs = self.vec_hcle.reset()
+        return np.copy(obs), {}
+    
+    def send(self, actions):
+        """Asynchronously sends actions to the environments."""
+        self.vec_hcle.send(actions)
+
+    def recv(self):
+        """Waits for and receives the results from the environments."""
+        # obs = np.empty(self.observation_space.shape, dtype=self.observation_space.dtype)
+        # rewards = np.empty(self.num_envs, dtype=np.float32)
+        # dones = np.empty(self.num_envs, dtype=np.uint8)
+        obs, rewards, dones = self.vec_hcle.recv()
+        return obs, rewards, dones, {}, {}
 
     def step(self, actions):
         actions = np.asarray(actions, dtype=np.uint8)
-        start_time = time.time()
         obs, rewards, dones = self.vec_hcle.step(actions)
-        if self.fps_limit > 0:
-            time.sleep(max(0, 1/self.fps_limit - (time.time() - start_time)))
         truncateds = np.zeros(self.num_envs, dtype=np.bool_)
         infos = {}
         return np.copy(obs), rewards, dones, truncateds, infos

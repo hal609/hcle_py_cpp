@@ -6,8 +6,11 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(MSVC)
-    add_compile_options(/W4 /diagnostics:caret)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+    set(CMAKE_CXX_FLAGS_RELEASE "/O2")
+    set(CMAKE_CXX_FLAGS_DEBUG "/W4 /diagnostics:caret")
 else()
+    set(CMAKE_CXX_FLAGS_RELEASE "-Ofast")
     add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 endif()
 
@@ -27,7 +30,6 @@ set(HCLE_CORE_SOURCES
     src/hcle/environment/preprocessed_env.cpp
     src/hcle/environment/hcle_environment.cpp
     src/hcle/common/display.cpp
-    src/hcle/common/thread_pool.cpp
     src/hcle/environment/hcle_vector_environment.cpp
     src/hcle/games/smb1.cpp
 )
@@ -44,7 +46,9 @@ pybind11_add_module(_hcle_py
 )
 target_link_libraries(_hcle_py PRIVATE hcle_core)
 set_target_properties(_hcle_py PROPERTIES DEBUG_POSTFIX "_d")
-
+install(TARGETS _hcle_py
+        LIBRARY DESTINATION hcle_py)
+        
 # TEST CPP RUNNER
 add_executable(hcle_test src/apps/test_runner.cpp)
 target_link_libraries(hcle_test PRIVATE hcle_core)

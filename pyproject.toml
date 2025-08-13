@@ -57,19 +57,14 @@ docstring-code-line-length = "dynamic"
 name = "hcle_py"
 version = "0.1.0"
 description = "A High-performance C++ Learning Environment"
-authors = [
-    { name = "Hal Kolb", email = "hal@kolb.com" }
-]
+authors = [{ name = "Hal Kolb", email = "hal@kolb.com" }]
 dependencies = ["numpy", "gymnasium"]
-
-[tool.scikit-build]
-build-dir = "build/{wheel_tag}"
 
 [tool.scikit-build.wheel]
 packages = ["src/hcle/python/hcle_py"]
 
 [tool.scikit-build.cmake]
-args = ["-DPython_EXECUTABLE:FILEPATH={python_executable}"]
-
-[tool.scikit-build.editable]
-mode = "inplace"
+args = [
+    "-DPython_EXECUTABLE:FILEPATH={python_executable}",
+    "-DCMAKE_BUILD_TYPE=Release",
+]
