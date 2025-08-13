@@ -28,7 +28,8 @@ namespace hcle
               maxpool_(maxpool),
               grayscale_(grayscale),
               stack_num_(stack_num),
-              num_envs_(num_envs)
+              num_envs_(num_envs),
+              m_step_in_flight(false)
         {
             if (num_envs <= 0)
             {
@@ -149,8 +150,10 @@ namespace hcle
 
         void HCLEVectorEnvironment::step_async(const std::vector<uint8_t> &actions)
         {
+            m_step_in_flight = true;
             if (actions.size() != num_envs_)
             {
+                m_step_in_flight = false;
                 throw std::runtime_error("Number of actions must equal number of environments.");
             }
             for (int i = 0; i < num_envs_; ++i)
@@ -162,6 +165,10 @@ namespace hcle
         void HCLEVectorEnvironment::step_wait(
             uint8_t *obs_buffer, float *reward_buffer, uint8_t *done_buffer)
         {
+            if (!m_step_in_flight)
+            {
+                throw std::runtime_error("Cannot call step_wait without a pending call to step_async.");
+            }
             const size_t obs_size = 240 * 256 * 3;
 
             for (int i = 0; i < num_envs_; ++i)
@@ -175,6 +182,7 @@ namespace hcle
                 reward_buffer[result.env_id] = result.reward;
                 done_buffer[result.env_id] = result.done;
             }
+            m_step_in_flight = false;
         }
 
         void HCLEVectorEnvironment::step(

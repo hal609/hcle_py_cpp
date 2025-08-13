@@ -78,7 +78,7 @@ void init_vector_bindings(py::module_ &m)
                  std::vector<uint8_t> actions_vec(actions.data(), actions.data() + actions.size());
 
                  py::gil_scoped_release release;
-                 self.send(actions_vec);
+                 self.step_async(actions_vec);
                  py::gil_scoped_acquire acquire;
                  // send has a void return type, so we return nothing.
              })
@@ -93,7 +93,7 @@ void init_vector_bindings(py::module_ &m)
 
             py::gil_scoped_release release;
             // Call the C++ recv method, passing pointers to the NumPy buffers
-            self.recv(obs.mutable_data(), rewards.mutable_data(), dones.mutable_data());
+            self.step_wait(obs.mutable_data(), rewards.mutable_data(), dones.mutable_data());
             py::gil_scoped_acquire acquire;
 
             // Return the populated NumPy arrays as a tuple

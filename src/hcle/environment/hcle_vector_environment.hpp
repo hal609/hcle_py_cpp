@@ -3,6 +3,7 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include <atomic>
 
 #include "hcle/environment/hcle_environment.hpp"
 #include "hcle/environment/preprocessed_env.hpp"
@@ -87,6 +88,8 @@ namespace hcle
             const uint8_t stack_num_;
 
             std::vector<std::unique_ptr<PreprocessedEnv>> envs_;
+
+            std::atomic<bool> m_step_in_flight;
 
             // Private worker function for threads
             void worker_function();

@@ -56,16 +56,13 @@ class HCLEVectorEnv(VectorEnv):
         obs = self.vec_hcle.reset()
         return np.copy(obs), {}
     
-    def send(self, actions):
+    def step_async(self, actions):
         """Asynchronously sends actions to the environments."""
-        self.vec_hcle.send(actions)
+        self.vec_hcle.step_async(actions)
 
-    def recv(self):
+    def step_wait(self):
         """Waits for and receives the results from the environments."""
-        # obs = np.empty(self.observation_space.shape, dtype=self.observation_space.dtype)
-        # rewards = np.empty(self.num_envs, dtype=np.float32)
-        # dones = np.empty(self.num_envs, dtype=np.uint8)
-        obs, rewards, dones = self.vec_hcle.recv()
+        obs, rewards, dones = self.vec_hcle.step_wait()
         return obs, rewards, dones, {}, {}
 
     def step(self, actions):

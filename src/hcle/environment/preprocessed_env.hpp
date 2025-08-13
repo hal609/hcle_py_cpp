@@ -30,6 +30,7 @@ namespace hcle
 
       float step(uint8_t action_index);
       void getScreenRGB(uint8_t *buffer) const;
+      void getObservation(uint8_t *buffer);
 
       void reset();
       void render();
@@ -39,6 +40,8 @@ namespace hcle
       const std::vector<uint8_t> &getActionSet();
 
     private:
+      void process_screen();
+
       std::unique_ptr<HCLEnvironment> env_;
 
       uint64_t current_step_;
