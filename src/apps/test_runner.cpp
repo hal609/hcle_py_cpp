@@ -9,7 +9,6 @@
 
 int main(int argc, char **argv)
 {
-    // Basic CLI-ish defaults (you can enhance parsing)
     int num_envs = 64;
     std::string rom_path = "C:\\Users\\offan\\Downloads\\hcle_py_cpp\\src\\hcle\\python\\hcle_py\\roms\\smb1.bin";
     std::string game_name = "smb1";

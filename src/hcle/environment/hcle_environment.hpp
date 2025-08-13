@@ -2,6 +2,7 @@
 
 #include "hcle/emucore/nes.hpp"
 #include "hcle/environment/game_logic.hpp"
+#include "hcle/common/display.hpp"
 #include <string>
 #include <vector>
 #include <memory>

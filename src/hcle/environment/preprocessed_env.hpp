@@ -4,6 +4,9 @@
 #include <vector>
 #include <memory>
 
+#include <opencv2/opencv.hpp>
+
+#include "hcle/common/display.hpp"
 #include "hcle/emucore/nes.hpp"
 #include "hcle/environment/hcle_environment.hpp"
 #include "hcle/environment/game_logic.hpp"
@@ -60,6 +63,18 @@ namespace hcle
       bool maxpool_;
       bool grayscale_;
       uint8_t stack_num_;
+
+      // Frame size variables
+      int m_channels_per_frame;
+      int m_raw_frame_height;
+      int m_raw_frame_width;
+      int m_raw_size; // Size of one raw frame (height * width * channels)
+      int m_obs_size; // Size of one processed frame (obs_height * obs_width * channels)
+
+      // Frame buffers
+      std::vector<std::vector<uint8_t>> m_raw_frames; // Buffers for the last 2 raw frames for max-pooling
+      std::vector<uint8_t> m_frame_stack;             // Circular buffer for the final N stacked frames
+      int m_frame_stack_idx;                          // Index for the circular buffer
 
       bool should_close_;
     };

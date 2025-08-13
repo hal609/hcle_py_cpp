@@ -18,7 +18,8 @@ find_package(Python COMPONENTS Interpreter Development)
 find_package(pybind11 CONFIG REQUIRED)
 find_package(SDL2 CONFIG REQUIRED)
 find_package(pybind11 CONFIG REQUIRED)
-find_package(OpenCV REQUIRED)
+find_package(OpenCV REQUIRED COMPONENTS core imgproc)
+find_package(zlib REQUIRED)
 
 
 set(HCLE_CORE_SOURCES
@@ -48,6 +49,8 @@ target_link_libraries(_hcle_py PRIVATE hcle_core)
 set_target_properties(_hcle_py PROPERTIES DEBUG_POSTFIX "_d")
 install(TARGETS _hcle_py
         LIBRARY DESTINATION hcle_py)
+
+install(FILES $<TARGET_RUNTIME_DLLS:_hcle_py> DESTINATION hcle_py)
         
 # TEST CPP RUNNER
 add_executable(hcle_test src/apps/test_runner.cpp)

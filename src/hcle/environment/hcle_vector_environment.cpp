@@ -28,8 +28,7 @@ namespace hcle
               maxpool_(maxpool),
               grayscale_(grayscale),
               stack_num_(stack_num),
-              num_envs_(num_envs),
-              m_step_in_flight(false)
+              num_envs_(num_envs)
         {
             if (num_envs <= 0)
             {
@@ -80,6 +79,7 @@ namespace hcle
 
         void HCLEVectorEnvironment::worker_function()
         {
+            printf("Worker thread started\n");
             while (!stop_)
             {
                 Action work = action_queue_.pop();
@@ -95,10 +95,12 @@ namespace hcle
 
                 if (work.force_reset)
                 {
+                    // printf("Worker %d resetting environment\n", work.env_id);
                     env->reset();
                 }
                 else
                 {
+                    // printf("Worker %d stepping environment with action %d\n", work.env_id, work.action_value);
                     result.reward = env->step(work.action_value);
                 }
 
@@ -110,6 +112,8 @@ namespace hcle
 
                 // The observation is written directly to the buffer in recv()
                 // to avoid an extra copy. We just push the other results.
+                // printf("Worker %d completed step with reward %.2f, done=%d\n", work.env_id, result.reward, result.done);
+                // printf("Pushing result: with env_id=%d, reward=%.2f, done=%d\n", result.env_id, result.reward, result.done);
                 result_queue_.push(result);
             }
         }
@@ -150,10 +154,8 @@ namespace hcle
 
         void HCLEVectorEnvironment::step_async(const std::vector<uint8_t> &actions)
         {
-            m_step_in_flight = true;
             if (actions.size() != num_envs_)
             {
-                m_step_in_flight = false;
                 throw std::runtime_error("Number of actions must equal number of environments.");
             }
             for (int i = 0; i < num_envs_; ++i)
@@ -165,24 +167,22 @@ namespace hcle
         void HCLEVectorEnvironment::step_wait(
             uint8_t *obs_buffer, float *reward_buffer, uint8_t *done_buffer)
         {
-            if (!m_step_in_flight)
-            {
-                throw std::runtime_error("Cannot call step_wait without a pending call to step_async.");
-            }
+            // printf("Execution in hclevectorenvironment::step_wait\n");
             const size_t obs_size = 240 * 256 * 3;
 
             for (int i = 0; i < num_envs_; ++i)
             {
+                // printf("About to pop from result_queue_\n");
                 Result result = result_queue_.pop();
-
+                // printf("Popped from result_queue_ about to get screen RGB\n");
                 // Get the observation for the new state
                 envs_[result.env_id]->getScreenRGB(obs_buffer + (result.env_id * obs_size));
-
+                // printf("Got screen RGB about to copy reward and dones.\n");
                 // Copy the other results to their buffers
                 reward_buffer[result.env_id] = result.reward;
                 done_buffer[result.env_id] = result.done;
             }
-            m_step_in_flight = false;
+            // printf("Loop through all environments complete.\n");
         }
 
         void HCLEVectorEnvironment::step(
@@ -191,8 +191,11 @@ namespace hcle
             float *reward_buffer,
             uint8_t *done_buffer)
         {
+            // printf("About to step async\n");
             this->step_async(actions);
+            // printf("Completed step async. About to call step_wait.\n");
             this->step_wait(obs_buffer, reward_buffer, done_buffer);
+            // printf("Completed step_wait.\n");
         }
     } // namespace environment
 } // namespace hcle
