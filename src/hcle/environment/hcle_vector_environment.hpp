@@ -26,7 +26,7 @@ namespace hcle
             int env_id;
             float reward;
             bool done;
-            // The observation is moved into the buffer directly, so not needed here
+            std::vector<uint8_t> observation;
         };
 
         struct StepResult

@@ -79,41 +79,35 @@ namespace hcle
 
         void HCLEVectorEnvironment::worker_function()
         {
-            printf("Worker thread started\n");
+            const size_t obs_size = 240 * 256 * 3; // Calculate this based on your env config
+
             while (!stop_)
             {
                 Action work = action_queue_.pop();
                 if (stop_ || work.env_id < 0)
                 {
-                    break; // Exit signal
+                    break;
                 }
 
                 Result result;
-
-                // Get the environment for this worker's task
+                result.env_id = work.env_id;
                 auto &env = envs_[work.env_id];
 
                 if (work.force_reset)
                 {
-                    // printf("Worker %d resetting environment\n", work.env_id);
                     env->reset();
+                    result.reward = 0.0f;
+                    result.done = false;
                 }
                 else
                 {
-                    // printf("Worker %d stepping environment with action %d\n", work.env_id, work.action_value);
                     result.reward = env->step(work.action_value);
+                    result.done = env->isDone();
                 }
 
-                // Prepare result and push to the result queue
-                // result.reward = env->getReward();
-                result.env_id = work.env_id;
-                // Note: We get reward/done *before* getting the screen for the next state
-                result.done = env->isDone();
+                result.observation.resize(obs_size);
+                env->getScreenRGB(result.observation.data());
 
-                // The observation is written directly to the buffer in recv()
-                // to avoid an extra copy. We just push the other results.
-                // printf("Worker %d completed step with reward %.2f, done=%d\n", work.env_id, result.reward, result.done);
-                // printf("Pushing result: with env_id=%d, reward=%.2f, done=%d\n", result.env_id, result.reward, result.done);
                 result_queue_.push(result);
             }
         }
@@ -167,22 +161,18 @@ namespace hcle
         void HCLEVectorEnvironment::step_wait(
             uint8_t *obs_buffer, float *reward_buffer, uint8_t *done_buffer)
         {
-            // printf("Execution in hclevectorenvironment::step_wait\n");
             const size_t obs_size = 240 * 256 * 3;
 
             for (int i = 0; i < num_envs_; ++i)
             {
-                // printf("About to pop from result_queue_\n");
                 Result result = result_queue_.pop();
-                // printf("Popped from result_queue_ about to get screen RGB\n");
-                // Get the observation for the new state
-                envs_[result.env_id]->getScreenRGB(obs_buffer + (result.env_id * obs_size));
-                // printf("Got screen RGB about to copy reward and dones.\n");
-                // Copy the other results to their buffers
+
+                uint8_t *dest_ptr = obs_buffer + (result.env_id * obs_size);
+                std::copy(result.observation.begin(), result.observation.end(), dest_ptr);
+
                 reward_buffer[result.env_id] = result.reward;
                 done_buffer[result.env_id] = result.done;
             }
-            // printf("Loop through all environments complete.\n");
         }
 
         void HCLEVectorEnvironment::step(
