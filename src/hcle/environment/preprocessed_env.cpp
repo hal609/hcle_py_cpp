@@ -140,40 +140,19 @@ namespace hcle
             return timestep;
         }
 
+        
         void PreprocessedEnv::get_screen_data(uint8_t* buffer) {
-            // Determine the size of the buffer based on whether it's grayscale or RGB
-            size_t buffer_size = 0;
             if (grayscale_) {
-                buffer_size = m_raw_frame_height * m_raw_frame_width * 1; // 1 channel
+                env_->getScreenRGB(this->rgb_buffer.data());
+
+                cv::Mat rgb_mat(m_raw_frame_height, m_raw_frame_width, CV_8UC3, this->rgb_buffer.data());
+                cv::Mat gray_mat(m_raw_frame_height, m_raw_frame_width, CV_8UC1, buffer); // Wrap the destination buffer
+                cv::cvtColor(rgb_mat, gray_mat, cv::COLOR_RGB2GRAY);
             }
             else {
-                buffer_size = m_raw_frame_height * m_raw_frame_width * 3; // 3 channels
+                env_->getScreenRGB(buffer);
             }
-
-            // Set the entire contents of the output buffer to 0
-            std::memset(buffer, 0, buffer_size);
-
         }
-        //void PreprocessedEnv::get_screen_data(uint8_t* buffer) {
-        //    if (grayscale_) {
-        //        // If we need grayscale, we can't write directly to the final buffer
-        //        // because the emulator gives us RGB data.
-
-        //        // 2. Get the RGB data from the emulator into the temporary buffer.
-        //        env_->getScreenRGB(this->rgb_buffer.data());
-
-        //        // 3. Use OpenCV to convert the 3-channel RGB image to a 1-channel Grayscale image,
-        //        //    writing the result directly into the final destination buffer.
-        //        cv::Mat rgb_mat(m_raw_frame_height, m_raw_frame_width, CV_8UC3, this->rgb_buffer.data());
-        //        cv::Mat gray_mat(m_raw_frame_height, m_raw_frame_width, CV_8UC1, buffer); // Wrap the destination buffer
-        //        cv::cvtColor(rgb_mat, gray_mat, cv::COLOR_RGB2GRAY);
-
-        //    }
-        //    else {
-        //        // If we want RGB, we can write directly to the destination buffer as it's the correct size.
-        //        env_->getScreenRGB(buffer);
-        //    }
-        //}
 
         bool PreprocessedEnv::isDone()
         {

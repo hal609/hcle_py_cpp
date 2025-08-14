@@ -11,10 +11,6 @@ namespace hcle::environment
             const std::function<std::unique_ptr<PreprocessedEnv>(int)> &env_factory) : num_envs_(num_envs)
         {
 
-            // Cache the action set from the first environment
-            if (!envs_.empty())
-                action_set_cache_ = envs_[0]->getActionSet();
-
             if (num_envs <= 0)
                 throw std::invalid_argument("Number of environments must be positive.");
 
@@ -26,6 +22,10 @@ namespace hcle::environment
                 //printf("Vectorizer creating environment %d\n", i);
                 envs_[i] = env_factory(i);
             }
+
+            // Cache the action set from the first environment
+            if (!envs_.empty())
+                action_set_cache_ = envs_[0]->getActionSet();
 
             // Setup worker threads
             const std::size_t processor_count = std::thread::hardware_concurrency();
