@@ -23,79 +23,122 @@ void init_vector_bindings(py::module_ &m)
              py::arg("grayscale"),
              py::arg("stack_num"))
 
-        .def("get_action_space_size", &hcle::environment::HCLEVectorEnvironment::getActionSpaceSize)
-
+        .def("get_action_space_size", [](hcle::environment::HCLEVectorEnvironment &self)
+             { return self.getActionSet().size(); })
         .def("reset", [](hcle::environment::HCLEVectorEnvironment &self)
              {
-            const std::vector<py::ssize_t> obs_shape = {self.getNumEnvs(), 240, 256, 3};
-            auto obs = py::array_t<uint8_t>(obs_shape);
-            
-            // Release the GIL to allow C++ threads to run
-            py::gil_scoped_release release;
-            self.reset(obs.mutable_data());
-            py::gil_scoped_acquire acquire;
+                py::gil_scoped_release release;
+                auto timesteps = self.reset();
+                py::gil_scoped_acquire acquire;
 
-            return obs; })
+                const int batch_size = timesteps.size();
+                const auto shape_info = self.get_observation_shape();
+                const int stack_num = std::get<0>(shape_info);
+                const int height = std::get<1>(shape_info);
+                const int width = std::get<2>(shape_info);
+                const int channels = std::get<3>(shape_info); // Assuming 3 for RGB, 1 for Grayscale
+                const bool is_grayscale = (channels == 1);
 
-        .def("step", [](hcle::environment::HCLEVectorEnvironment &self, py::array_t<uint8_t> actions)
-             {
-            if (actions.ndim() != 1 || actions.shape(0) != self.getNumEnvs()) {
-                throw std::runtime_error("Actions must be a 1D numpy array with size equal to num_envs.");
-            }
-            
-            // Prepare output NumPy arrays
-            const std::vector<py::ssize_t> obs_shape = {self.getNumEnvs(), 240, 256, 3};
-            auto obs = py::array_t<uint8_t>(obs_shape);
-            auto rewards = py::array_t<float>(self.getNumEnvs());
-            
-            // CHANGE 1: The 'dones' array should be uint8_t to match your C++ function
-            auto dones = py::array_t<uint8_t>(self.getNumEnvs());
+                // 2. Create the output NumPy arrays with the correct shapes and data types.
+                py::array_t<uint8_t> obs_np;
+                if (is_grayscale) {
+                    obs_np = py::array_t<uint8_t>({batch_size, stack_num, height, width});
+                } else {
+                    obs_np = py::array_t<uint8_t>({batch_size, stack_num, height, width, channels});
+                }
+                // py::array_t<float> rewards_np(batch_size);
+                // py::array_t<bool> dones_np(batch_size);
+                py::array_t<bool> env_ids_np(batch_size);
 
-            std::vector<uint8_t> actions_vec(actions.data(), actions.data() + actions.size());
+                // 3. Get direct, mutable pointers to the underlying data buffers of the NumPy arrays.
+                auto obs_ptr = static_cast<uint8_t*>(obs_np.mutable_data());
+                // auto rewards_ptr = static_cast<float*>(rewards_np.mutable_data());
+                // auto dones_ptr = static_cast<bool*>(dones_np.mutable_data());
+                auto env_ids_ptr = static_cast<bool*>(env_ids_np.mutable_data());
 
-            // Release the GIL to allow C++ threads to run
-            py::gil_scoped_release release;
+                // 4. Loop through the C++ Timestep vector and copy the data into the NumPy arrays.
+                const size_t single_obs_size = stack_num * height * width * channels;
+                for (int i = 0; i < batch_size; ++i) {
+                    const auto& timestep = timesteps[i];
 
-            // CHANGE 2: Replace the two separate calls with a single call to your new step function
-            self.step(actions_vec, 
-                    obs.mutable_data(), 
-                    rewards.mutable_data(), 
-                    dones.mutable_data());
-                    
-            py::gil_scoped_acquire acquire;
+                    // Copy the observation pixels.
+                    if (timestep.observation.size() == single_obs_size) {
+                        std::memcpy(obs_ptr + i * single_obs_size, timestep.observation.data(), single_obs_size);
+                    } else {
+                        throw std::runtime_error("C++ observation size does not match expected NumPy shape.");
+                    }
 
-            // Return the populated NumPy arrays
-            return py::make_tuple(obs, rewards, dones); })
+                    // Copy the scalar reward and done values.
+                    env_ids_ptr[i] = timestep.env_id;
+                    // rewards_ptr[i] = timestep.reward;
+                    // dones_ptr[i] = timestep.done;
+                }
 
+                // Create info dict
+                py::dict info;
+                info["env_id"] = env_ids_np;
+
+                return py::make_tuple(obs_np, info); })
         .def("step_async", [](hcle::environment::HCLEVectorEnvironment &self, py::array_t<uint8_t> actions)
              {
-                 if (actions.ndim() != 1 || actions.shape(0) != self.getNumEnvs())
-                 {
-                     throw std::runtime_error("Actions must be a 1D numpy array with size equal to num_envs.");
-                 }
+                py::buffer_info actions_buf = actions.request();
+                auto *actions_ptr = static_cast<uint8_t *>(actions_buf.ptr);
+                std::vector<int> actions_vec(actions_ptr, actions_ptr + actions.size());
 
-                 // Convert numpy array to C++ vector to pass to the C++ send method
-                 std::vector<uint8_t> actions_vec(actions.data(), actions.data() + actions.size());
-
-                 py::gil_scoped_release release;
-                 self.step_async(actions_vec);
-                 py::gil_scoped_acquire acquire;
-                 // send has a void return type, so we return nothing.
-             })
+                py::gil_scoped_release release;
+                self.send(actions_vec);
+                py::gil_scoped_acquire acquire; })
 
         .def("step_wait", [](hcle::environment::HCLEVectorEnvironment &self)
              {
-            // Prepare the output NumPy arrays that our C++ function will fill
-            const std::vector<py::ssize_t> obs_shape = {self.getNumEnvs(), 240, 256, 3};
-            auto obs = py::array_t<uint8_t>(obs_shape);
-            auto rewards = py::array_t<float>(self.getNumEnvs());
-            auto dones = py::array_t<uint8_t>(self.getNumEnvs());
+                std::vector<hcle::vector::Timestep> timesteps = self.recv();
+                py::gil_scoped_acquire acquire;
 
-            py::gil_scoped_release release;
-            // Call the C++ recv method, passing pointers to the NumPy buffers
-            self.step_wait(obs.mutable_data(), rewards.mutable_data(), dones.mutable_data());
-            py::gil_scoped_acquire acquire;
+                const int batch_size = timesteps.size();
+                const auto shape_info = self.get_observation_shape();
+                const int stack_num = std::get<0>(shape_info);
+                const int height = std::get<1>(shape_info);
+                const int width = std::get<2>(shape_info);
+                const int channels = std::get<3>(shape_info); // Assuming 3 for RGB, 1 for Grayscale
+                const bool is_grayscale = (channels == 1);
 
-            // Return the populated NumPy arrays as a tuple
-            return py::make_tuple(obs, rewards, dones); });
+                // 2. Create the output NumPy arrays with the correct shapes and data types.
+                py::array_t<uint8_t> obs_np;
+                if (is_grayscale)
+                {
+                    obs_np = py::array_t<uint8_t>({batch_size, stack_num, height, width});
+                }
+                else
+                {
+                    obs_np = py::array_t<uint8_t>({batch_size, stack_num, height, width, channels});
+                }
+                py::array_t<float> rewards_np(batch_size);
+                py::array_t<bool> dones_np(batch_size);
+
+                // 3. Get direct, mutable pointers to the underlying data buffers of the NumPy arrays.
+                auto obs_ptr = static_cast<uint8_t *>(obs_np.mutable_data());
+                auto rewards_ptr = static_cast<float *>(rewards_np.mutable_data());
+                auto dones_ptr = static_cast<bool *>(dones_np.mutable_data());
+
+                // 4. Loop through the C++ Timestep vector and copy the data into the NumPy arrays.
+                const size_t single_obs_size = stack_num * height * width * channels;
+                for (int i = 0; i < batch_size; ++i)
+                {
+                    const auto &timestep = timesteps[i];
+
+                    // Copy the observation pixels.
+                    if (timestep.observation.size() == single_obs_size)
+                    {
+                        std::memcpy(obs_ptr + i * single_obs_size, timestep.observation.data(), single_obs_size);
+                    }
+                    else
+                    {
+                        throw std::runtime_error("C++ observation size does not match expected NumPy shape.");
+                    }
+
+                    // Copy the scalar reward and done values.
+                    rewards_ptr[i] = timestep.reward;
+                    dones_ptr[i] = timestep.done;
+                }
+                return py::make_tuple(obs_np, rewards_np, dones_np); });
 }

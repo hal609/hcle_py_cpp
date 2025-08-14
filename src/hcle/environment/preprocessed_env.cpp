@@ -34,15 +34,12 @@ namespace hcle
 
             env_ = std::make_unique<HCLEnvironment>();
             env_->loadROM(rom_path, render_mode);
-            action_set_ = std::vector<uint8_t>({NES_INPUT_RIGHT | NES_INPUT_B,
-                                                NES_INPUT_RIGHT | NES_INPUT_B | NES_INPUT_A}); // env_->getActionSet()
-            // action_set_ = env_->getActionSet();
+            action_set_ = env_->getActionSet();
 
             // --- INITIALIZE NEW MEMBERS ---
             m_channels_per_frame = grayscale_ ? 1 : 3;
 
-            // Get raw screen dimensions from the base environment
-
+            // Get raw screen dimensions
             m_raw_size = m_raw_frame_height * m_raw_frame_width * m_channels_per_frame;
             m_obs_size = obs_height_ * obs_width_ * m_channels_per_frame;
 
@@ -63,17 +60,10 @@ namespace hcle
             std::fill(m_raw_frames[1].begin(), m_raw_frames[1].end(), 0); // Clear the second buffer
 
             process_screen(); // Process it into the frame stack
-
-            // // Since we are stacking frames, we fill the stack with the first frame
-            // for (uint8_t i = 1; i < stack_num_; ++i)
-            // {
-            //     process_screen();
-            // }
         }
 
         void PreprocessedEnv::step(uint8_t action_index)
         {
-            // printf("Executing PreprocessedEnv::step with action_index=%d\n", action_index);
             if (action_index >= action_set_.size())
             {
                 throw std::out_of_range("Action index out of range.");
@@ -82,7 +72,6 @@ namespace hcle
             uint8_t controller_input = action_set_[action_index];
             float accumulated_reward = 0.0f;
             bool done = false;
-            // printf("Local processedEnv timestep values set to: controller_input=%d, accumulated_reward=%.2f, done=%d\n", controller_input, accumulated_reward, done);
 
             // --- FRAME SKIPPING LOOP ---
             for (int skip = 0; skip < frame_skip_; ++skip)

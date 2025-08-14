@@ -44,6 +44,7 @@ namespace hcle
 
       std::vector<uint8_t> getRAM();
       const std::vector<uint8_t> getActionSet();
+      const size_t getObservationSize() const { return m_obs_size; };
 
     private:
       void process_screen();

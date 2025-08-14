@@ -1,3 +1,4 @@
+from typing import Any, TypeVar
 import gymnasium as gym
 from gymnasium.vector import VectorEnv
 from gymnasium.spaces import Box, Discrete
@@ -6,6 +7,8 @@ import numpy as np
 import time
 from hcle_py import roms
 from . import _hcle_py
+
+ObsType = TypeVar("ObsType")
 
 class HCLEVectorEnv(VectorEnv):
     """Gymnasium VectorEnv wrapper for the C++ HCLEVectorEnvironment."""
@@ -52,25 +55,23 @@ class HCLEVectorEnv(VectorEnv):
             self.single_action_space, self.batch_size
         )
 
-    def reset(self, *, seed=None, options=None):
-        obs = self.vec_hcle.reset()
-        return np.copy(obs), {}
+    def reset(self, *, seed=None, options=None)  -> tuple[ObsType, dict[str, Any]]:
+        return self.vec_hcle.reset()
     
-    def step_async(self, actions):
+    def step_async(self, actions: np.ndarray):
         """Asynchronously sends actions to the environments."""
         self.vec_hcle.step_async(actions)
 
-    def step_wait(self):
+    def step_wait(self) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, dict[str, Any]]:
         """Waits for and receives the results from the environments."""
         obs, rewards, dones = self.vec_hcle.step_wait()
-        return obs, rewards, dones, {}, {}
-
-    def step(self, actions):
-        actions = np.asarray(actions, dtype=np.uint8)
-        obs, rewards, dones = self.vec_hcle.step(actions)
         truncateds = np.zeros(self.num_envs, dtype=np.bool_)
         infos = {}
-        return np.copy(obs), rewards, dones, truncateds, infos
+        return obs, rewards, dones, truncateds, infos
+
+    def step(self, actions: np.ndarray):
+        self.step_async(actions)
+        return self.step_wait()
 
     def close(self, **kwargs):
         if hasattr(self, 'vec_hcle'):

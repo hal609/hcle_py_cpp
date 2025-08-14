@@ -87,6 +87,13 @@ namespace hcle::environment
             return action_set_cache_;
         }
 
+        const size_t getObservationSize() const
+        {
+            if (envs_.empty())
+                return 0;
+            return envs_[0]->getObservationSize();
+        }
+
         // --- PRIVATE HELPER ---
     private:
         std::vector<uint8_t> action_set_cache_;
@@ -122,8 +129,8 @@ namespace hcle::environment
                 }
 
                 hcle::vector::Timestep timestep = env->get_timestep();
-                timestep.env_id = work.env_id;
                 timestep.done = env->isDone();
+                timestep.env_id = work.env_id;
 
                 result_queue_.push(timestep);
             }

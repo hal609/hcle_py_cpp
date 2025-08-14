@@ -56,8 +56,6 @@ namespace hcle
 
         const std::vector<uint8_t> HCLEnvironment::getActionSet() const
         {
-            printf("Running getActionSet in HCLEnvironment\n");
-
             if (!this->game_logic)
             {
                 throw std::runtime_error("Cannot get action set; no game loaded.");

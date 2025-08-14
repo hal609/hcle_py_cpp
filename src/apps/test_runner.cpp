@@ -14,7 +14,6 @@ int main(int argc, char **argv)
     std::string rom_path = "C:\\Users\\offan\\Downloads\\hcle_py_cpp\\src\\hcle\\python\\hcle_py\\roms\\smb1.bin";
     std::string game_name = "smb1";
     std::string render_mode = "human";
-    int fps_limit = -1;
     int num_steps = 1000;
 
     std::vector<uint8_t> backup_state_;
@@ -22,26 +21,20 @@ int main(int argc, char **argv)
     try
     {
         std::cout << "Creating HCLEVectorEnvironment (num_envs=" << num_envs << ")...\n";
-        hcle::environment::HCLEVectorEnvironment env(num_envs, rom_path, game_name, render_mode);
 
-        const int H = 240, W = 256, C = 3;
-        size_t obs_bytes = static_cast<size_t>(num_envs) * H * W * C;
-        std::vector<uint8_t> obs(obs_bytes);
+        hcle::environment::HCLEVectorEnvironment env(num_envs, rom_path, game_name, render_mode);
 
         std::vector<hcle::vector::Timestep> timesteps;
 
-        // reset (fills the obs buffer)
-        env.reset();
+        timesteps = env.reset();
 
         size_t action_space = env.getActionSet().size();
         printf("Action space size: %zu\n", action_space);
+
         std::mt19937 rng(std::random_device{}());
         std::uniform_int_distribution<int> action_dist(0, (int)action_space - 1);
 
         std::vector<int> actions(num_envs);
-        std::vector<float> rewards(num_envs);
-        std::vector<uint8_t> dones_u8(num_envs);
-        bool *dones_ptr = reinterpret_cast<bool *>(dones_u8.data());
 
         double total_reward = 0.0;
         using clock = std::chrono::steady_clock;
@@ -49,29 +42,22 @@ int main(int argc, char **argv)
 
         for (int step = 0; step < num_steps; ++step)
         {
-            // random actions
             for (int i = 0; i < num_envs; ++i)
                 actions[i] = static_cast<int>(action_dist(rng));
 
-            // call step (fills obs, rewards, dones)
             env.send(actions);
             timesteps = env.recv();
 
-            // unsigned int state_size = env.nes_->size();
-            // backup_state_.resize(state_size);
-            // env.nes_->save(backup_state_.data());
-            // printf("Backup size: %u\n", state_size);
+            total_reward += timesteps[0].reward / (double)num_envs;
 
-            // simple reporting
-            double mean_reward = timesteps[0].reward;
-            for (float r : rewards)
-                mean_reward += r;
-            mean_reward /= (double)num_envs;
-            total_reward += mean_reward;
+            if (timesteps[0].done)
+            {
+                printf("!!!!!!! Episode finished after %d timesteps !!!!!!!!!!!!\n", step + 1);
+            }
 
             if ((step + 1) % 20 == 0)
             {
-                std::cout << "Step " << (step + 1) << " mean reward = " << mean_reward
+                std::cout << "Step " << (step + 1) << " step reward = " << timesteps[0].reward
                           << " total reward = " << total_reward << "\n";
             }
         }
