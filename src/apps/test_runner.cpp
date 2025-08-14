@@ -9,7 +9,7 @@
 
 int main(int argc, char **argv)
 {
-    int num_envs = 1;
+    int num_envs = 5;
     std::string rom_path = "C:\\Users\\offan\\Downloads\\hcle_py_cpp\\src\\hcle\\python\\hcle_py\\roms\\smb1.bin";
     std::string game_name = "smb1";
     std::string render_mode = "rgb_array";

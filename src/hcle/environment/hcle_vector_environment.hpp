@@ -31,6 +31,7 @@ namespace hcle::environment
         std::vector<hcle::vector::Timestep> recv();
         std::vector<uint8_t> getActionSet() const;
 
+
     private:
         std::unique_ptr<AsyncVectorizer> vectorizer_;
         std::vector<uint8_t> action_set_;

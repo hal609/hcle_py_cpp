@@ -51,9 +51,6 @@ namespace hcle::environment
 
     std::vector<uint8_t> HCLEVectorEnvironment::getActionSet() const
     {
-        printf("Execution in HCLEVectorEnvironment::getActionSet\n");
-        std::vector<uint8_t> result = vectorizer_->getActionSet();
-        printf("HCLEVectorEnvironment::getActionSet got action set of type %s with size %zu\n", typeid(result).name(), result.size());
-        return result;
+        return vectorizer_->getActionSet();;
     }
 }

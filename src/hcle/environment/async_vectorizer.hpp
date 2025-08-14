@@ -18,12 +18,12 @@ namespace hcle::environment
             if (num_envs <= 0)
                 throw std::invalid_argument("Number of environments must be positive.");
 
-            printf("Vectorizer constructor running with num_envs = %d\n", num_envs_);
+            //printf("Vectorizer constructor running with num_envs = %d\n", num_envs_);
             // Create environments
             envs_.resize(num_envs_);
             for (int i = 0; i < num_envs_; ++i)
             {
-                printf("Vectorizer creating environment %d\n", i);
+                //printf("Vectorizer creating environment %d\n", i);
                 envs_[i] = env_factory(i);
             }
 
@@ -34,7 +34,7 @@ namespace hcle::environment
             // Start worker threads
             for (int i = 0; i < num_threads_; ++i)
             {
-                printf("Vectorizer starting worker thread %d\n", i);
+                //printf("Vectorizer starting worker thread %d\n", i);
                 workers_.emplace_back([this]
                                       { worker_function(); });
             }
@@ -60,13 +60,13 @@ namespace hcle::environment
 
         std::vector<hcle::vector::Timestep> reset()
         {
-            printf("Running reset func in vectorizer. About to enqueue reset commands.\n");
+            //printf("Running reset func in vectorizer. About to enqueue reset commands.\n");
             // Enqueue a reset command for every environment
             for (int i = 0; i < num_envs_; ++i)
             {
                 action_queue_.push({i, 0, true});
             }
-            printf("Reset commands enqueued. Waiting for results, about to collect results.\n");
+            //printf("Reset commands enqueued. Waiting for results, about to collect results.\n");
             // Wait for all results and return them
             return collect_results();
         }
@@ -90,9 +90,9 @@ namespace hcle::environment
             return collect_results();
         }
 
-        const std::vector<uint8_t> &getActionSet() const
+        const std::vector<uint8_t> getActionSet() const
         {
-            printf("Execution in AsyncVectorizer::getActionSet\n");
+            //printf("Execution in AsyncVectorizer::getActionSet\n");
             return std::vector<uint8_t>({0}); // Placeholder, should return the actual action set
             // return action_set_cache_;
         }
@@ -145,21 +145,21 @@ namespace hcle::environment
         // --- MODIFIED RESULT COLLECTION ---
         std::vector<hcle::vector::Timestep> collect_results()
         {
-            printf("==== COLLECTING RESULTS FROM WORKER THREADS ====\n");
+            //printf("==== COLLECTING RESULTS FROM WORKER THREADS ====\n");
             std::vector<hcle::vector::Timestep> results(num_envs_);
             for (int i = 0; i < num_envs_; ++i)
             {
-                printf("Waiting for result %d of %d\n", i + 1, num_envs_);
+                //printf("Waiting for result %d of %d\n", i + 1, num_envs_);
 
                 // Pop the Timestep directly from the queue
                 hcle::vector::Timestep timestep = result_queue_.pop();
-                printf("popped timestep result from results_queque for env id %d, reward=%d, done=%d\n", timestep.env_id, timestep.reward, timestep.done);
+                //printf("popped timestep result from results_queque for env id %d, reward=%d, done=%d\n", timestep.env_id, timestep.reward, timestep.done);
                 // Use the env_id from the Timestep struct to sort the results
                 if (timestep.env_id >= 0 && timestep.env_id < num_envs_)
                 {
-                    printf("Received result for env %d, about to place.\n", timestep.env_id);
+                    //printf("Received result for env %d, about to place.\n", timestep.env_id);
                     results[timestep.env_id] = std::move(timestep);
-                    printf("Received and placed result for env %d\n", results[timestep.env_id].env_id);
+                    //printf("Received and placed result for env %d\n", results[timestep.env_id].env_id);
                 }
             }
             // printf("All results collected.\n");

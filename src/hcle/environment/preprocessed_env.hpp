@@ -41,7 +41,6 @@ namespace hcle
       bool isDone();
 
       void getObservation(uint8_t *buffer);
-      void getScreenRGB(uint8_t *buffer) const;
 
       std::vector<uint8_t> getRAM();
       const std::vector<uint8_t> &getActionSet();
@@ -72,8 +71,10 @@ namespace hcle
 
       // Frame size variables
       int m_channels_per_frame;
-      int m_raw_frame_height;
-      int m_raw_frame_width;
+      const int m_raw_frame_height = 240;
+      const int m_raw_frame_width = 256;
+      std::vector<uint8_t> rgb_buffer;
+      std::vector<uint8_t> grayscale_buffer;
       int m_raw_size; // Size of one raw frame (height * width * channels)
       int m_obs_size; // Size of one processed frame (obs_height * obs_width * channels)
 

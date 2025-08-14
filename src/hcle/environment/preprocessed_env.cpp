@@ -29,6 +29,9 @@ namespace hcle
               stack_num_(stack_num),
               reward_(0.0f)
         {
+            rgb_buffer.resize(m_raw_frame_height * m_raw_frame_width * 3, 0);
+            grayscale_buffer.resize(m_raw_frame_height * m_raw_frame_width * 3, 0);
+
             env_ = std::make_unique<HCLEnvironment>();
             env_->loadROM(rom_path, render_mode);
             action_set_ = std::vector<uint8_t>({NES_INPUT_RIGHT | NES_INPUT_B,
@@ -39,8 +42,6 @@ namespace hcle
             m_channels_per_frame = grayscale_ ? 1 : 3;
 
             // Get raw screen dimensions from the base environment
-            m_raw_frame_height = 240; // Assuming fixed size from your NES emulator
-            m_raw_frame_width = 256;
 
             m_raw_size = m_raw_frame_height * m_raw_frame_width * m_channels_per_frame;
             m_obs_size = obs_height_ * obs_width_ * m_channels_per_frame;
@@ -89,7 +90,7 @@ namespace hcle
             for (int skip = 0; skip < frame_skip_; ++skip)
             {
                 accumulated_reward += env_->act(controller_input);
-                printf("Running frame skip %d: accumulated_reward=%.2f\n", skip, accumulated_reward);
+                //printf("Running frame skip %d: accumulated_reward=%.2f\n", skip, accumulated_reward);
                 // done = env_->isDone();
                 done = false;
                 if (done)
@@ -139,20 +140,40 @@ namespace hcle
             return timestep;
         }
 
-        // Helper function to abstract away grayscale/RGB
-        void PreprocessedEnv::get_screen_data(uint8_t *buffer)
-        {
-            if (grayscale_)
-            {
-                // env_->getScreenGrayscale(buffer); // Assuming you have this function
-                // If not, you'd get RGB and convert it. For now, we'll assume RGB.
-                env_->getScreenRGB(buffer);
+        void PreprocessedEnv::get_screen_data(uint8_t* buffer) {
+            // Determine the size of the buffer based on whether it's grayscale or RGB
+            size_t buffer_size = 0;
+            if (grayscale_) {
+                buffer_size = m_raw_frame_height * m_raw_frame_width * 1; // 1 channel
             }
-            else
-            {
-                env_->getScreenRGB(buffer);
+            else {
+                buffer_size = m_raw_frame_height * m_raw_frame_width * 3; // 3 channels
             }
+
+            // Set the entire contents of the output buffer to 0
+            std::memset(buffer, 0, buffer_size);
+
         }
+        //void PreprocessedEnv::get_screen_data(uint8_t* buffer) {
+        //    if (grayscale_) {
+        //        // If we need grayscale, we can't write directly to the final buffer
+        //        // because the emulator gives us RGB data.
+
+        //        // 2. Get the RGB data from the emulator into the temporary buffer.
+        //        env_->getScreenRGB(this->rgb_buffer.data());
+
+        //        // 3. Use OpenCV to convert the 3-channel RGB image to a 1-channel Grayscale image,
+        //        //    writing the result directly into the final destination buffer.
+        //        cv::Mat rgb_mat(m_raw_frame_height, m_raw_frame_width, CV_8UC3, this->rgb_buffer.data());
+        //        cv::Mat gray_mat(m_raw_frame_height, m_raw_frame_width, CV_8UC1, buffer); // Wrap the destination buffer
+        //        cv::cvtColor(rgb_mat, gray_mat, cv::COLOR_RGB2GRAY);
+
+        //    }
+        //    else {
+        //        // If we want RGB, we can write directly to the destination buffer as it's the correct size.
+        //        env_->getScreenRGB(buffer);
+        //    }
+        //}
 
         bool PreprocessedEnv::isDone()
         {
@@ -162,11 +183,6 @@ namespace hcle
         const std::vector<uint8_t> &PreprocessedEnv::getActionSet()
         {
             return env_->getActionSet();
-        }
-
-        void PreprocessedEnv::getScreenRGB(uint8_t *buffer) const
-        {
-            env_->getScreenRGB(buffer);
         }
 
         std::vector<uint8_t> PreprocessedEnv::getRAM()
