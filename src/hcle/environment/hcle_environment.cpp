@@ -120,8 +120,6 @@ namespace hcle
 
         bool HCLEnvironment::isDone()
         {
-            if (!game_logic)
-                return true;
             return game_logic->isDone();
         }
 

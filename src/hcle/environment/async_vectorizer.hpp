@@ -112,7 +112,7 @@ namespace hcle::environment
 
                 auto &env = envs_[work.env_id];
 
-                if (work.force_reset)
+                if (work.force_reset || env->isDone())
                 {
                     env->reset();
                 }
