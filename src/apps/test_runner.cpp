@@ -9,7 +9,7 @@
 
 int main(int argc, char **argv)
 {
-    int num_envs = 64;
+    int num_envs = 1;
     std::string rom_path = "C:\\Users\\offan\\Downloads\\hcle_py_cpp\\src\\hcle\\python\\hcle_py\\roms\\smb1.bin";
     std::string game_name = "smb1";
     std::string render_mode = "rgb_array";
@@ -27,18 +27,24 @@ int main(int argc, char **argv)
         size_t obs_bytes = static_cast<size_t>(num_envs) * H * W * C;
         std::vector<uint8_t> obs(obs_bytes);
 
+        std::vector<hcle::vector::Timestep> timesteps;
+
         // reset (fills the obs buffer)
-        env.reset(obs.data());
+        std::cout << "!!!!!!!!!!!!!!!!!! About to call initial reset. !!!!!!!!!!!!!!!!!!\n";
+        env.reset();
         std::cout << "Environment reset complete.\n";
 
-        size_t action_space = env.getActionSpaceSize();
+        printf("About to get action space from vector env.\n");
+        std::vector<uint8_t> action_set = env.getActionSet();
+        printf("Returned to test_runner with action set of type %s with size %zu\n", typeid(action_set).name(), action_set.size());
+        size_t action_space = action_set.size();
+        action_space = 2;
+        printf("Action space size: %zu\n", action_space);
         std::mt19937 rng(std::random_device{}());
         std::uniform_int_distribution<int> action_dist(0, (int)action_space - 1);
 
-        std::vector<uint8_t> actions(num_envs);
+        std::vector<int> actions(num_envs);
         std::vector<float> rewards(num_envs);
-        // Many C++ implementations expect a bool* for dones; vector<bool> is not contiguous.
-        // We allocate a uint8_t buffer and reinterpret as bool* (common practice; sizeof(bool)==1 on mainstream platforms).
         std::vector<uint8_t> dones_u8(num_envs);
         bool *dones_ptr = reinterpret_cast<bool *>(dones_u8.data());
 
@@ -46,14 +52,17 @@ int main(int argc, char **argv)
         using clock = std::chrono::steady_clock;
         auto run_start = clock::now();
 
+        printf("!!!!!!!!!!!! About to enter step loop in test_runner !!!!!!!!!!!!!!\n");
         for (int step = 0; step < num_steps; ++step)
         {
             // random actions
             for (int i = 0; i < num_envs; ++i)
-                actions[i] = static_cast<uint8_t>(action_dist(rng));
+                actions[i] = static_cast<int>(action_dist(rng));
 
             // call step (fills obs, rewards, dones)
-            env.step(actions, obs.data(), rewards.data(), dones_u8.data());
+            env.send(actions);
+            timesteps = env.recv();
+            // env.step(actions, obs.data(), rewards.data(), dones_u8.data());
 
             // unsigned int state_size = env.nes_->size();
             // backup_state_.resize(state_size);

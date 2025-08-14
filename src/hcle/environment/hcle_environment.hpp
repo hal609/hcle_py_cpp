@@ -1,11 +1,22 @@
 #pragma once
 
-#include "hcle/emucore/nes.hpp"
-#include "hcle/environment/game_logic.hpp"
-#include "hcle/common/display.hpp"
 #include <string>
 #include <vector>
 #include <memory>
+
+#include "hcle/emucore/nes.hpp"
+#include "hcle/environment/game_logic.hpp"
+#include "hcle/common/display.hpp"
+#include "hcle/common/exceptions.hpp"
+#include "hcle/games/smb1.hpp"
+#include "hcle/version.hpp"
+
+struct StepResult
+{
+  float reward;
+  bool done;
+  std::vector<uint8_t> observation;
+};
 
 // Ensure the namespace is correct
 namespace hcle
@@ -21,11 +32,12 @@ namespace hcle
       static void WelcomeMessage();
 
       void loadROM(const std::string &rom_path, const std::string &render_mode);
-      float act(uint8_t action_index);
+      float act(uint8_t controller_input);
 
       const std::vector<uint8_t> &getActionSet() const;
       std::vector<uint8_t> getRAM();
       void getScreenRGB(uint8_t *buffer) const;
+      float getReward() const;
 
       void render();
       bool isDone();

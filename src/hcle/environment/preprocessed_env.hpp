@@ -9,14 +9,15 @@
 #include "hcle/common/display.hpp"
 #include "hcle/emucore/nes.hpp"
 #include "hcle/environment/hcle_environment.hpp"
+#include "hcle/environment/utils.hpp"
 #include "hcle/environment/game_logic.hpp"
+#include "hcle/games/smb1.hpp"
 
 // Ensure the namespace is correct
 namespace hcle
 {
   namespace environment
   {
-
     class PreprocessedEnv
     {
     public:
@@ -31,22 +32,27 @@ namespace hcle
           const bool grayscale = true,
           const uint8_t stack_num = 4);
 
-      float step(uint8_t action_index);
-      void getScreenRGB(uint8_t *buffer) const;
-      void getObservation(uint8_t *buffer);
+      void set_action(uint8_t action_index);
 
+      hcle::vector::Timestep get_timestep() const;
+      void step(uint8_t action_index);
       void reset();
       void render();
       bool isDone();
+
+      void getObservation(uint8_t *buffer);
+      void getScreenRGB(uint8_t *buffer) const;
 
       std::vector<uint8_t> getRAM();
       const std::vector<uint8_t> &getActionSet();
 
     private:
       void process_screen();
+      void get_screen_data(uint8_t *buffer); // Helper to get screen data
 
       std::unique_ptr<HCLEnvironment> env_;
 
+      float reward_;
       uint64_t current_step_;
       std::unique_ptr<hcle::games::GameLogic> game_logic_;
 

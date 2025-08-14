@@ -1,191 +1,59 @@
-#include <future> // For std::async
-#include <stdexcept>
-
 #include "hcle/environment/hcle_vector_environment.hpp"
+#include "hcle/environment/preprocessed_env.hpp" // Needed for the factory
 
-namespace hcle
+namespace hcle::environment
 {
-    namespace environment
+
+    // The constructor's job is to create the factory and then the vectorizer.
+    HCLEVectorEnvironment::HCLEVectorEnvironment(
+        const int num_envs,
+        const std::string &rom_path,
+        const std::string &game_name,
+        const std::string &render_mode,
+        const uint8_t obs_height,
+        const uint8_t obs_width,
+        const uint8_t frame_skip,
+        const bool maxpool,
+        const bool grayscale,
+        const uint8_t stack_num)
     {
-
-        HCLEVectorEnvironment::HCLEVectorEnvironment(
-            const int num_envs,
-            const std::string &rom_path,
-            const std::string &game_name,
-            const std::string &render_mode,
-            const uint8_t obs_height,
-            const uint8_t obs_width,
-            const uint8_t frame_skip,
-            const bool maxpool,
-            const bool grayscale,
-            const uint8_t stack_num)
-            : rom_path_(rom_path),
-              game_name_(game_name),
-              render_mode_(render_mode),
-              obs_height_(obs_height),
-              obs_width_(obs_width),
-              frame_skip_(frame_skip),
-              maxpool_(maxpool),
-              grayscale_(grayscale),
-              stack_num_(stack_num),
-              num_envs_(num_envs)
+        // 1. Create the factory lambda that knows how to build a PreprocessedEnv.
+        auto env_factory = [=](int env_id)
         {
-            if (num_envs <= 0)
-            {
-                throw std::invalid_argument("Number of environments must be positive.");
-            }
-            // Create environments in the main thread
-            for (int i = 0; i < num_envs_; ++i)
-            {
-                // Only render the first environment if in human mode
-                std::string current_render_mode = (i == 0) ? render_mode_ : "rgb_array";
-                auto env = std::make_unique<PreprocessedEnv>(
-                    rom_path_,
-                    game_name_,
-                    current_render_mode,
-                    obs_height_,
-                    obs_width_,
-                    frame_skip_,
-                    maxpool_,
-                    grayscale_,
-                    stack_num_);
-                envs_.push_back(std::move(env));
-            }
+            std::string current_render_mode = (env_id == 0) ? render_mode : "rgb_array";
+            return std::make_unique<PreprocessedEnv>(
+                rom_path, game_name, current_render_mode, obs_height, obs_width,
+                frame_skip, maxpool, grayscale, stack_num);
+        };
 
-            // Start worker threads
-            for (int i = 0; i < num_envs_; ++i)
-            {
-                workers_.emplace_back(&HCLEVectorEnvironment::worker_function, this);
-            }
-        }
+        // 2. Create the vectorizer engine, passing it the factory.
+        vectorizer_ = std::make_unique<AsyncVectorizer>(num_envs, env_factory);
 
-        HCLEVectorEnvironment::~HCLEVectorEnvironment()
-        {
-            stop_ = true;
-            // Push dummy actions to wake up any waiting workers
-            for (int i = 0; i < num_envs_; ++i)
-            {
-                action_queue_.push({-1, 0});
-            }
-            // Wait for all worker threads to terminate
-            for (auto &worker : workers_)
-            {
-                if (worker.joinable())
-                {
-                    worker.join();
-                }
-            }
-        }
+        // const auto temp_env = env_factory(0);
+        action_set_ = std::vector<uint8_t>({0}); // temp_env->getActionSet()
+    }
 
-        void HCLEVectorEnvironment::worker_function()
-        {
-            const size_t obs_size = 240 * 256 * 3; // Calculate this based on your env config
+    void HCLEVectorEnvironment::reset()
+    {
+        vectorizer_->reset();
+        printf("HCLEVectorEnvironment finished calling vectorizer_->reset().\n");
+    }
 
-            while (!stop_)
-            {
-                Action work = action_queue_.pop();
-                if (stop_ || work.env_id < 0)
-                {
-                    break;
-                }
+    void HCLEVectorEnvironment::send(const std::vector<int> &action_ids)
+    {
+        vectorizer_->send(action_ids);
+    }
 
-                Result result;
-                result.env_id = work.env_id;
-                auto &env = envs_[work.env_id];
+    std::vector<hcle::vector::Timestep> HCLEVectorEnvironment::recv()
+    {
+        return vectorizer_->recv();
+    }
 
-                if (work.force_reset)
-                {
-                    env->reset();
-                    result.reward = 0.0f;
-                    result.done = false;
-                }
-                else
-                {
-                    result.reward = env->step(work.action_value);
-                    result.done = env->isDone();
-                }
-
-                result.observation.resize(obs_size);
-                env->getScreenRGB(result.observation.data());
-
-                result_queue_.push(result);
-            }
-        }
-
-        void HCLEVectorEnvironment::reset(uint8_t *obs_buffer)
-        {
-            // Send reset tasks to all workers
-            for (int i = 0; i < num_envs_; ++i)
-            {
-                action_queue_.push({i, 0, true});
-            }
-            // Wait for results and populate the initial observation buffer
-            std::vector<float> dummy_rewards(num_envs_);
-            std::vector<uint8_t> dummy_dones(num_envs_);
-            step_wait(obs_buffer, dummy_rewards.data(), dummy_dones.data());
-        }
-
-        size_t HCLEVectorEnvironment::getActionSpaceSize() const
-        {
-            if (envs_.empty())
-            {
-                return 0;
-            }
-            return envs_[0]->getActionSet().size();
-        }
-
-        const std::tuple<int, int, int, int> HCLEVectorEnvironment::get_observation_shape() const
-        {
-            if (this->grayscale_)
-            {
-                return std::make_tuple(stack_num_, obs_height_, obs_width_, 0);
-            }
-            else
-            {
-                return std::make_tuple(stack_num_, obs_height_, obs_width_, 3);
-            }
-        }
-
-        void HCLEVectorEnvironment::step_async(const std::vector<uint8_t> &actions)
-        {
-            if (actions.size() != num_envs_)
-            {
-                throw std::runtime_error("Number of actions must equal number of environments.");
-            }
-            for (int i = 0; i < num_envs_; ++i)
-            {
-                action_queue_.push({i, actions[i], false});
-            }
-        }
-
-        void HCLEVectorEnvironment::step_wait(
-            uint8_t *obs_buffer, float *reward_buffer, uint8_t *done_buffer)
-        {
-            const size_t obs_size = 240 * 256 * 3;
-
-            for (int i = 0; i < num_envs_; ++i)
-            {
-                Result result = result_queue_.pop();
-
-                uint8_t *dest_ptr = obs_buffer + (result.env_id * obs_size);
-                std::copy(result.observation.begin(), result.observation.end(), dest_ptr);
-
-                reward_buffer[result.env_id] = result.reward;
-                done_buffer[result.env_id] = result.done;
-            }
-        }
-
-        void HCLEVectorEnvironment::step(
-            const std::vector<uint8_t> &actions,
-            uint8_t *obs_buffer,
-            float *reward_buffer,
-            uint8_t *done_buffer)
-        {
-            // printf("About to step async\n");
-            this->step_async(actions);
-            // printf("Completed step async. About to call step_wait.\n");
-            this->step_wait(obs_buffer, reward_buffer, done_buffer);
-            // printf("Completed step_wait.\n");
-        }
-    } // namespace environment
-} // namespace hcle
+    std::vector<uint8_t> HCLEVectorEnvironment::getActionSet() const
+    {
+        printf("Execution in HCLEVectorEnvironment::getActionSet\n");
+        std::vector<uint8_t> result = vectorizer_->getActionSet();
+        printf("HCLEVectorEnvironment::getActionSet got action set of type %s with size %zu\n", typeid(result).name(), result.size());
+        return result;
+    }
+}

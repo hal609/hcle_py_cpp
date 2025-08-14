@@ -1,6 +1,7 @@
 build
 __pycache__
 .vscode
+.vs
 file_structure_printer.ipynb
 main.cpp
 *.pyc
