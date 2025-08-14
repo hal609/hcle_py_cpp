@@ -10,12 +10,12 @@
 
 int main(int argc, char **argv)
 {
-    int num_envs = 5;
+    int num_envs = 1;
     std::string rom_path = "C:\\Users\\offan\\Downloads\\hcle_py_cpp\\src\\hcle\\python\\hcle_py\\roms\\smb1.bin";
     std::string game_name = "smb1";
-    std::string render_mode = "rgb_array";
+    std::string render_mode = "human";
     int fps_limit = -1;
-    int num_steps = 100; // 1000;
+    int num_steps = 1000;
 
     std::vector<uint8_t> backup_state_;
 
@@ -31,15 +31,9 @@ int main(int argc, char **argv)
         std::vector<hcle::vector::Timestep> timesteps;
 
         // reset (fills the obs buffer)
-        std::cout << "!!!!!!!!!!!!!!!!!! About to call initial reset. !!!!!!!!!!!!!!!!!!\n";
         env.reset();
-        std::cout << "Environment reset complete.\n";
 
-        printf("About to get action space from vector env.\n");
-        std::vector<uint8_t> action_set = env.getActionSet();
-        printf("Returned to test_runner with action set of type %s with size %zu\n", typeid(action_set).name(), action_set.size());
-        size_t action_space = action_set.size();
-        action_space = 2;
+        size_t action_space = env.getActionSet().size();
         printf("Action space size: %zu\n", action_space);
         std::mt19937 rng(std::random_device{}());
         std::uniform_int_distribution<int> action_dist(0, (int)action_space - 1);
@@ -53,7 +47,6 @@ int main(int argc, char **argv)
         using clock = std::chrono::steady_clock;
         auto run_start = clock::now();
 
-        printf("!!!!!!!!!!!! About to enter step loop in test_runner !!!!!!!!!!!!!!\n");
         for (int step = 0; step < num_steps; ++step)
         {
             // random actions
@@ -70,7 +63,7 @@ int main(int argc, char **argv)
             // printf("Backup size: %u\n", state_size);
 
             // simple reporting
-            double mean_reward = 0.0;
+            double mean_reward = timesteps[0].reward;
             for (float r : rewards)
                 mean_reward += r;
             mean_reward /= (double)num_envs;

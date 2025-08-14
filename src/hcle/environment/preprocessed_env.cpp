@@ -53,9 +53,7 @@ namespace hcle
         }
         void PreprocessedEnv::reset()
         {
-            printf("Executing processedEnv reset\n");
             env_->reset();
-            printf("Execution returned to preprocessedEnv reset from HCLEnvironment reset.\n");
             // After reset, we need to populate the first frame of the stack
             std::fill(m_frame_stack.begin(), m_frame_stack.end(), 0);
             m_frame_stack_idx = 0;
@@ -90,13 +88,10 @@ namespace hcle
             for (int skip = 0; skip < frame_skip_; ++skip)
             {
                 accumulated_reward += env_->act(controller_input);
-                // printf("Running frame skip %d: accumulated_reward=%.2f\n", skip, accumulated_reward);
-                //  done = env_->isDone();
-                done = false;
+                done = env_->isDone();
+
                 if (done)
-                {
                     break;
-                }
 
                 // Capture the last two frames for max-pooling
                 if (maxpool_ && skip >= frame_skip_ - 2)

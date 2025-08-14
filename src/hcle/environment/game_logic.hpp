@@ -62,7 +62,7 @@ namespace hcle
             this->nes_ = nes;
             this->previous_ram_.resize(2048);
             this->current_ram_.resize(2048);
-            updateRAM(); // `this->` is optional here
+            updateRAM();
             previous_ram_ = current_ram_;
         }
     } // namespace games

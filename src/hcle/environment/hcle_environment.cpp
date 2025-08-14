@@ -29,9 +29,7 @@ namespace hcle
             rom_path_ = rom_path;
             render_mode_ = render_mode;
 
-            printf("Loading ROM: %s\n", rom_path_.c_str());
             emu.reset(new cynes::NES(rom_path.c_str()));
-            printf("Cynes emu created\n");
 
             if (render_mode_ == "human")
                 display_ = std::make_unique<hcle::common::Display>("HCLEnvironment", 256, 240, 3);
@@ -59,33 +57,27 @@ namespace hcle
         const std::vector<uint8_t> HCLEnvironment::getActionSet() const
         {
             printf("Running getActionSet in HCLEnvironment\n");
-            return std::vector<uint8_t>({0});
-            // if (!this->game_logic)
-            // {
-            //     throw std::runtime_error("Cannot get action set; no game loaded.");
-            // }
-            // return game_logic->getActionSet();
+
+            if (!this->game_logic)
+            {
+                throw std::runtime_error("Cannot get action set; no game loaded.");
+            }
+            return game_logic->getActionSet();
         }
 
         void HCLEnvironment::reset()
         {
-            printf("Execution in HCLEnvironment reset. About to reset emu.\n");
-            emu->reset();
-            printf("Cynes reset complete, now running one step of with no input.\n");
+            if (!emu || !game_logic)
+            {
+                throw std::runtime_error("Environment must be loaded with a ROM before reset.");
+            }
+            if (!game_logic->onReset())
+            {
+                emu->reset();
+            }
+            this->current_step_ = 0;
+            game_logic->updateRAM();
             emu->step(NES_INPUT_NONE, 1);
-            printf("Cynes post-reset step complete, returning to preprocessing env.\n");
-            return;
-            // if (!emu || !game_logic)
-            // {
-            //     throw std::runtime_error("Environment must be loaded with a ROM before reset.");
-            // }
-            // if (!game_logic->onReset())
-            // {
-            //     emu->reset();
-            // }
-            // this->current_step_ = 0;
-            // game_logic->updateRAM();
-            // emu->step(NES_INPUT_NONE, 1);
         }
 
         float HCLEnvironment::act(uint8_t controller_input)
@@ -97,7 +89,6 @@ namespace hcle
 
             emu->step(controller_input, 1);
             this->current_step_++;
-            return 0.0f;
             game_logic->updateRAM();
             game_logic->onStep();
 
@@ -109,7 +100,6 @@ namespace hcle
 
         float HCLEnvironment::getReward() const
         {
-            return 0.0f;
             if (!game_logic)
                 throw std::runtime_error("Environment must be loaded with a ROM before getting reward.");
             return game_logic->getReward();
@@ -143,7 +133,8 @@ namespace hcle
             }
             const uint8_t *frame_ptr = emu->get_frame_buffer();
             // --- ADD THIS TEST ---
-            if (frame_ptr == nullptr) {
+            if (frame_ptr == nullptr)
+            {
                 throw std::runtime_error("FATAL: emu->get_frame_buffer() returned a null pointer!");
             }
             // --- END TEST ---
