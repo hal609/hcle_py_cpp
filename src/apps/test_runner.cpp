@@ -8,23 +8,6 @@
 
 #include "hcle/environment/hcle_vector_environment.hpp"
 
-// A simple function for each thread to run
-void get_screen_task(hcle::environment::HCLEnvironment *env, int thread_id)
-{
-    const int width = 256;
-    const int height = 240;
-    std::vector<uint8_t> screen_buffer(width * height * 3);
-
-    // Run the call multiple times to increase the chance of a race
-    for (int i = 0; i < 100; ++i)
-    {
-        env->getScreenRGB(screen_buffer.data());
-        // A real test would verify the buffer's integrity here.
-        // For now, we are just seeing if it crashes.
-    }
-    std::cout << "Thread " << thread_id << " finished." << std::endl;
-}
-
 int main(int argc, char **argv)
 {
     int num_envs = 5;
@@ -32,7 +15,7 @@ int main(int argc, char **argv)
     std::string game_name = "smb1";
     std::string render_mode = "rgb_array";
     int fps_limit = -1;
-    int num_steps = 1000;
+    int num_steps = 100; // 1000;
 
     std::vector<uint8_t> backup_state_;
 
@@ -80,7 +63,6 @@ int main(int argc, char **argv)
             // call step (fills obs, rewards, dones)
             env.send(actions);
             timesteps = env.recv();
-            // env.step(actions, obs.data(), rewards.data(), dones_u8.data());
 
             // unsigned int state_size = env.nes_->size();
             // backup_state_.resize(state_size);
