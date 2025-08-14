@@ -90,8 +90,8 @@ namespace hcle
             for (int skip = 0; skip < frame_skip_; ++skip)
             {
                 accumulated_reward += env_->act(controller_input);
-                //printf("Running frame skip %d: accumulated_reward=%.2f\n", skip, accumulated_reward);
-                // done = env_->isDone();
+                // printf("Running frame skip %d: accumulated_reward=%.2f\n", skip, accumulated_reward);
+                //  done = env_->isDone();
                 done = false;
                 if (done)
                 {
@@ -114,7 +114,7 @@ namespace hcle
                 get_screen_data(m_raw_frames[0].data());
             }
 
-            process_screen();
+            //process_screen();
         }
 
         hcle::vector::Timestep PreprocessedEnv::get_timestep() const
@@ -140,16 +140,18 @@ namespace hcle
             return timestep;
         }
 
-        
-        void PreprocessedEnv::get_screen_data(uint8_t* buffer) {
-            if (grayscale_) {
+        void PreprocessedEnv::get_screen_data(uint8_t *buffer)
+        {
+            if (grayscale_)
+            {
                 env_->getScreenRGB(this->rgb_buffer.data());
 
                 cv::Mat rgb_mat(m_raw_frame_height, m_raw_frame_width, CV_8UC3, this->rgb_buffer.data());
                 cv::Mat gray_mat(m_raw_frame_height, m_raw_frame_width, CV_8UC1, buffer); // Wrap the destination buffer
                 cv::cvtColor(rgb_mat, gray_mat, cv::COLOR_RGB2GRAY);
             }
-            else {
+            else
+            {
                 env_->getScreenRGB(buffer);
             }
         }
@@ -159,7 +161,7 @@ namespace hcle
             return env_->isDone();
         }
 
-        const std::vector<uint8_t> &PreprocessedEnv::getActionSet()
+        const std::vector<uint8_t> PreprocessedEnv::getActionSet()
         {
             return env_->getActionSet();
         }

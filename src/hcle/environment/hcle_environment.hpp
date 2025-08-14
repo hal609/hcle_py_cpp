@@ -34,7 +34,7 @@ namespace hcle
       void loadROM(const std::string &rom_path, const std::string &render_mode);
       float act(uint8_t controller_input);
 
-      const std::vector<uint8_t> &getActionSet() const;
+      const std::vector<uint8_t> getActionSet() const;
       std::vector<uint8_t> getRAM();
       void getScreenRGB(uint8_t *buffer) const;
       float getReward() const;

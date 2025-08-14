@@ -43,7 +43,7 @@ namespace hcle
       void getObservation(uint8_t *buffer);
 
       std::vector<uint8_t> getRAM();
-      const std::vector<uint8_t> &getActionSet();
+      const std::vector<uint8_t> getActionSet();
 
     private:
       void process_screen();

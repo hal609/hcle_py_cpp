@@ -18,7 +18,7 @@ namespace hcle
             bool isDone() override;
             void onStep() override; // For checking if in-game to make savestate
             bool onReset() override;
-            const std::vector<uint8_t> &getActionSet() override { return action_set_; }
+            const std::vector<uint8_t> getActionSet() override { return action_set_; }
 
         private:
             bool in_game();

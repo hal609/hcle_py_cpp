@@ -33,14 +33,14 @@ namespace hcle
             emu.reset(new cynes::NES(rom_path.c_str()));
             printf("Cynes emu created\n");
 
-            // if (render_mode_ == "human")
-            //     display_ = std::make_unique<hcle::common::Display>("HCLEnvironment", 256, 240, 3);
+            if (render_mode_ == "human")
+                display_ = std::make_unique<hcle::common::Display>("HCLEnvironment", 256, 240, 3);
 
             hcle::games::GameLogic *wrapper = createGameLogic(rom_path);
             game_logic.reset(wrapper);
             game_logic->initialize(emu.get());
 
-            // this->reset();
+            this->reset();
         }
 
         hcle::games::GameLogic *
@@ -56,7 +56,7 @@ namespace hcle
             return roms[0]->clone();
         }
 
-        const std::vector<uint8_t> &HCLEnvironment::getActionSet() const
+        const std::vector<uint8_t> HCLEnvironment::getActionSet() const
         {
             printf("Running getActionSet in HCLEnvironment\n");
             return std::vector<uint8_t>({0});
@@ -142,6 +142,11 @@ namespace hcle
                 throw std::runtime_error("Cannot get screen; no game loaded.");
             }
             const uint8_t *frame_ptr = emu->get_frame_buffer();
+            // --- ADD THIS TEST ---
+            if (frame_ptr == nullptr) {
+                throw std::runtime_error("FATAL: emu->get_frame_buffer() returned a null pointer!");
+            }
+            // --- END TEST ---
             const size_t obs_size = 240 * 256 * 3;
             // Copy the data directly into the provided buffer
             std::copy(frame_ptr, frame_ptr + obs_size, buffer);
