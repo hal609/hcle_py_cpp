@@ -18,7 +18,8 @@ struct StepResult
   std::vector<uint8_t> observation;
 };
 
-const size_t RAW_FRAME_SIZE = 240 * 256 * 3; // RGB format
+const size_t RAW_FRAME_SIZE = 240 * 256 * 3;   // RGB format
+const size_t GRAYSCALE_FRAME_SIZE = 240 * 256; // Grayscale format
 
 // Ensure the namespace is correct
 namespace hcle
@@ -34,10 +35,11 @@ namespace hcle
       static void WelcomeMessage();
 
       void loadROM(const std::string &rom_path, const std::string &render_mode);
+      void setOutputModeGrayscale();
       float act(uint8_t controller_input);
 
       const std::vector<uint8_t> getActionSet() const;
-      void getScreenRGB(uint8_t *buffer) const;
+      void getFrameBufferData(uint8_t *buffer, bool mix_in) const;
       float getReward() const;
 
       void render();
@@ -59,6 +61,7 @@ namespace hcle
       std::unique_ptr<hcle::common::Display> display_;
 
       const uint8_t *frame_ptr_;
+      size_t frame_size_;
 
       uint64_t current_step_;
     };

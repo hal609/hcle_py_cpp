@@ -24,10 +24,21 @@ namespace hcle
             was_welcomed = true;
         }
 
+        void HCLEnvironment::setOutputModeGrayscale()
+        {
+            if (!emu)
+            {
+                throw std::runtime_error("Environment must be loaded with a ROM before setting output mode.");
+            }
+            emu->setOutputModeGrayscale();
+            frame_size_ = GRAYSCALE_FRAME_SIZE;
+        }
+
         void HCLEnvironment::loadROM(const std::string &rom_path, const std::string &render_mode)
         {
             rom_path_ = rom_path;
             render_mode_ = render_mode;
+            frame_size_ = RAW_FRAME_SIZE;
 
             emu.reset(new cynes::NES(rom_path.c_str()));
 
@@ -123,13 +134,23 @@ namespace hcle
             return game_logic->isDone();
         }
 
-        void HCLEnvironment::getScreenRGB(uint8_t *buffer) const
+        void HCLEnvironment::getFrameBufferData(uint8_t *buffer, bool mix_in) const
         {
             if (!emu)
             {
                 throw std::runtime_error("Cannot get screen; no game loaded.");
             }
-            std::copy(frame_ptr_, frame_ptr_ + RAW_FRAME_SIZE, buffer);
+            if (!mix_in)
+            {
+                std::copy(frame_ptr_, frame_ptr_ + frame_size_, buffer);
+            }
+            else
+            {
+                for (size_t i = 0; i < frame_size_; ++i)
+                {
+                    buffer[i] = std::max(buffer[i], frame_ptr_[i]);
+                }
+            }
         }
 
     } // namespace environment

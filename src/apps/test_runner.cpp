@@ -8,6 +8,22 @@
 
 #include "hcle/environment/hcle_vector_environment.hpp"
 
+void saveObsToRaw(std::vector<uint8_t> *obs_buffer)
+{
+    std::cout << "\n--- Saving observation at step 100 to test_output.raw ---\n";
+    std::ofstream raw_image("test_output.raw", std::ios::binary);
+    if (raw_image)
+    {
+        // Write the entire batch of observations from the buffer
+        raw_image.write(reinterpret_cast<const char *>(obs_buffer->data()), obs_buffer->size());
+        raw_image.close();
+        std::cout << "Save complete.\n";
+    }
+    else
+    {
+        std::cerr << "Error: Could not open test_output.raw for writing.\n";
+    }
+}
 int main(int argc, char **argv)
 {
     // --- Configuration ---
@@ -20,7 +36,7 @@ int main(int argc, char **argv)
     try
     {
         std::cout << "Creating HCLEVectorEnvironment (num_envs=" << num_envs << ")...\n";
-        hcle::environment::HCLEVectorEnvironment env(num_envs, rom_path, game_name, render_mode);
+        hcle::environment::HCLEVectorEnvironment env(num_envs, rom_path, game_name, render_mode, 84, 84, 1, true, true, 4);
 
         // --- Pre-allocate memory buffers for results ---
         const size_t single_obs_size = env.getObservationSize();
@@ -60,6 +76,11 @@ int main(int argc, char **argv)
             env.send(actions);
             env.recv(obs_buffer.data(), reward_buffer.data(), done_buffer.data());
 
+            if (step == 100)
+            {
+                // Save the observation at step 100 to a raw file
+                saveObsToRaw(&obs_buffer);
+            }
             // Accumulate rewards for performance metric (optional)
             for (int i = 0; i < num_envs; ++i)
             {

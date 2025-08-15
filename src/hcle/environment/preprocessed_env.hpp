@@ -9,10 +9,6 @@
 
 namespace hcle::environment
 {
-  /**
-   * @brief Wraps a single HCLEnvironment to add standard preprocessing steps
-   * like frame skipping, max-pooling, resizing, and frame stacking.
-   */
   class PreprocessedEnv
   {
   public:
@@ -20,53 +16,39 @@ namespace hcle::environment
         const std::string &rom_path,
         const std::string &game_name,
         const std::string &render_mode,
-        const uint8_t obs_height = 84,
-        const uint8_t obs_width = 84,
-        const uint8_t frame_skip = 4,
+        const int obs_height = 84,
+        const int obs_width = 84,
+        const int frame_skip = 4,
         const bool maxpool = true,
         const bool grayscale = true,
-        const uint8_t stack_num = 4);
+        const int stack_num = 4);
 
-    /**
-     * @brief Resets the environment to an initial state.
-     * @param obs_output_buffer A pre-allocated buffer where the final stacked observation will be written.
-     */
     void reset(uint8_t *obs_output_buffer);
 
-    /**
-     * @brief Executes a single action in the environment for frame_skip steps.
-     * @param action_index The index of the action to perform.
-     * @param obs_output_buffer A pre-allocated buffer where the final stacked observation will be written.
-     */
     void step(uint8_t action_index, uint8_t *obs_output_buffer);
 
     // --- Getters for state information ---
     bool isDone() const;
     float getReward() const;
+
     // Return by value to avoid dangling reference issues.
     std::vector<uint8_t> getActionSet() const;
     size_t getObservationSize() const;
 
   private:
-    /**
-     * @brief Performs all image processing (max-pool, color conversion, resize)
-     * and updates the internal frame stack.
-     */
     void process_screen();
 
-    /**
-     * @brief Copies the current observation from the internal frame stack to an external buffer.
-     * @param obs_output_buffer The destination buffer.
-     */
     void write_observation(uint8_t *obs_output_buffer);
 
     // Environment configuration
-    uint8_t obs_height_;
-    uint8_t obs_width_;
-    uint8_t frame_skip_;
+    int obs_height_;
+    int obs_width_;
+    int frame_skip_;
     bool maxpool_;
     bool grayscale_;
-    uint8_t stack_num_;
+    int stack_num_;
+
+    bool requires_resize_;
 
     // Core environment
     std::unique_ptr<HCLEnvironment> env_;

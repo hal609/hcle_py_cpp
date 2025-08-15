@@ -30,6 +30,11 @@ cynes::NES::NES(const char *path)
     }
 }
 
+void cynes::NES::setOutputModeGrayscale()
+{
+    ppu.setOutputModeGrayscale();
+}
+
 void cynes::NES::reset()
 {
     cpu.reset();
