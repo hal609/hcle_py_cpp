@@ -14,8 +14,8 @@ namespace hcle
 {
     namespace games
     {
-        bool SMB1Logic::in_game() { return current_ram_[LEVEL_LOADING] == 3 && current_ram_[GAME_MODE] != 0; }
-        bool SMB1Logic::is_dead() { return current_ram_[PLAYER_STATE] == 0x0B || current_ram_[Y_VIEWPORT] > 0x1; }
+        bool SMB1Logic::in_game() { return current_ram_ptr_[LEVEL_LOADING] == 3 && current_ram_ptr_[GAME_MODE] != 0; }
+        bool SMB1Logic::is_dead() { return current_ram_ptr_[PLAYER_STATE] == 0x0B || current_ram_ptr_[Y_VIEWPORT] > 0x1; }
         bool SMB1Logic::isDone() { return is_dead(); }
 
         void SMB1Logic::onStep()
@@ -53,7 +53,7 @@ namespace hcle
                 return -20.0f;
 
             // Calculate change in X position
-            int current_x = (static_cast<int>(current_ram_[CURRENT_PAGE]) << 8) | current_ram_[X_POS];
+            int current_x = (static_cast<int>(current_ram_ptr_[CURRENT_PAGE]) << 8) | current_ram_ptr_[X_POS];
             int previous_x = (static_cast<int>(previous_ram_[CURRENT_PAGE]) << 8) | previous_ram_[X_POS];
 
             float x_reward = static_cast<float>(current_x - previous_x);

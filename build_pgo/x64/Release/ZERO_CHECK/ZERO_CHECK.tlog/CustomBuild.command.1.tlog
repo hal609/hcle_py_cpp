@@ -1,0 +1,10 @@
+^C:\USERS\OFFAN\DOWNLOADS\HCLE_PY_CPP\BUILD_PGO\CMAKEFILES\B612CCC984D67CBB4D6E75FB0EF63954\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/offan/Downloads/hcle_py_cpp -BC:/Users/offan/Downloads/hcle_py_cpp/build_pgo --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/offan/Downloads/hcle_py_cpp/build_pgo/hcle.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

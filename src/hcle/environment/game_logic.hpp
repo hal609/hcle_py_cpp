@@ -17,6 +17,8 @@ const uint8_t NES_INPUT_SELECT = 0x20;
 const uint8_t NES_INPUT_B = 0x40;
 const uint8_t NES_INPUT_A = 0x80;
 
+const int RAM_SIZE = 2048;
+
 namespace cynes
 {
     class NES;
@@ -43,27 +45,25 @@ namespace hcle
             {
                 if (!nes_)
                     return;
-                previous_ram_ = std::move(current_ram_);
-                const uint8_t *ram_ptr = nes_->get_ram_pointer();
-                current_ram_.resize(2048);
-                std::copy(ram_ptr, ram_ptr + 2048, current_ram_.begin());
+                std::memcpy(previous_ram_.data(), current_ram_ptr_, RAM_SIZE);
             }
 
             void frameadvance(uint8_t controller_value) { nes_->step(controller_value, 1); }
 
         protected:
             cynes::NES *nes_ = nullptr;
-            std::vector<uint8_t> previous_ram_;
-            std::vector<uint8_t> current_ram_;
+            const uint8_t *current_ram_ptr_ = nullptr;
+            std::array<uint8_t, 2048> previous_ram_;
+
+            int *ram_ptr_ = nullptr;
+            int ram_frame_ = 0;
         };
 
         inline void GameLogic::initialize(cynes::NES *nes)
         {
-            this->nes_ = nes;
-            this->previous_ram_.resize(2048);
-            this->current_ram_.resize(2048);
-            updateRAM();
-            previous_ram_ = current_ram_;
+            nes_ = nes;
+            current_ram_ptr_ = nes_->get_ram_pointer();
+            updateRAM(); // initialise previous to current
         }
     } // namespace games
 } // namespace hcle

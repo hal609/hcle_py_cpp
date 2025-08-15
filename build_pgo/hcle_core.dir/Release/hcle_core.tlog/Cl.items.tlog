@@ -1,0 +1,9 @@
+C:\Users\offan\Downloads\hcle_py_cpp\src\hcle\emucore\nes.cpp;C:\Users\offan\Downloads\hcle_py_cpp\build_pgo\hcle_core.dir\Release\nes.obj
+C:\Users\offan\Downloads\hcle_py_cpp\src\hcle\emucore\cpu.cpp;C:\Users\offan\Downloads\hcle_py_cpp\build_pgo\hcle_core.dir\Release\cpu.obj
+C:\Users\offan\Downloads\hcle_py_cpp\src\hcle\emucore\ppu.cpp;C:\Users\offan\Downloads\hcle_py_cpp\build_pgo\hcle_core.dir\Release\ppu.obj
+C:\Users\offan\Downloads\hcle_py_cpp\src\hcle\emucore\apu.cpp;C:\Users\offan\Downloads\hcle_py_cpp\build_pgo\hcle_core.dir\Release\apu.obj
+C:\Users\offan\Downloads\hcle_py_cpp\src\hcle\emucore\mapper.cpp;C:\Users\offan\Downloads\hcle_py_cpp\build_pgo\hcle_core.dir\Release\mapper.obj
+C:\Users\offan\Downloads\hcle_py_cpp\src\hcle\environment\preprocessed_env.cpp;C:\Users\offan\Downloads\hcle_py_cpp\build_pgo\hcle_core.dir\Release\preprocessed_env.obj
+C:\Users\offan\Downloads\hcle_py_cpp\src\hcle\environment\hcle_environment.cpp;C:\Users\offan\Downloads\hcle_py_cpp\build_pgo\hcle_core.dir\Release\hcle_environment.obj
+C:\Users\offan\Downloads\hcle_py_cpp\src\hcle\common\display.cpp;C:\Users\offan\Downloads\hcle_py_cpp\build_pgo\hcle_core.dir\Release\display.obj
+C:\Users\offan\Downloads\hcle_py_cpp\src\hcle\games\smb1.cpp;C:\Users\offan\Downloads\hcle_py_cpp\build_pgo\hcle_core.dir\Release\smb1.obj

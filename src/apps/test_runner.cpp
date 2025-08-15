@@ -13,7 +13,7 @@ int main(int argc, char **argv)
     int num_envs = 1;
     std::string rom_path = "C:\\Users\\offan\\Downloads\\hcle_py_cpp\\src\\hcle\\python\\hcle_py\\roms\\smb1.bin";
     std::string game_name = "smb1";
-    std::string render_mode = "human";
+    std::string render_mode = "rgb_array";
     int num_steps = 1000;
 
     std::vector<uint8_t> backup_state_;
@@ -49,11 +49,6 @@ int main(int argc, char **argv)
             timesteps = env.recv();
 
             total_reward += timesteps[0].reward / (double)num_envs;
-
-            if (timesteps[0].done)
-            {
-                printf("!!!!!!! Episode finished after %d timesteps !!!!!!!!!!!!\n", step + 1);
-            }
 
             if ((step + 1) % 20 == 0)
             {

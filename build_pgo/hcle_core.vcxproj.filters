@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\offan\Downloads\hcle_py_cpp\src\hcle\emucore\nes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\offan\Downloads\hcle_py_cpp\src\hcle\emucore\cpu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\offan\Downloads\hcle_py_cpp\src\hcle\emucore\ppu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\offan\Downloads\hcle_py_cpp\src\hcle\emucore\apu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\offan\Downloads\hcle_py_cpp\src\hcle\emucore\mapper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\offan\Downloads\hcle_py_cpp\src\hcle\environment\preprocessed_env.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\offan\Downloads\hcle_py_cpp\src\hcle\environment\hcle_environment.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\offan\Downloads\hcle_py_cpp\src\hcle\common\display.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\offan\Downloads\hcle_py_cpp\src\hcle\games\smb1.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\offan\Downloads\hcle_py_cpp\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{B0A31867-0125-3838-837C-CB64438C9470}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
