@@ -295,7 +295,7 @@ void cynes::PPU::tick() {
             }
 
             if (_current_x > 0 && _current_x < 257 && _current_y < 240) {
-                memcpy(_frame_buffer.get() + ((_current_y << 8) + _current_x - 1) * 3, PALETTE_COLORS[_mask_color_emphasize][_nes.read_ppu(0x3F00 | blend_colors())], 3);
+                    memcpy(_frame_buffer.get() + ((_current_y << 8) + _current_x - 1) * 3, PALETTE_COLORS[_mask_color_emphasize][_nes.read_ppu(0x3F00 | blend_colors())], 3);
             }
         } else if (_current_y == 240 && _current_x == 1) {
             _nes.read_ppu(_register_v);

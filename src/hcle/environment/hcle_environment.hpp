@@ -18,6 +18,8 @@ struct StepResult
   std::vector<uint8_t> observation;
 };
 
+const size_t RAW_FRAME_SIZE = 240 * 256 * 3; // RGB format
+
 // Ensure the namespace is correct
 namespace hcle
 {
@@ -35,7 +37,6 @@ namespace hcle
       float act(uint8_t controller_input);
 
       const std::vector<uint8_t> getActionSet() const;
-      std::vector<uint8_t> getRAM();
       void getScreenRGB(uint8_t *buffer) const;
       float getReward() const;
 
@@ -56,6 +57,8 @@ namespace hcle
 
       std::unique_ptr<hcle::games::GameLogic> game_logic_;
       std::unique_ptr<hcle::common::Display> display_;
+
+      const uint8_t *frame_ptr_;
 
       uint64_t current_step_;
     };

@@ -129,7 +129,6 @@ namespace hcle::environment
                 }
 
                 hcle::vector::Timestep timestep = env->get_timestep();
-                timestep.done = env->isDone();
                 timestep.env_id = work.env_id;
 
                 result_queue_.push(timestep);

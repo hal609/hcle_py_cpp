@@ -6,9 +6,12 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(MSVC)
-    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
-    set(CMAKE_CXX_FLAGS_RELEASE "/O2")
+    set(CMAKE_CXX_FLAGS_RELEASE "/O2 /Oi /Ot /Ob2 /fp:fast /arch:AVX2 /W4")
     set(CMAKE_CXX_FLAGS_DEBUG "/W4 /diagnostics:caret")
+
+    # Add the /PROFILE flag ONLY for RelWithDebInfo builds
+    set(CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO "${CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO} /PROFILE")
+    set(CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO "${CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO} /PROFILE")
 else()
     set(CMAKE_CXX_FLAGS_RELEASE "-Ofast")
     add_compile_options(-Wall -Wextra -Wpedantic -Werror)

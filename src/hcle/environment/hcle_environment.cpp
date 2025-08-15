@@ -34,6 +34,8 @@ namespace hcle
             if (render_mode_ == "human")
                 display_ = std::make_unique<hcle::common::Display>("HCLEnvironment", 256, 240, 3);
 
+            frame_ptr_ = emu->get_frame_buffer();
+
             hcle::games::GameLogic *wrapper = createGameLogic(rom_path);
             game_logic.reset(wrapper);
             game_logic->initialize(emu.get());
@@ -107,7 +109,7 @@ namespace hcle
         {
             if (this->display_)
             {
-                this->display_->update(emu->get_frame_buffer());
+                this->display_->update(frame_ptr_);
 
                 if (this->display_->processEvents())
                 {
@@ -127,30 +129,7 @@ namespace hcle
             {
                 throw std::runtime_error("Cannot get screen; no game loaded.");
             }
-            const uint8_t *frame_ptr = emu->get_frame_buffer();
-            // --- ADD THIS TEST ---
-            if (frame_ptr == nullptr)
-            {
-                throw std::runtime_error("FATAL: emu->get_frame_buffer() returned a null pointer!");
-            }
-            // --- END TEST ---
-            const size_t obs_size = 240 * 256 * 3;
-            // Copy the data directly into the provided buffer
-            std::copy(frame_ptr, frame_ptr + obs_size, buffer);
-        }
-
-        std::vector<uint8_t> HCLEnvironment::getRAM()
-        {
-            if (!emu)
-            {
-                throw std::runtime_error("Cannot get RAM; no game loaded.");
-            }
-            // This is a temporary vector to hold the RAM data
-            std::vector<uint8_t> ram_buffer(2048);
-            const uint8_t *ram_ptr = emu->get_ram_pointer();
-            // Copy the data from the raw pointer to our vector
-            std::copy(ram_ptr, ram_ptr + ram_buffer.size(), ram_buffer.begin());
-            return ram_buffer;
+            std::copy(frame_ptr_, frame_ptr_ + RAW_FRAME_SIZE, buffer);
         }
 
     } // namespace environment

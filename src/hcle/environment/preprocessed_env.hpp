@@ -42,7 +42,7 @@ namespace hcle
 
       void getObservation(uint8_t *buffer);
 
-      std::vector<uint8_t> getRAM();
+      // std::vector<uint8_t> getRAM();
       const std::vector<uint8_t> getActionSet();
       const size_t getObservationSize() const { return m_obs_size; };
 

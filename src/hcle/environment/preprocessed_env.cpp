@@ -40,7 +40,7 @@ namespace hcle
             m_channels_per_frame = grayscale_ ? 1 : 3;
 
             // Get raw screen dimensions
-            m_raw_size = m_raw_frame_height * m_raw_frame_width * m_channels_per_frame;
+            m_raw_size = m_raw_frame_height * m_raw_frame_width * 3;
             m_obs_size = obs_height_ * obs_width_ * m_channels_per_frame;
 
             // Allocate buffers
@@ -48,6 +48,7 @@ namespace hcle
             m_frame_stack.resize(stack_num_ * m_obs_size, 0);
             m_frame_stack_idx = 0;
         }
+
         void PreprocessedEnv::reset()
         {
             env_->reset();
@@ -87,7 +88,7 @@ namespace hcle
                 {
                     // The index will be 0 for the second-to-last frame, 1 for the last
                     int buffer_idx = (frame_skip_ - 1) - skip;
-                    get_screen_data(m_raw_frames[buffer_idx].data());
+                    env_->getScreenRGB(m_raw_frames[buffer_idx].data());
                 }
             }
             this->reward_ = accumulated_reward;
@@ -95,7 +96,7 @@ namespace hcle
             // If not max-pooling, just get the final frame
             if (!maxpool_)
             {
-                get_screen_data(m_raw_frames[0].data());
+                env_->getScreenRGB(m_raw_frames[0].data());
             }
 
             process_screen();
@@ -105,8 +106,7 @@ namespace hcle
         {
             hcle::vector::Timestep timestep;
             timestep.reward = this->reward_;
-            // printf("Placing reward %.2f onto timestep\n", timestep.reward);
-            timestep.done = false; // TODO: Add correct done detection behaviour
+            timestep.done = env_->isDone();
 
             // The observation is a stack of frames. We need to assemble it correctly.
             timestep.observation.resize(stack_num_ * m_obs_size);
@@ -127,24 +127,53 @@ namespace hcle
 
         void PreprocessedEnv::process_screen()
         {
-            // Get pointer to current position in circular buffer
-            uint8_t *dest_ptr = m_frame_stack.data() + (m_frame_stack_idx * m_obs_size);
-
-            // Resize directly into the circular buffer or copy if no resize needed
-            if (obs_height_ != m_raw_frame_height || obs_width_ != m_raw_frame_width)
+            // 1. Max-pooling (if enabled)
+            if (maxpool_)
             {
-                auto cv2_format = (grayscale_) ? CV_8UC1 : CV_8UC3;
-                cv::Mat src_img(m_raw_frame_height, m_raw_frame_width, cv2_format, m_raw_frames[0].data());
-                cv::Mat dst_img(obs_height_, obs_width_, cv2_format, dest_ptr);
-                cv::resize(src_img, dst_img, dst_img.size(), 0, 0, cv::INTER_AREA);
+                // This assumes m_raw_frames are RGB (3 channels)
+                const size_t raw_rgb_size = m_raw_frame_height * m_raw_frame_width * 3;
+                for (size_t i = 0; i < raw_rgb_size; ++i)
+                {
+                    m_raw_frames[0][i] = std::max(m_raw_frames[0][i], m_raw_frames[1][i]);
+                }
+            }
+
+            // 2. Create a cv::Mat wrapper for the source image (always start with RGB)
+            cv::Mat source_mat(m_raw_frame_height, m_raw_frame_width, CV_8UC3, m_raw_frames[0].data());
+            cv::Mat processed_mat; // This will hold our intermediate results
+
+            // 3. Color Conversion (if enabled)
+            if (grayscale_)
+            {
+                cv::cvtColor(source_mat, processed_mat, cv::COLOR_RGB2GRAY);
             }
             else
             {
-                // No resize needed, copy directly to circular buffer
-                std::memcpy(dest_ptr, m_raw_frames[0].data(), m_raw_size);
+                // If not converting to grayscale, our processed_mat is just the source_mat
+                processed_mat = source_mat;
             }
 
-            // Move to next position in circular buffer
+            // 4. Get a pointer to the current position in the circular frame stack
+            uint8_t *dest_ptr = m_frame_stack.data() + (m_frame_stack_idx * m_obs_size);
+
+            // 5. Resizing
+            bool requires_resize = (obs_height_ != m_raw_frame_height) || (obs_width_ != m_raw_frame_width);
+            if (requires_resize)
+            {
+                // Create a destination Mat wrapper around our final buffer
+                auto cv2_format = grayscale_ ? CV_8UC1 : CV_8UC3;
+                cv::Mat dest_mat(obs_height_, obs_width_, cv2_format, dest_ptr);
+
+                // Resize the processed image into the destination buffer
+                cv::resize(processed_mat, dest_mat, dest_mat.size(), 0, 0, cv::INTER_AREA);
+            }
+            else
+            {
+                // No resize needed, just copy the processed data directly
+                std::memcpy(dest_ptr, processed_mat.data, m_obs_size);
+            }
+
+            // 6. Move to the next position in the circular buffer
             m_frame_stack_idx = (m_frame_stack_idx + 1) % stack_num_;
         }
 
@@ -172,11 +201,6 @@ namespace hcle
         const std::vector<uint8_t> PreprocessedEnv::getActionSet()
         {
             return env_->getActionSet();
-        }
-
-        std::vector<uint8_t> PreprocessedEnv::getRAM()
-        {
-            return env_->getRAM();
         }
 
     } // namespace environment
