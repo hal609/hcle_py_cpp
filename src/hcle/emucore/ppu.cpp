@@ -115,6 +115,26 @@ static const uint8_t GRAYSCALE_PALETTE_LOOKUP[8][64] = {
     {84, 25, 30, 75, 91, 87, 72, 49, 31, 25, 34, 40, 38, 30, 38, 0, 150, 69, 69, 111, 143, 143, 122, 78, 56, 56, 75, 84, 79, 62, 78, 0, 236, 143, 132, 169, 203, 203, 182, 137, 102, 102, 137, 150, 137, 111, 137, 0, 236, 191, 178, 203, 224, 224, 211, 182, 146, 146, 169, 178, 165, 146, 165, 0},
     {84, 25, 30, 75, 91, 87, 72, 49, 31, 25, 34, 40, 38, 30, 38, 0, 150, 69, 69, 111, 143, 143, 122, 78, 56, 56, 75, 84, 79, 62, 78, 0, 236, 143, 132, 169, 203, 203, 182, 137, 102, 102, 137, 150, 137, 111, 137, 0, 236, 191, 178, 203, 224, 224, 211, 182, 146, 146, 169, 178, 165, 146, 165, 0}};
 
+static const uint8_t REVERSE_BYTE_LOOKUP[256] = {
+    0x00, 0x80, 0x40, 0xC0, 0x20, 0xA0, 0x60, 0xE0, 0x10, 0x90, 0x50, 0xD0, 0x30, 0xB0, 0x70, 0xF0,
+    0x08, 0x88, 0x48, 0xC8, 0x28, 0xA8, 0x68, 0xE8, 0x18, 0x98, 0x58, 0xD8, 0x38, 0xB8, 0x78, 0xF8,
+    0x04, 0x84, 0x44, 0xC4, 0x24, 0xA4, 0x64, 0xE4, 0x14, 0x94, 0x54, 0xD4, 0x34, 0xB4, 0x74, 0xF4,
+    0x0C, 0x8C, 0x4C, 0xCC, 0x2C, 0xAC, 0x6C, 0xEC, 0x1C, 0x9C, 0x5C, 0xDC, 0x3C, 0xBC, 0x7C, 0xFC,
+    0x02, 0x82, 0x42, 0xC2, 0x22, 0xA2, 0x62, 0xE2, 0x12, 0x92, 0x52, 0xD2, 0x32, 0xB2, 0x72, 0xF2,
+    0x0A, 0x8A, 0x4A, 0xCA, 0x2A, 0xAA, 0x6A, 0xEA, 0x1A, 0x9A, 0x5A, 0xDA, 0x3A, 0xBA, 0x7A, 0xFA,
+    0x06, 0x86, 0x46, 0xC6, 0x26, 0xA6, 0x66, 0xE6, 0x16, 0x96, 0x56, 0xD6, 0x36, 0xB6, 0x76, 0xF6,
+    0x0E, 0x8E, 0x4E, 0xCE, 0x2E, 0xAE, 0x6E, 0xEE, 0x1E, 0x9E, 0x5E, 0xDE, 0x3E, 0xBE, 0x7E, 0xFE,
+    0x01, 0x81, 0x41, 0xC1, 0x21, 0xA1, 0x61, 0xE1, 0x11, 0x91, 0x51, 0xD1, 0x31, 0xB1, 0x71, 0xF1,
+    0x09, 0x89, 0x49, 0xC9, 0x29, 0xA9, 0x69, 0xE9, 0x19, 0x99, 0x59, 0xD9, 0x39, 0xB9, 0x79, 0xF9,
+    0x05, 0x85, 0x45, 0xC5, 0x25, 0xA5, 0x65, 0xE5, 0x15, 0x95, 0x55, 0xD5, 0x35, 0xB5, 0x75, 0xF5,
+    0x0D, 0x8D, 0x4D, 0xCD, 0x2D, 0xAD, 0x6D, 0xED, 0x1D, 0x9D, 0x5D, 0xDD, 0x3D, 0xBD, 0x7D, 0xFD,
+    0x03, 0x83, 0x43, 0xC3, 0x23, 0xA3, 0x63, 0xE3, 0x13, 0x93, 0x53, 0xD3, 0x33, 0xB3, 0x73, 0xF3,
+    0x0B, 0x8B, 0x4B, 0xCB, 0x2B, 0xAB, 0x6B, 0xEB, 0x1B, 0x9B, 0x5B, 0xDB, 0x3B, 0xBB, 0x7B, 0xFB,
+    0x07, 0x87, 0x47, 0xC7, 0x27, 0xA7, 0x67, 0xE7, 0x17, 0x97, 0x57, 0xD7, 0x37, 0xB7, 0x77, 0xF7,
+    0x0F, 0x8F, 0x4F, 0xCF, 0x2F, 0xAF, 0x6F, 0xEF, 0x1F, 0x9F, 0x5F, 0xDF, 0x3F, 0xBF, 0x7F, 0xFF};
+
+static constexpr uint8_t DECAY_MASKS[] = {0x3F, 0xDF, 0xE0};
+
 cynes::PPU::PPU(NES &nes)
     : _nes{nes}, _frame_buffer{new uint8_t[0x2D000]}, _current_x{0x0000}, _current_y{0x0000}, _rendering_enabled{false}, _rendering_enabled_delayed{false}, _prevent_vertical_blank{false}, _control_increment_mode{false}, _control_foreground_table{false}, _control_background_table{false}, _control_foreground_large{false}, _control_interrupt_on_vertical_blank{false}, _mask_grayscale_mode{false}, _mask_render_background_left{false}, _mask_render_foreground_left{false}, _mask_render_background{false}, _mask_render_foreground{false}, _mask_color_emphasize{0x00}, _status_sprite_overflow{false}, _status_sprite_zero_hit{false}, _status_vertical_blank{false}, _clock_decays{}, _register_decay{0x00}, _latch_cycle{false}, _latch_address{false}, _register_t{0x0000}, _register_v{0x0000}, _delayed_register_v{0x0000}, _scroll_x{0x00}, _delay_data_read_counter{0x00}, _delay_data_write_counter{0x00}, _buffer_data{0x00}, _background_data{}, _background_shifter{}, _foreground_data{}, _foreground_shifter{}, _foreground_attributes{}, _foreground_positions{}, _foreground_data_pointer{0x00}, _foreground_sprite_count{0x00}, _foreground_sprite_count_next{0x00}, _foreground_sprite_pointer{0x00}, _foreground_read_delay_counter{0x00}, _foreground_sprite_address{0x0000}, _foreground_sprite_zero_line{false}, _foreground_sprite_zero_should{false}, _foreground_sprite_zero_hit{false}, _foreground_evaluation_step{SpriteEvaluationStep::LOAD_SECONDARY_OAM}
 {
@@ -129,7 +149,7 @@ cynes::PPU::PPU(NES &nes)
 
 void cynes::PPU::setOutputModeGrayscale()
 {
-    _output_grayscale_palette = true;
+    _render_pixel = &PPU::render_pixel_gray;
     // Clear buffer of garbage data as grayscale will only overwrite first third
     if (_frame_buffer)
     {
@@ -213,6 +233,16 @@ void cynes::PPU::reset()
     _buffer_data = 0x00;
 }
 
+void cynes::PPU::render_pixel_rgb(size_t pixel_offset, uint8_t color_index)
+{
+    memcpy(_frame_buffer.get() + pixel_offset * 3, PALETTE_COLORS[_mask_color_emphasize][color_index], 3);
+}
+
+void cynes::PPU::render_pixel_gray(size_t pixel_offset, uint8_t color_index)
+{
+    _frame_buffer.get()[pixel_offset] = GRAYSCALE_PALETTE_LOOKUP[_mask_color_emphasize][color_index];
+}
+
 void cynes::PPU::tick()
 {
     if (_current_x > 339)
@@ -230,17 +260,9 @@ void cynes::PPU::tick()
             {
                 if (_clock_decays[k] > 0 && --_clock_decays[k] == 0)
                 {
-                    switch (k)
+                    if (_clock_decays[k] > 0 && --_clock_decays[k] == 0)
                     {
-                    case 0:
-                        _register_decay &= 0x3F;
-                        break;
-                    case 1:
-                        _register_decay &= 0xDF;
-                        break;
-                    case 2:
-                        _register_decay &= 0xE0;
-                        break;
+                        _register_decay &= DECAY_MASKS[k];
                     }
                 }
             }
@@ -296,15 +318,7 @@ void cynes::PPU::tick()
 
             if (_current_x > 0 && _current_x < 257 && _current_y < 240)
             {
-                if (_output_grayscale_palette)
-                {
-                    size_t pixel_offset = (_current_y << 8) + _current_x - 1;
-                    _frame_buffer.get()[pixel_offset] = GRAYSCALE_PALETTE_LOOKUP[_mask_color_emphasize][_nes.read_ppu(0x3F00 | blend_colors())];
-                }
-                else
-                {
-                    memcpy(_frame_buffer.get() + ((_current_y << 8) + _current_x - 1) * 3, PALETTE_COLORS[_mask_color_emphasize][_nes.read_ppu(0x3F00 | blend_colors())], 3);
-                }
+                (this->*_render_pixel)((_current_y << 8) + _current_x - 1, _nes.read_ppu(0x3F00 | blend_colors()));
             }
         }
         else if (_current_y == 240 && _current_x == 1)
@@ -395,11 +409,6 @@ void cynes::PPU::tick()
         }
     }
 
-    if (_rendering_enabled != (_mask_render_background || _mask_render_foreground))
-    {
-        _rendering_enabled = _mask_render_background || _mask_render_foreground;
-    }
-
     if (_delay_data_write_counter > 0 && --_delay_data_write_counter == 0)
     {
         _register_v = _delayed_register_v;
@@ -459,6 +468,7 @@ void cynes::PPU::write(uint8_t address, uint8_t value)
         _mask_render_foreground = value & 0x10;
         _mask_color_emphasize = value >> 5;
 
+        _rendering_enabled = _mask_render_background || _mask_render_foreground;
         break;
     }
 
@@ -1053,9 +1063,7 @@ void cynes::PPU::load_foreground_shifter()
 
             if (sprite_attribute & 0x40)
             {
-                sprite_pattern_lsb_plane = (sprite_pattern_lsb_plane & 0xF0) >> 4 | (sprite_pattern_lsb_plane & 0x0F) << 4;
-                sprite_pattern_lsb_plane = (sprite_pattern_lsb_plane & 0xCC) >> 2 | (sprite_pattern_lsb_plane & 0x33) << 2;
-                sprite_pattern_lsb_plane = (sprite_pattern_lsb_plane & 0xAA) >> 1 | (sprite_pattern_lsb_plane & 0x55) << 1;
+                sprite_pattern_lsb_plane = REVERSE_BYTE_LOOKUP[sprite_pattern_lsb_plane];
             }
 
             _foreground_shifter[_foreground_data_pointer * 2] = sprite_pattern_lsb_plane;
@@ -1069,9 +1077,7 @@ void cynes::PPU::load_foreground_shifter()
 
             if (_foreground_data[_foreground_data_pointer * 4 + 2] & 0x40)
             {
-                sprite_pattern_msb_plane = (sprite_pattern_msb_plane & 0xF0) >> 4 | (sprite_pattern_msb_plane & 0x0F) << 4;
-                sprite_pattern_msb_plane = (sprite_pattern_msb_plane & 0xCC) >> 2 | (sprite_pattern_msb_plane & 0x33) << 2;
-                sprite_pattern_msb_plane = (sprite_pattern_msb_plane & 0xAA) >> 1 | (sprite_pattern_msb_plane & 0x55) << 1;
+                sprite_pattern_msb_plane = REVERSE_BYTE_LOOKUP[sprite_pattern_msb_plane];
             }
 
             _foreground_shifter[_foreground_data_pointer * 2 + 1] = sprite_pattern_msb_plane;
@@ -1152,36 +1158,26 @@ uint8_t cynes::PPU::blend_colors()
         }
     }
 
-    uint8_t final_pixel = 0x00;
-    uint8_t final_palette = 0x00;
+    uint8_t final_pixel = 0;
+    uint8_t final_palette = 0;
 
-    if (background_pixel == 0 && foreground_pixel > 0)
-    {
-        final_pixel = foreground_pixel;
-        final_palette = foreground_palette;
-    }
-    else if (background_pixel > 0 && foreground_pixel == 0)
+    bool b_is_opaque = (background_pixel != 0);
+    bool f_is_opaque = (foreground_pixel != 0);
+
+    if (b_is_opaque && (!f_is_opaque || !foreground_priority))
     {
         final_pixel = background_pixel;
         final_palette = background_palette;
     }
-    else if (background_pixel > 0 && foreground_pixel > 0)
+    else if (f_is_opaque)
     {
-        if (foreground_priority)
-        {
-            final_pixel = foreground_pixel;
-            final_palette = foreground_palette;
-        }
-        else
-        {
-            final_pixel = background_pixel;
-            final_palette = background_palette;
-        }
+        final_pixel = foreground_pixel;
+        final_palette = foreground_palette;
+    }
 
-        if (_foreground_sprite_zero_hit && _foreground_sprite_zero_line && (_current_x > 8 || _mask_render_background_left || _mask_render_foreground_left))
-        {
-            _status_sprite_zero_hit = true;
-        }
+    if (b_is_opaque && f_is_opaque && _foreground_sprite_zero_hit && _foreground_sprite_zero_line && (_current_x > 8 || _mask_render_background_left || _mask_render_foreground_left))
+    {
+        _status_sprite_zero_hit = true;
     }
 
     final_pixel |= final_palette << 2;

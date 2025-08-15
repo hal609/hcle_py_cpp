@@ -86,7 +86,15 @@ namespace cynes
 
         uint8_t _mask_color_emphasize;
 
-        bool _output_grayscale_palette = false;
+        // === GRAYSCALE OUTPUT MODIFICATIONS ===
+        using RenderPixelFunc = void (PPU::*)(size_t, uint8_t);
+        RenderPixelFunc _render_pixel = &PPU::render_pixel_rgb;
+
+        void render_pixel_rgb(size_t pixel_offset, uint8_t color_index);
+        void render_pixel_gray(size_t pixel_offset, uint8_t color_index);
+
+        void update_palette_cache();
+        uint8_t _palette_cache[32];
 
     private:
         bool _status_sprite_overflow;

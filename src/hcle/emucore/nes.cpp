@@ -179,6 +179,13 @@ uint8_t cynes::NES::read_cpu(uint16_t address)
     }
 }
 
+static const uint8_t PALETTE_MIRROR_MAP[32] = {
+    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, // Addresses 0x00-0x07 map to themselves
+    0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, // Addresses 0x08-0x0F map to themselves
+    0x00, 0x11, 0x12, 0x13, 0x04, 0x15, 0x16, 0x17, // 0x10->0x00, 0x14->0x04
+    0x08, 0x19, 0x1A, 0x1B, 0x0C, 0x1D, 0x1E, 0x1F  // 0x18->0x08, 0x1C->0x0C
+};
+
 uint8_t cynes::NES::read_ppu(uint16_t address)
 {
     address &= 0x3FFF;
@@ -189,26 +196,7 @@ uint8_t cynes::NES::read_ppu(uint16_t address)
     }
     else
     {
-        address &= 0x1F;
-
-        if (address == 0x10)
-        {
-            address = 0x00;
-        }
-        else if (address == 0x14)
-        {
-            address = 0x04;
-        }
-        else if (address == 0x18)
-        {
-            address = 0x08;
-        }
-        else if (address == 0x1C)
-        {
-            address = 0x0C;
-        }
-
-        return _memory_palette[address];
+        return _memory_palette[PALETTE_MIRROR_MAP[address & 0x1F]];
     }
 }
 
