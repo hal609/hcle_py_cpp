@@ -65,8 +65,8 @@ namespace hcle::environment
     size_t m_raw_size; // Size of a single raw RGB frame from the emulator
     size_t m_obs_size; // Size of a single processed (resized, grayscale) observation frame
 
-    std::vector<std::vector<uint8_t>> m_raw_frames; // Buffers for raw frames for max-pooling
-    std::vector<uint8_t> m_frame_stack;             // Circular buffer for stacked processed frames
+    std::vector<uint8_t> m_raw_frame;   // Buffers for raw frames for max-pooling
+    std::vector<uint8_t> m_frame_stack; // Circular buffer for stacked processed frames
     int m_frame_stack_idx;
   };
 }

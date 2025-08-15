@@ -39,7 +39,7 @@ namespace hcle
             virtual bool isDone() = 0;
             virtual void onStep() {}
             virtual bool onReset() { return false; }
-            virtual const std::vector<uint8_t> getActionSet() = 0;
+            virtual const std::vector<uint8_t> getActionSet() { return std::vector<uint8_t>{0}; }
 
             void updateRAM()
             {

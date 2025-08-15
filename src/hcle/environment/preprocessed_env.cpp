@@ -18,6 +18,7 @@ namespace hcle::environment
         : obs_height_(obs_height),
           obs_width_(obs_width),
           frame_skip_(frame_skip),
+          maxpool_((frame_skip_ > 1) && maxpool),
           grayscale_(grayscale),
           stack_num_(stack_num),
           reward_(0.0f),
@@ -36,13 +37,11 @@ namespace hcle::environment
         m_obs_size = obs_height_ * obs_width_ * m_channels_per_frame;
 
         // Allocate buffers with the correct sizes.
-        m_raw_frames.resize(2, std::vector<uint8_t>(m_raw_size));
+        m_raw_frame.resize(m_raw_size);
         m_frame_stack.resize(stack_num_ * m_obs_size, 0);
         m_frame_stack_idx = 0;
 
         requires_resize_ = (obs_height_ != m_raw_frame_height) || (obs_width_ != m_raw_frame_width);
-
-        maxpool_ = (frame_skip_ > 1) && maxpool;
     }
 
     void PreprocessedEnv::reset(uint8_t *obs_output_buffer)
@@ -55,9 +54,7 @@ namespace hcle::environment
         m_frame_stack_idx = 0;
 
         // Get the initial screen from the emulator.
-        env_->getFrameBufferData(m_raw_frames[0].data(), false);
-        // Copy the first frame to the second buffer for the initial max-pool.
-        std::memcpy(m_raw_frames[1].data(), m_raw_frames[0].data(), m_raw_size);
+        env_->getFrameBufferData(m_raw_frame.data(), false);
 
         // Process the initial frame and fill the entire stack with it.
         for (int i = 0; i < stack_num_; ++i)
@@ -93,11 +90,11 @@ namespace hcle::environment
             {
                 if (skip == frame_skip_ - 2)
                 {
-                    env_->getFrameBufferData(m_raw_frames[0].data(), false);
+                    env_->getFrameBufferData(m_raw_frame.data(), false);
                 }
                 if (skip == frame_skip_ - 1)
                 {
-                    env_->getFrameBufferData(m_raw_frames[0].data(), true);
+                    env_->getFrameBufferData(m_raw_frame.data(), true);
                 }
             }
         }
@@ -106,7 +103,7 @@ namespace hcle::environment
         // If not max-pooling, just get the final frame.
         if (!maxpool_)
         {
-            env_->getFrameBufferData(m_raw_frames[0].data(), false);
+            env_->getFrameBufferData(m_raw_frame.data(), false);
         }
 
         // Perform all image processing and update the frame stack.
@@ -118,23 +115,14 @@ namespace hcle::environment
 
     void PreprocessedEnv::process_screen()
     {
-        // // 1. Max-pooling (if enabled).
-        // if (maxpool_)
-        // {
-        //     for (size_t i = 0; i < m_raw_size; ++i)
-        //     {
-        //         m_raw_frames[0][i] = std::max(m_raw_frames[0][i], m_raw_frames[1][i]);
-        //     }
-        // }
-
-        // 2. Create a cv::Mat wrapper for the source image (always start with RGB).
+        // 1. Create a cv::Mat wrapper for the source image (always start with RGB).
         auto cv2_format = grayscale_ ? CV_8UC1 : CV_8UC3;
-        cv::Mat source_mat(m_raw_frame_height, m_raw_frame_width, cv2_format, m_raw_frames[0].data());
+        cv::Mat source_mat(m_raw_frame_height, m_raw_frame_width, cv2_format, m_raw_frame.data());
 
-        // 3. Get a pointer to the current position in the circular frame stack.
+        // 2. Get a pointer to the current position in the circular frame stack.
         uint8_t *dest_ptr = m_frame_stack.data() + (m_frame_stack_idx * m_obs_size);
 
-        // 4. Resizing.
+        // 3. Resizing.
         bool requires_resize = (obs_height_ != m_raw_frame_height) || (obs_width_ != m_raw_frame_width);
         if (requires_resize)
         {
@@ -147,7 +135,7 @@ namespace hcle::environment
             std::memcpy(dest_ptr, source_mat.data, m_obs_size);
         }
 
-        // 5. Move to the next position in the circular buffer.
+        // 4. Move to the next position in the circular buffer.
         m_frame_stack_idx = (m_frame_stack_idx + 1) % stack_num_;
     }
 

@@ -27,7 +27,7 @@ void saveObsToRaw(std::vector<uint8_t> *obs_buffer)
 int main(int argc, char **argv)
 {
     // --- Configuration ---
-    const int num_envs = 64;
+    const int num_envs = 2;
     const std::string rom_path = "C:\\Users\\offan\\Downloads\\hcle_py_cpp\\src\\hcle\\python\\hcle_py\\roms\\smb1.bin";
     const std::string game_name = "smb1";
     const std::string render_mode = "rgb_array"; // Must be rgb_array for vector env
