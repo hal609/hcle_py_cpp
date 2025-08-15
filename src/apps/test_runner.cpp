@@ -22,7 +22,7 @@ int main(int argc, char **argv)
     {
         std::cout << "Creating HCLEVectorEnvironment (num_envs=" << num_envs << ")...\n";
 
-        hcle::environment::HCLEVectorEnvironment env(num_envs, rom_path, game_name, render_mode);
+        hcle::environment::HCLEVectorEnvironment env(num_envs, rom_path, game_name, render_mode, 240, 256, 1, false, false, 1);
 
         std::vector<hcle::vector::Timestep> timesteps;
 

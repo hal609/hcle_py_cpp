@@ -16,21 +16,21 @@ namespace hcle::environment
             const std::string &rom_path,
             const std::string &game_name,
             const std::string &render_mode,
-            const uint8_t obs_height = 84,
-            const uint8_t obs_width = 84,
-            const uint8_t frame_skip = 4,
+            const int obs_height = 84,
+            const int obs_width = 84,
+            const int frame_skip = 4,
             const bool maxpool = true,
             const bool grayscale = true,
-            const uint8_t stack_num = 4) : num_envs_(num_envs),
-                                           rom_path_(rom_path),
-                                           game_name_(game_name),
-                                           render_mode_(render_mode),
-                                           obs_height_(obs_height),
-                                           obs_width_(obs_width),
-                                           frame_skip_(frame_skip),
-                                           maxpool_(maxpool),
-                                           grayscale_(grayscale),
-                                           stack_num_(stack_num)
+            const int stack_num = 4) : num_envs_(num_envs),
+                                       rom_path_(rom_path),
+                                       game_name_(game_name),
+                                       render_mode_(render_mode),
+                                       obs_height_(obs_height),
+                                       obs_width_(obs_width),
+                                       frame_skip_(frame_skip),
+                                       maxpool_(maxpool),
+                                       grayscale_(grayscale),
+                                       stack_num_(stack_num)
         {
             auto env_factory = [=](int env_id)
             {
@@ -73,11 +73,11 @@ namespace hcle::environment
         const std::string &rom_path_;
         const std::string &game_name_;
         const std::string &render_mode_;
-        const uint8_t obs_height_;
-        const uint8_t obs_width_;
-        const uint8_t frame_skip_;
+        const int obs_height_;
+        const int obs_width_;
+        const int frame_skip_;
         const bool maxpool_;
         const bool grayscale_;
-        const uint8_t stack_num_;
+        const int stack_num_;
     };
 }

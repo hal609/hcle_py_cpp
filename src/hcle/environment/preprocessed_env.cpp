@@ -12,12 +12,12 @@ namespace hcle
             const std::string &rom_path,
             const std::string &game_name,
             const std::string &render_mode,
-            const uint8_t obs_height,
-            const uint8_t obs_width,
-            const uint8_t frame_skip,
+            const int obs_height,
+            const int obs_width,
+            const int frame_skip,
             const bool maxpool,
             const bool grayscale,
-            const uint8_t stack_num)
+            const int stack_num)
             : rom_path_(rom_path),
               game_name_(game_name),
               render_mode_(render_mode),

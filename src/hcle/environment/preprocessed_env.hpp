@@ -25,12 +25,12 @@ namespace hcle
           const std::string &rom_path,
           const std::string &game_name,
           const std::string &render_mode,
-          const uint8_t obs_height,
-          const uint8_t obs_width,
-          const uint8_t frame_skip,
+          const int obs_height,
+          const int obs_width,
+          const int frame_skip,
           const bool maxpool,
           const bool grayscale,
-          const uint8_t stack_num);
+          const int stack_num);
 
       void set_action(uint8_t action_index);
 
@@ -63,12 +63,12 @@ namespace hcle
       std::string rom_path_;
       std::string game_name_;
       std::string render_mode_;
-      uint8_t obs_height_;
-      uint8_t obs_width_;
-      uint8_t frame_skip_;
+      int obs_height_;
+      int obs_width_;
+      int frame_skip_;
       bool maxpool_;
       bool grayscale_;
-      uint8_t stack_num_;
+      int stack_num_;
 
       // Frame size variables
       int m_channels_per_frame;
