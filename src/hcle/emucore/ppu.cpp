@@ -5,7 +5,7 @@
 
 #include <cstring>
 
-constexpr uint8_t PALETTE_COLORS[0x8][0x40][0x3] = {
+static constexpr uint8_t PALETTE_COLORS[0x8][0x40][0x3] = {
     0x54, 0x54, 0x54, 0x00, 0x1E, 0x74, 0x08, 0x10, 0x90, 0x30, 0x00, 0x88, 0x44, 0x00, 0x64, 0x5C,
     0x00, 0x30, 0x54, 0x04, 0x00, 0x3C, 0x18, 0x00, 0x20, 0x2A, 0x00, 0x08, 0x3A, 0x00, 0x00, 0x40,
     0x00, 0x00, 0x3C, 0x00, 0x00, 0x32, 0x3C, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -105,7 +105,7 @@ constexpr uint8_t PALETTE_COLORS[0x8][0x40][0x3] = {
 
 // This table is generated once by applying the luminance formula to PALETTE_COLORS.
 // Y = 0.299*R + 0.587*G + 0.114*B
-static const uint8_t GRAYSCALE_PALETTE_LOOKUP[8][64] = {
+static constexpr uint8_t GRAYSCALE_PALETTE_LOOKUP[8][64] = {
     {84, 25, 30, 75, 91, 87, 72, 49, 31, 25, 34, 40, 38, 30, 38, 0, 150, 69, 69, 111, 143, 143, 122, 78, 56, 56, 75, 84, 79, 62, 78, 0, 236, 143, 132, 169, 203, 203, 182, 137, 102, 102, 137, 150, 137, 111, 137, 0, 236, 191, 178, 203, 224, 224, 211, 182, 146, 146, 169, 178, 165, 146, 165, 0},
     {84, 25, 30, 75, 91, 87, 72, 49, 31, 25, 34, 40, 38, 30, 38, 0, 150, 69, 69, 111, 143, 143, 122, 78, 56, 56, 75, 84, 79, 62, 78, 0, 236, 143, 132, 169, 203, 203, 182, 137, 102, 102, 137, 150, 137, 111, 137, 0, 236, 191, 178, 203, 224, 224, 211, 182, 146, 146, 169, 178, 165, 146, 165, 0},
     {84, 25, 30, 75, 91, 87, 72, 49, 31, 25, 34, 40, 38, 30, 38, 0, 150, 69, 69, 111, 143, 143, 122, 78, 56, 56, 75, 84, 79, 62, 78, 0, 236, 143, 132, 169, 203, 203, 182, 137, 102, 102, 137, 150, 137, 111, 137, 0, 236, 191, 178, 203, 224, 224, 211, 182, 146, 146, 169, 178, 165, 146, 165, 0},
@@ -115,7 +115,7 @@ static const uint8_t GRAYSCALE_PALETTE_LOOKUP[8][64] = {
     {84, 25, 30, 75, 91, 87, 72, 49, 31, 25, 34, 40, 38, 30, 38, 0, 150, 69, 69, 111, 143, 143, 122, 78, 56, 56, 75, 84, 79, 62, 78, 0, 236, 143, 132, 169, 203, 203, 182, 137, 102, 102, 137, 150, 137, 111, 137, 0, 236, 191, 178, 203, 224, 224, 211, 182, 146, 146, 169, 178, 165, 146, 165, 0},
     {84, 25, 30, 75, 91, 87, 72, 49, 31, 25, 34, 40, 38, 30, 38, 0, 150, 69, 69, 111, 143, 143, 122, 78, 56, 56, 75, 84, 79, 62, 78, 0, 236, 143, 132, 169, 203, 203, 182, 137, 102, 102, 137, 150, 137, 111, 137, 0, 236, 191, 178, 203, 224, 224, 211, 182, 146, 146, 169, 178, 165, 146, 165, 0}};
 
-static const uint8_t REVERSE_BYTE_LOOKUP[256] = {
+static constexpr uint8_t REVERSE_BYTE_LOOKUP[256] = {
     0x00, 0x80, 0x40, 0xC0, 0x20, 0xA0, 0x60, 0xE0, 0x10, 0x90, 0x50, 0xD0, 0x30, 0xB0, 0x70, 0xF0,
     0x08, 0x88, 0x48, 0xC8, 0x28, 0xA8, 0x68, 0xE8, 0x18, 0x98, 0x58, 0xD8, 0x38, 0xB8, 0x78, 0xF8,
     0x04, 0x84, 0x44, 0xC4, 0x24, 0xA4, 0x64, 0xE4, 0x14, 0x94, 0x54, 0xD4, 0x34, 0xB4, 0x74, 0xF4,
@@ -145,6 +145,22 @@ cynes::PPU::PPU(NES &nes)
     std::memset(_foreground_shifter, 0x00, 0x10);
     std::memset(_foreground_attributes, 0x00, 0x8);
     std::memset(_foreground_positions, 0x00, 0x8);
+
+    std::memset(_palette_cache, 0, sizeof(_palette_cache));
+}
+
+void cynes::PPU::update_palette_cache()
+{
+    for (int i = 0; i < 32; ++i)
+    {
+        // The address mirroring logic from read_ppu is replicated here.
+        uint16_t addr = 0x3F00 + i;
+        if (addr >= 0x3F10 && (addr % 4) == 0)
+        {
+            addr -= 0x10;
+        }
+        _palette_cache[i] = _nes.read_ppu(addr);
+    }
 }
 
 void cynes::PPU::setOutputModeGrayscale()
@@ -245,6 +261,11 @@ void cynes::PPU::render_pixel_gray(size_t pixel_offset, uint8_t color_index)
 
 void cynes::PPU::tick()
 {
+    // --- OPTIMIZATION: Update the palette cache at the start of the visible frame ---
+    if (_current_y == 0 && _current_x == 0 && _rendering_enabled)
+    {
+        update_palette_cache();
+    }
     if (_current_x > 339)
     {
         _current_x = 0;
@@ -318,7 +339,8 @@ void cynes::PPU::tick()
 
             if (_current_x > 0 && _current_x < 257 && _current_y < 240)
             {
-                (this->*_render_pixel)((_current_y << 8) + _current_x - 1, _nes.read_ppu(0x3F00 | blend_colors()));
+                uint8_t color_index = _palette_cache[blend_colors()];
+                (this->*_render_pixel)((_current_y << 8) + _current_x - 1, color_index);
             }
         }
         else if (_current_y == 240 && _current_x == 1)
