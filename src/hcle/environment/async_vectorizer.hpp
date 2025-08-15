@@ -14,19 +14,9 @@
 
 namespace hcle::environment
 {
-    /**
-     * @brief Manages a collection of environments that can be stepped in parallel.
-     * This class handles the asynchronous distribution of actions to worker threads
-     * and the collection of results, using a zero-allocation pattern for performance.
-     */
     class AsyncVectorizer
     {
     public:
-        /**
-         * @brief Constructs the AsyncVectorizer.
-         * @param num_envs The number of parallel environments to run.
-         * @param env_factory A function that creates a single PreprocessedEnv instance.
-         */
         AsyncVectorizer(
             const int num_envs,
             const std::function<std::unique_ptr<PreprocessedEnv>(int)> &env_factory) : num_envs_(num_envs), stop_(false)
@@ -34,7 +24,6 @@ namespace hcle::environment
             if (num_envs <= 0)
                 throw std::invalid_argument("Number of environments must be positive.");
 
-            // Create environments using the provided factory.
             envs_.reserve(num_envs_);
             for (int i = 0; i < num_envs_; ++i)
             {
@@ -44,7 +33,6 @@ namespace hcle::environment
             if (envs_.empty())
                 throw std::runtime_error("Environment creation failed.");
 
-            // Cache the action set from the first environment.
             action_set_cache_ = envs_[0]->getActionSet();
 
             // Pre-allocate internal buffers to avoid allocations in the main loop.
@@ -70,9 +58,6 @@ namespace hcle::environment
             }
         }
 
-        /**
-         * @brief Destructor. Signals worker threads to stop and joins them.
-         */
         ~AsyncVectorizer()
         {
             stop_ = true;
@@ -91,12 +76,6 @@ namespace hcle::environment
             }
         }
 
-        /**
-         * @brief Resets all environments and populates the initial observation buffers.
-         * @param obs_buffer Pointer to a pre-allocated buffer to store observations.
-         * @param reward_buffer Pointer to a pre-allocated buffer to store rewards.
-         * @param done_buffer Pointer to a pre-allocated buffer to store done flags.
-         */
         void reset(uint8_t *obs_buffer, float *reward_buffer, uint8_t *done_buffer)
         {
             for (int i = 0; i < num_envs_; ++i)
@@ -106,47 +85,23 @@ namespace hcle::environment
             collect_results(obs_buffer, reward_buffer, done_buffer);
         }
 
-        /**
-         * @brief Sends actions to the worker threads to be executed in the environments.
-         * @param action_ids A vector of action IDs, one for each environment.
-         */
         void send(const std::vector<int> &action_ids)
         {
             if (action_ids.size() != num_envs_)
             {
                 throw std::runtime_error("Number of actions must equal number of environments.");
             }
-            // Enqueue a step command for every environment.
+            // Queue a step command for every environment.
             for (int i = 0; i < num_envs_; ++i)
             {
                 action_queue_.push({i, static_cast<uint8_t>(action_ids[i]), false});
             }
         }
 
-        /**
-         * @brief Waits for and collects results from all environments.
-         * @param obs_buffer Pointer to a pre-allocated buffer to store observations.
-         * @param reward_buffer Pointer to a pre-allocated buffer to store rewards.
-         * @param done_buffer Pointer to a pre-allocated buffer to store done flags.
-         */
-        void recv(uint8_t *obs_buffer, float *reward_buffer, uint8_t *done_buffer)
-        {
-            collect_results(obs_buffer, reward_buffer, done_buffer);
-        }
+        void recv(uint8_t *obs_buffer, float *reward_buffer, uint8_t *done_buffer) { collect_results(obs_buffer, reward_buffer, done_buffer); }
 
-        /**
-         * @brief Gets the action set from the environment.
-         * @return A const reference to the cached action set vector.
-         */
-        const std::vector<uint8_t> &getActionSet() const
-        {
-            return action_set_cache_;
-        }
+        const std::vector<uint8_t> &getActionSet() const { return action_set_cache_; }
 
-        /**
-         * @brief Gets the size of a single preprocessed observation.
-         * @return The size in bytes.
-         */
         const size_t getObservationSize() const
         {
             if (envs_.empty())
@@ -154,8 +109,9 @@ namespace hcle::environment
             return envs_[0]->getObservationSize();
         }
 
+        const int getNumEnvs() const { return num_envs_; }
+
     private:
-        // Struct for passing tasks to worker threads.
         struct ActionTask
         {
             int env_id;
@@ -177,9 +133,6 @@ namespace hcle::environment
         std::vector<float> internal_reward_buffers_;
         std::vector<bool> internal_done_buffers_;
 
-        /**
-         * @brief The main function executed by each worker thread.
-         */
         void worker_function()
         {
             while (!stop_)
@@ -215,9 +168,6 @@ namespace hcle::environment
             }
         }
 
-        /**
-         * @brief Collects results from all environments after being notified.
-         */
         void collect_results(uint8_t *obs_buffer, float *reward_buffer, uint8_t *done_buffer)
         {
             const size_t single_obs_size = getObservationSize();

@@ -71,6 +71,8 @@ namespace hcle::environment
             return vectorizer_->getObservationSize();
         }
 
+        const int getNumEnvs() const { return vectorizer_->getNumEnvs(); }
+
     private:
         std::unique_ptr<AsyncVectorizer> vectorizer_;
     };

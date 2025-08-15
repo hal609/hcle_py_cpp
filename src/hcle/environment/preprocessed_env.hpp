@@ -16,12 +16,12 @@ namespace hcle::environment
         const std::string &rom_path,
         const std::string &game_name,
         const std::string &render_mode,
-        const int obs_height = 84,
-        const int obs_width = 84,
-        const int frame_skip = 4,
-        const bool maxpool = true,
-        const bool grayscale = true,
-        const int stack_num = 4);
+        const int obs_height,
+        const int obs_width,
+        const int frame_skip,
+        const bool maxpool,
+        const bool grayscale,
+        const int stack_num);
 
     void reset(uint8_t *obs_output_buffer);
 
