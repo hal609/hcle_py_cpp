@@ -3,11 +3,17 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include <functional>
 
 #include "hcle/environment/async_vectorizer.hpp"
+#include "hcle/environment/preprocessed_env.hpp"
 
 namespace hcle::environment
 {
+    /**
+     * @brief The user-facing interface for creating and interacting with a
+     * collection of parallel game environments.
+     */
     class HCLEVectorEnvironment
     {
     public:
@@ -15,69 +21,57 @@ namespace hcle::environment
             const int num_envs,
             const std::string &rom_path,
             const std::string &game_name,
-            const std::string &render_mode,
+            const std::string &render_mode = "rgb_array",
             const uint8_t obs_height = 84,
             const uint8_t obs_width = 84,
             const uint8_t frame_skip = 4,
             const bool maxpool = true,
             const bool grayscale = true,
-            const uint8_t stack_num = 4) : num_envs_(num_envs),
-                                           rom_path_(rom_path),
-                                           game_name_(game_name),
-                                           render_mode_(render_mode),
-                                           obs_height_(obs_height),
-                                           obs_width_(obs_width),
-                                           frame_skip_(frame_skip),
-                                           maxpool_(maxpool),
-                                           grayscale_(grayscale),
-                                           stack_num_(stack_num)
+            const uint8_t stack_num = 4)
         {
+            // Create a factory function that the AsyncVectorizer can use to
+            // construct PreprocessedEnv instances with the correct settings.
             auto env_factory = [=](int env_id)
             {
+                // Only the first environment should render to a window if requested.
                 std::string current_render_mode = (env_id == 0) ? render_mode : "rgb_array";
                 return std::make_unique<PreprocessedEnv>(
                     rom_path, game_name, current_render_mode, obs_height, obs_width,
                     frame_skip, maxpool, grayscale, stack_num);
             };
 
+            // Create and own the vectorizer engine.
             vectorizer_ = std::make_unique<AsyncVectorizer>(num_envs, env_factory);
         }
 
-        int getNumEnvs() const { return num_envs_; }
-        void send(const std::vector<int> &action_ids) { vectorizer_->send(action_ids); }
-        std::vector<hcle::vector::Timestep> recv() { return vectorizer_->recv(); }
-        std::vector<uint8_t> getActionSet() const { return vectorizer_->getActionSet(); }
+        // --- Public API (Pass-through calls to the vectorizer) ---
 
-        std::vector<hcle::vector::Timestep> reset()
+        void reset(uint8_t *obs_buffer, float *reward_buffer, uint8_t *done_buffer)
         {
-            return vectorizer_->reset();
+            vectorizer_->reset(obs_buffer, reward_buffer, done_buffer);
         }
 
-        const std::tuple<int, int, int, int> get_observation_shape() const
+        void send(const std::vector<int> &action_ids)
         {
-            if (grayscale_)
-            {
-                return std::make_tuple(stack_num_, obs_height_, obs_width_, 1);
-            }
-            else
-            {
-                return std::make_tuple(stack_num_, obs_height_, obs_width_, 3);
-            }
+            vectorizer_->send(action_ids);
+        }
+
+        void recv(uint8_t *obs_buffer, float *reward_buffer, uint8_t *done_buffer)
+        {
+            vectorizer_->recv(obs_buffer, reward_buffer, done_buffer);
+        }
+
+        const std::vector<uint8_t> &getActionSet() const
+        {
+            return vectorizer_->getActionSet();
+        }
+
+        size_t getObservationSize() const
+        {
+            return vectorizer_->getObservationSize();
         }
 
     private:
         std::unique_ptr<AsyncVectorizer> vectorizer_;
-        std::vector<uint8_t> action_set_;
-
-        const int num_envs_;
-        const std::string &rom_path_;
-        const std::string &game_name_;
-        const std::string &render_mode_;
-        const uint8_t obs_height_;
-        const uint8_t obs_width_;
-        const uint8_t frame_skip_;
-        const bool maxpool_;
-        const bool grayscale_;
-        const uint8_t stack_num_;
     };
 }

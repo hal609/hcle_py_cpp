@@ -1,69 +1,91 @@
-// src/apps/test_runner.cpp
 #include <iostream>
 #include <random>
 #include <vector>
 #include <thread>
 #include <chrono>
-#include <fstream> // For writing to a file
+#include <fstream>
+#include <stdexcept>
 
 #include "hcle/environment/hcle_vector_environment.hpp"
 
 int main(int argc, char **argv)
 {
-    int num_envs = 64;
-    std::string rom_path = "C:\\Users\\offan\\Downloads\\hcle_py_cpp\\src\\hcle\\python\\hcle_py\\roms\\smb1.bin";
-    std::string game_name = "smb1";
-    std::string render_mode = "rgb_array";
-    int num_steps = 1000;
-
-    std::vector<uint8_t> backup_state_;
+    // --- Configuration ---
+    const int num_envs = 64;
+    const std::string rom_path = "C:\\Users\\offan\\Downloads\\hcle_py_cpp\\src\\hcle\\python\\hcle_py\\roms\\smb1.bin";
+    const std::string game_name = "smb1";
+    const std::string render_mode = "rgb_array"; // Must be rgb_array for vector env
+    const int num_steps = 1000;
 
     try
     {
         std::cout << "Creating HCLEVectorEnvironment (num_envs=" << num_envs << ")...\n";
-
         hcle::environment::HCLEVectorEnvironment env(num_envs, rom_path, game_name, render_mode);
 
-        std::vector<hcle::vector::Timestep> timesteps;
+        // --- Pre-allocate memory buffers for results ---
+        const size_t single_obs_size = env.getObservationSize();
+        std::vector<uint8_t> obs_buffer(num_envs * single_obs_size);
+        std::vector<float> reward_buffer(num_envs);
+        // Use uint8_t for the done buffer to ensure it has a .data() method.
+        std::vector<uint8_t> done_buffer(num_envs);
 
-        timesteps = env.reset();
+        // --- Reset environments to get initial state ---
+        std::cout << "Resetting environments...\n";
+        env.reset(obs_buffer.data(), reward_buffer.data(), done_buffer.data());
+        std::cout << "Environments reset.\n";
 
-        size_t action_space = env.getActionSet().size();
-        printf("Action space size: %zu\n", action_space);
+        // --- Setup for the main loop ---
+        const size_t action_space_size = env.getActionSet().size();
+        std::cout << "Action space size: " << action_space_size << "\n";
 
         std::mt19937 rng(std::random_device{}());
-        std::uniform_int_distribution<int> action_dist(0, (int)action_space - 1);
-
+        std::uniform_int_distribution<int> action_dist(0, static_cast<int>(action_space_size) - 1);
         std::vector<int> actions(num_envs);
 
+        // --- Performance tracking ---
         double total_reward = 0.0;
         using clock = std::chrono::steady_clock;
         auto run_start = clock::now();
 
+        std::cout << "Starting main loop for " << num_steps << " steps...\n";
         for (int step = 0; step < num_steps; ++step)
         {
+            // Generate a batch of random actions
             for (int i = 0; i < num_envs; ++i)
-                actions[i] = static_cast<int>(action_dist(rng));
-
-            env.send(actions);
-            timesteps = env.recv();
-
-            total_reward += timesteps[0].reward / (double)num_envs;
-
-            if ((step + 1) % 20 == 0)
             {
-                std::cout << "Step " << (step + 1) << " step reward = " << timesteps[0].reward
-                          << " total reward = " << total_reward << "\n";
+                actions[i] = action_dist(rng);
+            }
+
+            // Asynchronously send actions and synchronously wait for results
+            env.send(actions);
+            env.recv(obs_buffer.data(), reward_buffer.data(), done_buffer.data());
+
+            // Accumulate rewards for performance metric (optional)
+            for (int i = 0; i < num_envs; ++i)
+            {
+                total_reward += reward_buffer[i];
+            }
+
+            if ((step + 1) % 100 == 0)
+            {
+                std::cout << "Step " << (step + 1) << " complete.\n";
             }
         }
-        auto elapsed = std::chrono::duration_cast<std::chrono::duration<double>>(clock::now() - run_start).count();
 
-        std::cout << "Run complete in " << elapsed << " seconds. Average fps = " << ((num_steps * num_envs) / elapsed) << ". Closing.\n";
+        auto elapsed = std::chrono::duration_cast<std::chrono::duration<double>>(clock::now() - run_start).count();
+        double average_reward = total_reward / (num_steps * num_envs);
+
+        std::cout << "\n--- Run Summary ---\n";
+        std::cout << "Total steps: " << num_steps * num_envs << "\n";
+        std::cout << "Total time: " << elapsed << " seconds\n";
+        std::cout << "Average FPS: " << ((num_steps * num_envs) / elapsed) << "\n";
+        std::cout << "Average reward per step: " << average_reward << "\n";
     }
     catch (const std::exception &ex)
     {
-        std::cerr << "Exception: " << ex.what() << "\n";
+        std::cerr << "Exception caught: " << ex.what() << "\n";
         return 1;
     }
+
     return 0;
 }
