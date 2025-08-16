@@ -82,13 +82,9 @@ namespace hcle
             {
                 throw std::runtime_error("Environment must be loaded with a ROM before reset.");
             }
-            if (!game_logic->onReset())
-            {
-                emu->reset();
-            }
+            game_logic->reset();
             this->current_step_ = 0;
             game_logic->updateRAM();
-            emu->step(NES_INPUT_NONE, 1);
         }
 
         float HCLEnvironment::act(uint8_t controller_input)

@@ -13,6 +13,17 @@
 
 #include "utils.hpp"
 
+struct NESState
+{
+    CPUState cpu_state;
+    // PPUState ppu_state;
+
+    // Main memory blocks
+    uint8_t ram[2048];
+    uint8_t ppu_vram[2048]; // Or whatever size your VRAM is
+    // Add mapper state variables here if they need to be saved.
+};
+
 namespace cynes
 {
     /// Main NES class, contains the RAM, CPU, PPU, APU, Mapper, etc...

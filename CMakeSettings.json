@@ -41,7 +41,7 @@
       "inheritEnvironments": [ "msvc_x64_x64" ],
       "buildRoot": "${projectDir}\\out\\build\\${name}",
       "installRoot": "${projectDir}\\out\\install\\${name}",
-      "cmakeCommandArgs": "",
+      "cmakeCommandArgs": "/O2 /Oi /Ot /Ob2 /fp:fast",
       "buildCommandArgs": "",
       "ctestCommandArgs": ""
     }

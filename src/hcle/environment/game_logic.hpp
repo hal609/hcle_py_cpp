@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <memory>
 #include <algorithm>
+#include <mutex>
 
 #include "hcle/emucore/nes.hpp"
 
@@ -38,7 +39,7 @@ namespace hcle
             virtual float getReward() = 0;
             virtual bool isDone() = 0;
             virtual void onStep() {}
-            virtual bool onReset() { return false; }
+            virtual void reset() {}
             virtual const std::vector<uint8_t> getActionSet() { return std::vector<uint8_t>{0}; }
 
             void updateRAM()
@@ -63,7 +64,7 @@ namespace hcle
         {
             nes_ = nes;
             current_ram_ptr_ = nes_->get_ram_pointer();
-            updateRAM(); // initialise previous to current
+            updateRAM();
         }
     } // namespace games
 } // namespace hcle

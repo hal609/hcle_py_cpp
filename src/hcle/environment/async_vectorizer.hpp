@@ -150,7 +150,7 @@ namespace hcle::environment
 
                 // Perform the action (step or reset), writing the observation
                 // directly into the internal buffer.
-                if (work.force_reset)
+                if (work.force_reset || env->isDone())
                 {
                     env->reset(current_obs_buffer);
                 }

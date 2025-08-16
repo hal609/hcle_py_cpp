@@ -10,15 +10,15 @@ namespace hcle
         class SMB1Logic : public GameLogic
         {
         public:
-            SMB1Logic() { action_set_ = {NES_INPUT_RIGHT | NES_INPUT_B,
-                                         NES_INPUT_RIGHT | NES_INPUT_B | NES_INPUT_A}; }
+            SMB1Logic() { action_set = {NES_INPUT_RIGHT | NES_INPUT_B,
+                                        NES_INPUT_RIGHT | NES_INPUT_B | NES_INPUT_A}; }
 
             GameLogic *SMB1Logic::clone() const override { return new SMB1Logic(*this); }
             float getReward() override;
             bool isDone() override;
             void onStep() override; // For checking if in-game to make savestate
-            bool onReset() override;
-            const std::vector<uint8_t> getActionSet() override { return action_set_; }
+            void reset() override;
+            const std::vector<uint8_t> getActionSet() override { return action_set; }
 
         private:
             bool in_game();
@@ -30,11 +30,12 @@ namespace hcle
             static const int GAME_MODE = 0x0770;
             static const int CURRENT_PAGE = 0x006D;
             static const int X_POS = 0x0086;
+            static const int LEVEL_LOADING = 0x0772;
 
-            std::vector<uint8_t> action_set_;
-            bool has_backup_ = false;
+            static bool has_backup;
+            static std::vector<uint8_t> backup_state;
 
-            std::vector<uint8_t> backup_state_;
+            std::vector<uint8_t> action_set;
         };
 
     } // namespace games

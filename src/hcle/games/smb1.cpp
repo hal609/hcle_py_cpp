@@ -2,18 +2,14 @@
 #include "hcle/emucore/nes.hpp" // For access to the NES object
 #include <vector>
 
-const uint16_t PLAYER_STATE = 0x000E;
-const uint16_t GAME_MODE = 0x0770; // 00 - Start demo, 01 - Start normal, 02 - End current world, 03 - End game (dead)
-const uint16_t ON_PRELEVEL = 0x075E;
-const uint16_t LEVEL_LOADING = 0x0772;
-const uint16_t Y_VIEWPORT = 0x00B5; // Greater than 1 means off screen
-const uint16_t CURRENT_PAGE = 0x006D;
-const uint16_t X_POS = 0x0086;
-
 namespace hcle
 {
     namespace games
     {
+
+        bool SMB1Logic::has_backup = false;
+        std::vector<uint8_t> SMB1Logic::backup_state;
+
         bool SMB1Logic::in_game() { return current_ram_ptr_[LEVEL_LOADING] == 3 && current_ram_ptr_[GAME_MODE] != 0; }
         bool SMB1Logic::is_dead() { return current_ram_ptr_[PLAYER_STATE] == 0x0B || current_ram_ptr_[Y_VIEWPORT] > 0x1; }
         bool SMB1Logic::isDone() { return is_dead(); }
@@ -22,12 +18,15 @@ namespace hcle
         {
             if (in_game())
             {
-                if (!has_backup_)
+                if (!has_backup)
                 {
+                    static std::mutex backup_mutex;
+                    std::lock_guard<std::mutex> lock(backup_mutex);
+
                     unsigned int state_size = nes_->size();
-                    backup_state_.resize(state_size);
-                    nes_->save(backup_state_.data());
-                    has_backup_ = true;
+                    backup_state.resize(state_size);
+                    nes_->save(backup_state.data());
+                    has_backup = true;
                 }
             }
             else
@@ -37,14 +36,17 @@ namespace hcle
             }
         }
 
-        bool SMB1Logic::onReset()
+        void SMB1Logic::reset()
         {
-            if (has_backup_)
+            if (has_backup)
             {
-                nes_->load(backup_state_.data());
-                return true;
+                nes_->load(backup_state.data());
             }
-            return false;
+            else
+            {
+                nes_->reset();
+                nes_->step(NES_INPUT_NONE, 1);
+            }
         }
 
         float SMB1Logic::getReward()

@@ -50,7 +50,7 @@ namespace hcle::environment
 
     bool requires_resize_;
 
-    // Core environment
+        // Core environment
     std::unique_ptr<HCLEnvironment> env_;
     std::vector<uint8_t> action_set_;
 
@@ -64,6 +64,7 @@ namespace hcle::environment
     int m_channels_per_frame;
     size_t m_raw_size; // Size of a single raw RGB frame from the emulator
     size_t m_obs_size; // Size of a single processed (resized, grayscale) observation frame
+    size_t m_stacked_obs_size;
 
     std::vector<uint8_t> m_raw_frame;   // Buffers for raw frames for max-pooling
     std::vector<uint8_t> m_frame_stack; // Circular buffer for stacked processed frames

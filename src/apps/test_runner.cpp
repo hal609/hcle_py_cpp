@@ -27,16 +27,17 @@ void saveObsToRaw(std::vector<uint8_t> *obs_buffer)
 int main(int argc, char **argv)
 {
     // --- Configuration ---
-    const int num_envs = 2;
+    const int num_envs = 64;
     const std::string rom_path = "C:\\Users\\offan\\Downloads\\hcle_py_cpp\\src\\hcle\\python\\hcle_py\\roms\\smb1.bin";
     const std::string game_name = "smb1";
-    const std::string render_mode = "rgb_array"; // Must be rgb_array for vector env
+    const std::string render_mode = "rgb_array";
     const int num_steps = 1000;
 
     try
     {
         std::cout << "Creating HCLEVectorEnvironment (num_envs=" << num_envs << ")...\n";
-        hcle::environment::HCLEVectorEnvironment env(num_envs, rom_path, game_name, render_mode, 84, 84, 1, true, true, 4);
+        hcle::environment::HCLEVectorEnvironment env(num_envs, rom_path, game_name, render_mode, 84, 84, 4, true, true, 4);
+        printf("HCLEVectorEnvironment created.\n");
 
         // --- Pre-allocate memory buffers for results ---
         const size_t single_obs_size = env.getObservationSize();
@@ -76,11 +77,11 @@ int main(int argc, char **argv)
             env.send(actions);
             env.recv(obs_buffer.data(), reward_buffer.data(), done_buffer.data());
 
-            if (step == 100)
-            {
-                // Save the observation at step 100 to a raw file
-                saveObsToRaw(&obs_buffer);
-            }
+            // if (step == 100)
+            // {
+            //     // Save the observation at step 100 to a raw file
+            //     saveObsToRaw(&obs_buffer);
+            // }
             // Accumulate rewards for performance metric (optional)
             for (int i = 0; i < num_envs; ++i)
             {

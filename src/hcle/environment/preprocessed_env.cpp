@@ -35,10 +35,11 @@ namespace hcle::environment
         m_channels_per_frame = grayscale_ ? 1 : 3;
         m_raw_size = m_raw_frame_height * m_raw_frame_width * m_channels_per_frame;
         m_obs_size = obs_height_ * obs_width_ * m_channels_per_frame;
+        m_stacked_obs_size = stack_num_ * m_obs_size;
 
         // Allocate buffers with the correct sizes.
         m_raw_frame.resize(m_raw_size);
-        m_frame_stack.resize(stack_num_ * m_obs_size, 0);
+        m_frame_stack.resize(m_stacked_obs_size, 0);
         m_frame_stack_idx = 0;
 
         requires_resize_ = (obs_height_ != m_raw_frame_height) || (obs_width_ != m_raw_frame_width);
@@ -50,20 +51,24 @@ namespace hcle::environment
         reward_ = 0.0f;
         done_ = false;
 
-        std::fill(m_frame_stack.begin(), m_frame_stack.end(), 0);
-        m_frame_stack_idx = 0;
-
         // Get the initial screen from the emulator.
         env_->getFrameBufferData(m_raw_frame.data(), false);
 
-        // Process the initial frame and fill the entire stack with it.
-        for (int i = 0; i < stack_num_; ++i)
-        {
-            process_screen();
-        }
+        m_frame_stack_idx = 0;
+        process_screen();
 
-        // Write the final stacked observation to the user's buffer.
-        write_observation(obs_output_buffer);
+        uint8_t *first_frame_ptr = m_frame_stack.data();
+
+        for (int i = 1; i < stack_num_; ++i)
+        {
+            std::memcpy(m_frame_stack.data() + (i * m_obs_size),
+                        first_frame_ptr,
+                        m_obs_size);
+        }
+        std::memcpy(
+            obs_output_buffer,
+            m_frame_stack.data(),
+            m_stacked_obs_size);
     }
 
     void PreprocessedEnv::step(uint8_t action_index, uint8_t *obs_output_buffer)
@@ -85,7 +90,7 @@ namespace hcle::environment
             if (done_)
                 break;
 
-            // Capture the last two frames for max-pooling directly from the emulator.
+            // Capture last two frames for max-pooling directly from emu
             if (maxpool_)
             {
                 if (skip == frame_skip_ - 2)
@@ -100,38 +105,28 @@ namespace hcle::environment
         }
         reward_ = accumulated_reward;
 
-        // If not max-pooling, just get the final frame.
         if (!maxpool_)
-        {
             env_->getFrameBufferData(m_raw_frame.data(), false);
-        }
 
-        // Perform all image processing and update the frame stack.
         process_screen();
-
-        // Write the final stacked observation to the user's buffer.
         write_observation(obs_output_buffer);
     }
 
     void PreprocessedEnv::process_screen()
     {
-        // 1. Create a cv::Mat wrapper for the source image (always start with RGB).
         auto cv2_format = grayscale_ ? CV_8UC1 : CV_8UC3;
         cv::Mat source_mat(m_raw_frame_height, m_raw_frame_width, cv2_format, m_raw_frame.data());
 
-        // 2. Get a pointer to the current position in the circular frame stack.
+        // Get pointer to current position in circular frame stack
         uint8_t *dest_ptr = m_frame_stack.data() + (m_frame_stack_idx * m_obs_size);
 
-        // 3. Resizing.
-        bool requires_resize = (obs_height_ != m_raw_frame_height) || (obs_width_ != m_raw_frame_width);
-        if (requires_resize)
+        if (requires_resize_)
         {
             cv::Mat dest_mat(obs_height_, obs_width_, cv2_format, dest_ptr);
             cv::resize(source_mat, dest_mat, dest_mat.size(), 0, 0, cv::INTER_AREA);
         }
         else
         {
-            // No resize needed, just copy the data directly.
             std::memcpy(dest_ptr, source_mat.data, m_obs_size);
         }
 
@@ -141,14 +136,21 @@ namespace hcle::environment
 
     void PreprocessedEnv::write_observation(uint8_t *obs_output_buffer)
     {
-        // Copy frames from oldest to newest into the single output buffer.
-        for (int i = 0; i < stack_num_; ++i)
+        if (m_frame_stack_idx == 0)
         {
-            int src_idx = (m_frame_stack_idx + i) % stack_num_;
-            std::memcpy(
-                obs_output_buffer + i * m_obs_size,
-                m_frame_stack.data() + src_idx * m_obs_size,
-                m_obs_size);
+            std::memcpy(obs_output_buffer, m_frame_stack.data(), m_stacked_obs_size);
+        }
+        else
+        {
+            size_t older_part_size = (stack_num_ - m_frame_stack_idx) * m_obs_size;
+            std::memcpy(obs_output_buffer,
+                        m_frame_stack.data() + (m_frame_stack_idx * m_obs_size),
+                        older_part_size);
+
+            size_t newer_part_size = m_frame_stack_idx * m_obs_size;
+            std::memcpy(obs_output_buffer + older_part_size,
+                        m_frame_stack.data(),
+                        newer_part_size);
         }
     }
 
@@ -156,6 +158,6 @@ namespace hcle::environment
     bool PreprocessedEnv::isDone() const { return done_; }
     float PreprocessedEnv::getReward() const { return reward_; }
     std::vector<uint8_t> PreprocessedEnv::getActionSet() const { return action_set_; }
-    size_t PreprocessedEnv::getObservationSize() const { return stack_num_ * m_obs_size; }
+    size_t PreprocessedEnv::getObservationSize() const { return m_stacked_obs_size; }
 
 } // namespace environment

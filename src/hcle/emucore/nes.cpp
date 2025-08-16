@@ -52,7 +52,6 @@ void cynes::NES::dummy_read()
     apu.tick(true);
     ppu.tick();
     ppu.tick();
-    ppu.tick();
     cpu.poll();
 }
 
