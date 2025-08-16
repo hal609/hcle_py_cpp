@@ -1,6 +1,4 @@
 #include <stdexcept>
-#include <chrono>
-
 #include <opencv2/opencv.hpp>
 #include "hcle/environment/preprocessed_env.hpp"
 
@@ -86,7 +84,6 @@ namespace hcle::environment
         // --- FRAME SKIPPING LOOP ---
         for (int skip = 0; skip < frame_skip_; ++skip)
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
             accumulated_reward += env_->act(controller_input);
             done_ = env_->isDone();
 
