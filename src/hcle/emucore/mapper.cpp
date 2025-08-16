@@ -191,7 +191,7 @@ void cynes::Mapper::tick() {}
 
 void cynes::Mapper::write_cpu(uint16_t address, uint8_t value)
 {
-    const auto &bank = glob_state.banks_cpu[address >> 10];
+    const auto &bank = _nes.glob_state.banks_cpu[address >> 10];
 
     if (!bank.read_only && bank.mapped)
     {
@@ -200,7 +200,7 @@ void cynes::Mapper::write_cpu(uint16_t address, uint8_t value)
 }
 void cynes::Mapper::write_ppu(uint16_t address, uint8_t value)
 {
-    const auto &bank = glob_state.banks_ppu[address >> 10];
+    const auto &bank = _nes.glob_state.banks_ppu[address >> 10];
 
     if (!bank.read_only && bank.mapped)
     {
@@ -210,7 +210,7 @@ void cynes::Mapper::write_ppu(uint16_t address, uint8_t value)
 
 uint8_t cynes::Mapper::read_cpu(uint16_t address)
 {
-    const auto &bank = glob_state.banks_cpu[address >> 10];
+    const auto &bank = _nes.glob_state.banks_cpu[address >> 10];
 
     if (!bank.mapped)
     {
@@ -222,7 +222,7 @@ uint8_t cynes::Mapper::read_cpu(uint16_t address)
 
 uint8_t cynes::Mapper::read_ppu(uint16_t address)
 {
-    const auto &bank = glob_state.banks_ppu[address >> 10];
+    const auto &bank = _nes.glob_state.banks_ppu[address >> 10];
 
     if (!bank.mapped)
     {
@@ -234,7 +234,7 @@ uint8_t cynes::Mapper::read_ppu(uint16_t address)
 
 void cynes::Mapper::map_bank_prg(uint8_t page, uint16_t address)
 {
-    glob_state.banks_cpu[page] = {
+    _nes.glob_state.banks_cpu[page] = {
         static_cast<size_t>(address << 10),
         true, true};
 }
@@ -249,7 +249,7 @@ void cynes::Mapper::map_bank_prg(uint8_t page, uint8_t size, uint16_t address)
 
 void cynes::Mapper::map_bank_cpu_ram(uint8_t page, uint16_t address, bool read_only)
 {
-    glob_state.banks_cpu[page] = {
+    _nes.glob_state.banks_cpu[page] = {
         _size_prg + _size_chr + static_cast<size_t>(address << 10),
         read_only, true};
 }
@@ -264,7 +264,7 @@ void cynes::Mapper::map_bank_cpu_ram(uint8_t page, uint8_t size, uint16_t addres
 
 void cynes::Mapper::map_bank_chr(uint8_t page, uint16_t address)
 {
-    glob_state.banks_ppu[page] = {
+    _nes.glob_state.banks_ppu[page] = {
         _size_prg + static_cast<size_t>(address << 10),
         _read_only_chr,
         true};
@@ -280,7 +280,7 @@ void cynes::Mapper::map_bank_chr(uint8_t page, uint8_t size, uint16_t address)
 
 void cynes::Mapper::map_bank_ppu_ram(uint8_t page, uint16_t address, bool read_only)
 {
-    glob_state.banks_ppu[page] = {
+    _nes.glob_state.banks_ppu[page] = {
         _size_prg + _size_chr + _size_cpu_ram + static_cast<size_t>(address << 10),
         read_only, true};
 }
@@ -295,7 +295,7 @@ void cynes::Mapper::map_bank_ppu_ram(uint8_t page, uint8_t size, uint16_t addres
 
 void cynes::Mapper::unmap_bank_cpu(uint8_t page)
 {
-    glob_state.banks_cpu[page] = {};
+    _nes.glob_state.banks_cpu[page] = {};
 }
 
 void cynes::Mapper::unmap_bank_cpu(uint8_t page, uint8_t size)
@@ -342,7 +342,7 @@ void cynes::Mapper::mirror_cpu_banks(uint8_t page, uint8_t size, uint8_t mirror)
 {
     for (uint8_t index = 0; index < size; index++)
     {
-        glob_state.banks_cpu[mirror + index] = glob_state.banks_cpu[page + index];
+        _nes.glob_state.banks_cpu[mirror + index] = _nes.glob_state.banks_cpu[page + index];
     }
 }
 
@@ -350,7 +350,7 @@ void cynes::Mapper::mirror_ppu_banks(uint8_t page, uint8_t size, uint8_t mirror)
 {
     for (uint8_t index = 0; index < size; index++)
     {
-        glob_state.banks_ppu[mirror + index] = glob_state.banks_ppu[page + index];
+        _nes.glob_state.banks_ppu[mirror + index] = _nes.glob_state.banks_ppu[page + index];
     }
 }
 
@@ -372,25 +372,139 @@ cynes::NROM::NROM(NES &nes, const ParsedMemory &metadata, MirroringMode mode)
     map_bank_cpu_ram(0x18, 0x8, 0x0, false);
 }
 
+template <uint8_t BANK_SIZE>
+cynes::MMC<BANK_SIZE>::MMC(NES &nes,
+                           const ParsedMemory &metadata,
+                           MirroringMode mode) : Mapper(nes, metadata, mode)
+{
+    map_bank_chr(0x0, 0x8, 0x0);
+
+    map_bank_prg(0x20, BANK_SIZE, 0x0);
+    map_bank_prg(0x20 + BANK_SIZE, 0x20 - BANK_SIZE, _banks_prg - 0x20 + BANK_SIZE);
+
+    map_bank_cpu_ram(0x18, 0x8, 0x0, true);
+
+    memset(_nes.glob_state.latches, false, 0x2);
+    memset(_nes.glob_state.selected_banks, 0x0, 0x4);
+}
+
+template <uint8_t BANK_SIZE>
+void cynes::MMC<BANK_SIZE>::update_banks()
+{
+    if (_nes.glob_state.latches[0])
+    {
+        map_bank_chr(0x0, 0x4, _nes.glob_state.selected_banks[0x0] << 2);
+    }
+    else
+    {
+        map_bank_chr(0x0, 0x4, _nes.glob_state.selected_banks[0x1] << 2);
+    }
+
+    if (_nes.glob_state.latches[1])
+    {
+        map_bank_chr(0x4, 0x4, _nes.glob_state.selected_banks[0x2] << 2);
+    }
+    else
+    {
+        map_bank_chr(0x4, 0x4, _nes.glob_state.selected_banks[0x3] << 2);
+    }
+}
+
+template <uint8_t BANK_SIZE>
+void cynes::MMC<BANK_SIZE>::write_cpu(uint16_t address, uint8_t value)
+{
+    if (address < 0xA000)
+    {
+        Mapper::write_cpu(address, value);
+    }
+    else if (address < 0xB000)
+    {
+        map_bank_prg(0x20, BANK_SIZE, (value & 0xF) * BANK_SIZE);
+    }
+    else if (address < 0xC000)
+    {
+        _nes.glob_state.selected_banks[0x0] = value & 0x1F;
+        update_banks();
+    }
+    else if (address < 0xD000)
+    {
+        _nes.glob_state.selected_banks[0x1] = value & 0x1F;
+        update_banks();
+    }
+    else if (address < 0xE000)
+    {
+        _nes.glob_state.selected_banks[0x2] = value & 0x1F;
+        update_banks();
+    }
+    else if (address < 0xF000)
+    {
+        _nes.glob_state.selected_banks[0x3] = value & 0x1F;
+        update_banks();
+    }
+    else
+    {
+        if (value & 0x01)
+        {
+            set_mirroring_mode(MirroringMode::HORIZONTAL);
+        }
+        else
+        {
+            set_mirroring_mode(MirroringMode::VERTICAL);
+        }
+    }
+}
+
+template <uint8_t BANK_SIZE>
+uint8_t cynes::MMC<BANK_SIZE>::read_ppu(uint16_t address)
+{
+    uint8_t value = Mapper::read_ppu(address);
+
+    if (address == 0x0FD8)
+    {
+        _nes.glob_state.latches[0] = true;
+        update_banks();
+    }
+    else if (address == 0x0FE8)
+    {
+        _nes.glob_state.latches[0] = false;
+        update_banks();
+    }
+    else if (address >= 0x1FD8 && address < 0x1FE0)
+    {
+        _nes.glob_state.latches[1] = true;
+        update_banks();
+    }
+    else if (address >= 0x1FE8 && address < 0x1FF0)
+    {
+        _nes.glob_state.latches[1] = false;
+        update_banks();
+    }
+
+    return value;
+}
+
+// template class MMC<0x08>;
+// template class MMC<0x10>;
+
 cynes::MMC1::MMC1(
     NES &nes,
     const ParsedMemory &metadata,
     MirroringMode mode) : Mapper(nes, metadata, mode)
 {
-    glob_state.tick = 0x00;
-    glob_state.reg = 0x00;
-    glob_state.counter = 0x00;
-    memset(glob_state.registers, 0x00, 0x4);
-    glob_state.registers[0x0] = 0xC;
+    _nes.glob_state.tick = 0x00;
+    _nes.glob_state.reg = 0x00;
+    _nes.glob_state.counter = 0x00;
+    memset(_nes.glob_state.registers, 0x00, 0x4);
+    _nes.glob_state.registers[0x0] = 0xC;
 
     update_banks();
 }
 
 void cynes::MMC1::tick()
 {
-    if (glob_state.tick < 6)
+    if (_nes.glob_state.tick < 6)
     {
-        glob_state.tick++;
+        _nes.glob_state.tick++;
     }
 }
 
@@ -408,40 +522,40 @@ void cynes::MMC1::write_cpu(uint16_t address, uint8_t value)
 
 void cynes::MMC1::write_registers(uint8_t register_target, uint8_t value)
 {
-    if (glob_state.tick == 6)
+    if (_nes.glob_state.tick == 6)
     {
         if (value & 0x80)
         {
-            glob_state.registers[0x0] |= 0xC;
+            _nes.glob_state.registers[0x0] |= 0xC;
 
             update_banks();
 
-            glob_state.reg = 0x00;
-            glob_state.counter = 0;
+            _nes.glob_state.reg = 0x00;
+            _nes.glob_state.counter = 0;
         }
         else
         {
-            glob_state.reg >>= 1;
-            glob_state.reg |= (value & 0x1) << 4;
+            _nes.glob_state.reg >>= 1;
+            _nes.glob_state.reg |= (value & 0x1) << 4;
 
-            if (++glob_state.counter == 5)
+            if (++_nes.glob_state.counter == 5)
             {
-                glob_state.registers[register_target] = glob_state.reg;
+                _nes.glob_state.registers[register_target] = _nes.glob_state.reg;
 
                 update_banks();
 
-                glob_state.reg = 0x00;
-                glob_state.counter = 0x00;
+                _nes.glob_state.reg = 0x00;
+                _nes.glob_state.counter = 0x00;
             }
         }
     }
 
-    glob_state.tick = 0;
+    _nes.glob_state.tick = 0;
 }
 
 void cynes::MMC1::update_banks()
 {
-    switch (glob_state.registers[0x0] & 0x03)
+    switch (_nes.glob_state.registers[0x0] & 0x03)
     {
     case 0:
         set_mirroring_mode(MirroringMode::ONE_SCREEN_LOW);
@@ -457,35 +571,35 @@ void cynes::MMC1::update_banks()
         break;
     }
 
-    if (glob_state.registers[0x0] & 0x10)
+    if (_nes.glob_state.registers[0x0] & 0x10)
     {
-        map_bank_chr(0x0, 0x4, (glob_state.registers[0x1] & 0x1F) << 2);
-        map_bank_chr(0x4, 0x4, (glob_state.registers[0x2] & 0x1F) << 2);
+        map_bank_chr(0x0, 0x4, (_nes.glob_state.registers[0x1] & 0x1F) << 2);
+        map_bank_chr(0x4, 0x4, (_nes.glob_state.registers[0x2] & 0x1F) << 2);
     }
     else
     {
-        map_bank_chr(0x0, 0x8, (glob_state.registers[0x1] & 0x1E) << 2);
+        map_bank_chr(0x0, 0x8, (_nes.glob_state.registers[0x1] & 0x1E) << 2);
     }
 
-    if (glob_state.registers[0x0] & 0x08)
+    if (_nes.glob_state.registers[0x0] & 0x08)
     {
-        if (glob_state.registers[0x0] & 0x04)
+        if (_nes.glob_state.registers[0x0] & 0x04)
         {
-            map_bank_prg(0x20, 0x10, (glob_state.registers[0x3] & 0x0F) << 4);
+            map_bank_prg(0x20, 0x10, (_nes.glob_state.registers[0x3] & 0x0F) << 4);
             map_bank_prg(0x30, 0x10, _banks_prg - 0x10);
         }
         else
         {
             map_bank_prg(0x20, 0x10, 0x0);
-            map_bank_prg(0x30, 0x10, (glob_state.registers[0x3] & 0xF) << 4);
+            map_bank_prg(0x30, 0x10, (_nes.glob_state.registers[0x3] & 0xF) << 4);
         }
     }
     else
     {
-        map_bank_prg(0x20, 0x20, (glob_state.registers[0x3] & 0x0E) << 4);
+        map_bank_prg(0x20, 0x20, (_nes.glob_state.registers[0x3] & 0x0E) << 4);
     }
 
-    bool read_only = glob_state.registers[0x3] & 0x10;
+    bool read_only = _nes.glob_state.registers[0x3] & 0x10;
     map_bank_cpu_ram(0x18, 0x8, 0x0, read_only);
 }
 
@@ -571,29 +685,29 @@ cynes::MMC3::MMC3(
     const ParsedMemory &metadata,
     MirroringMode mode) : Mapper(nes, metadata, mode)
 {
-    glob_state.tick = 0x0000;
-    std::memset(glob_state.registers, 0x00, sizeof(glob_state.registers));
-    glob_state.counter = 0x0000;
-    glob_state.counter_reset_value = 0x0000;
-    glob_state.register_target = 0x00;
-    glob_state.mode_prg = false;
-    glob_state.mode_chr = false;
-    glob_state.enable_interrupt = false;
-    glob_state.should_reload_interrupt = false;
+    _nes.glob_state.tick = 0x0000;
+    std::memset(_nes.glob_state.registers, 0x00, sizeof(_nes.glob_state.registers));
+    _nes.glob_state.counter = 0x0000;
+    _nes.glob_state.counter_reset_value = 0x0000;
+    _nes.glob_state.register_target = 0x00;
+    _nes.glob_state.mode_prg = false;
+    _nes.glob_state.mode_chr = false;
+    _nes.glob_state.enable_interrupt = false;
+    _nes.glob_state.should_reload_interrupt = false;
 
     map_bank_chr(0x0, 0x8, 0x0);
     map_bank_prg(0x20, 0x10, 0x0);
     map_bank_prg(0x30, 0x10, _banks_prg - 0x10);
     map_bank_cpu_ram(0x18, 0x8, 0x0, false);
 
-    memset(glob_state.registers, 0x0000, 0x20);
+    memset(_nes.glob_state.registers, 0x0000, 0x20);
 }
 
 void cynes::MMC3::tick()
 {
-    if (glob_state.tick > 0 && glob_state.tick < 11)
+    if (_nes.glob_state.tick > 0 && _nes.glob_state.tick < 11)
     {
-        glob_state.tick++;
+        _nes.glob_state.tick++;
     }
 }
 
@@ -607,51 +721,51 @@ void cynes::MMC3::write_cpu(uint16_t address, uint8_t value)
     {
         if (address & 0x1)
         {
-            if (glob_state.register_target < 2)
+            if (_nes.glob_state.register_target < 2)
             {
                 value &= 0xFE;
             }
 
-            glob_state.registers[glob_state.register_target] = value;
+            _nes.glob_state.registers[_nes.glob_state.register_target] = value;
 
-            if (glob_state.mode_prg)
+            if (_nes.glob_state.mode_prg)
             {
                 map_bank_prg(0x20, 0x08, _banks_prg - 0x10);
-                map_bank_prg(0x28, 0x08, (glob_state.registers[0x7] & 0x3F) << 3);
-                map_bank_prg(0x30, 0x08, (glob_state.registers[0x6] & 0x3F) << 3);
+                map_bank_prg(0x28, 0x08, (_nes.glob_state.registers[0x7] & 0x3F) << 3);
+                map_bank_prg(0x30, 0x08, (_nes.glob_state.registers[0x6] & 0x3F) << 3);
                 map_bank_prg(0x38, 0x08, _banks_prg - 0x8);
             }
             else
             {
-                map_bank_prg(0x20, 0x08, (glob_state.registers[0x6] & 0x3F) << 3);
-                map_bank_prg(0x28, 0x08, (glob_state.registers[0x7] & 0x3F) << 3);
+                map_bank_prg(0x20, 0x08, (_nes.glob_state.registers[0x6] & 0x3F) << 3);
+                map_bank_prg(0x28, 0x08, (_nes.glob_state.registers[0x7] & 0x3F) << 3);
                 map_bank_prg(0x30, 0x10, _banks_prg - 0x10);
             }
 
-            if (glob_state.mode_chr)
+            if (_nes.glob_state.mode_chr)
             {
-                map_bank_chr(0x0, glob_state.registers[0x2]);
-                map_bank_chr(0x1, glob_state.registers[0x3]);
-                map_bank_chr(0x2, glob_state.registers[0x4]);
-                map_bank_chr(0x3, glob_state.registers[0x5]);
-                map_bank_chr(0x4, 0x2, glob_state.registers[0x0]);
-                map_bank_chr(0x6, 0x2, glob_state.registers[0x1]);
+                map_bank_chr(0x0, _nes.glob_state.registers[0x2]);
+                map_bank_chr(0x1, _nes.glob_state.registers[0x3]);
+                map_bank_chr(0x2, _nes.glob_state.registers[0x4]);
+                map_bank_chr(0x3, _nes.glob_state.registers[0x5]);
+                map_bank_chr(0x4, 0x2, _nes.glob_state.registers[0x0]);
+                map_bank_chr(0x6, 0x2, _nes.glob_state.registers[0x1]);
             }
             else
             {
-                map_bank_chr(0x0, 0x2, glob_state.registers[0x0]);
-                map_bank_chr(0x2, 0x2, glob_state.registers[0x1]);
-                map_bank_chr(0x4, glob_state.registers[0x2]);
-                map_bank_chr(0x5, glob_state.registers[0x3]);
-                map_bank_chr(0x6, glob_state.registers[0x4]);
-                map_bank_chr(0x7, glob_state.registers[0x5]);
+                map_bank_chr(0x0, 0x2, _nes.glob_state.registers[0x0]);
+                map_bank_chr(0x2, 0x2, _nes.glob_state.registers[0x1]);
+                map_bank_chr(0x4, _nes.glob_state.registers[0x2]);
+                map_bank_chr(0x5, _nes.glob_state.registers[0x3]);
+                map_bank_chr(0x6, _nes.glob_state.registers[0x4]);
+                map_bank_chr(0x7, _nes.glob_state.registers[0x5]);
             }
         }
         else
         {
-            glob_state.register_target = value & 0x07;
-            glob_state.mode_prg = value & 0x40;
-            glob_state.mode_chr = value & 0x80;
+            _nes.glob_state.register_target = value & 0x07;
+            _nes.glob_state.mode_prg = value & 0x40;
+            _nes.glob_state.mode_chr = value & 0x80;
         }
     }
     else if (address < 0xC000)
@@ -674,23 +788,23 @@ void cynes::MMC3::write_cpu(uint16_t address, uint8_t value)
     {
         if (address & 0x1)
         {
-            glob_state.counter = 0x0000;
-            glob_state.should_reload_interrupt = true;
+            _nes.glob_state.counter = 0x0000;
+            _nes.glob_state.should_reload_interrupt = true;
         }
         else
         {
-            glob_state.counter_reset_value = value;
+            _nes.glob_state.counter_reset_value = value;
         }
     }
     else
     {
         if (address & 0x1)
         {
-            glob_state.enable_interrupt = true;
+            _nes.glob_state.enable_interrupt = true;
         }
         else
         {
-            glob_state.enable_interrupt = false;
+            _nes.glob_state.enable_interrupt = false;
             _nes.cpu.set_mapper_interrupt(false);
         }
     }
@@ -712,30 +826,30 @@ void cynes::MMC3::update_state(bool state)
 {
     if (state)
     {
-        if (glob_state.tick > 10)
+        if (_nes.glob_state.tick > 10)
         {
-            if (glob_state.counter == 0 || glob_state.should_reload_interrupt)
+            if (_nes.glob_state.counter == 0 || _nes.glob_state.should_reload_interrupt)
             {
-                glob_state.counter = glob_state.counter_reset_value;
+                _nes.glob_state.counter = _nes.glob_state.counter_reset_value;
             }
             else
             {
-                glob_state.counter--;
+                _nes.glob_state.counter--;
             }
 
-            if (glob_state.counter == 0 && glob_state.enable_interrupt)
+            if (_nes.glob_state.counter == 0 && _nes.glob_state.enable_interrupt)
             {
                 _nes.cpu.set_mapper_interrupt(true);
             }
 
-            glob_state.should_reload_interrupt = false;
+            _nes.glob_state.should_reload_interrupt = false;
         }
 
-        glob_state.tick = 0;
+        _nes.glob_state.tick = 0;
     }
-    else if (glob_state.tick == 0)
+    else if (_nes.glob_state.tick == 0)
     {
-        glob_state.tick = 1;
+        _nes.glob_state.tick = 1;
     }
 }
 

@@ -12,14 +12,14 @@ enum class SpriteEvaluationStep
     IDLE
 };
 
-static struct MemoryBank
+struct MemoryBank
 {
     size_t offset = 0;
     bool read_only = true;
     bool mapped = false;
 };
 
-static struct FullState
+struct FullState
 {
     // ======== APU Variables ========
     bool apu_latch_cycle;
@@ -168,8 +168,6 @@ static struct FullState
     bool latches[0x2];
     uint8_t selected_banks[0x4];
 };
-
-static FullState glob_state;
 
 namespace cynes
 {

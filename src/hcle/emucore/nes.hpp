@@ -13,21 +13,6 @@
 
 #include "utils.hpp"
 
-struct NESState
-{
-    CPUState cpu_state;
-    // PPUState ppu_state;
-
-    // Main memory blocks
-    uint8_t ram[2048];
-    uint8_t ppu_vram[2048]; // Or whatever size your VRAM is
-    // Add mapper state variables here if they need to be saved.
-};
-
-struct MemoryStruct
-{
-};
-
 namespace cynes
 {
     /// Main NES class, contains the RAM, CPU, PPU, APU, Mapper, etc...
@@ -146,14 +131,14 @@ namespace cynes
         PPU ppu;
         APU apu;
 
+        FullState glob_state;
+
         Mapper &get_mapper();
 
     private:
         std::unique_ptr<Mapper> _mapper;
 
     private:
-        MemoryStruct _mem;
-
         uint8_t _open_bus;
 
         uint8_t _controller_status[0x2];

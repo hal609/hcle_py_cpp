@@ -215,10 +215,7 @@ namespace cynes
 
     public:
         template <DumpOperation operation, typename T>
-        constexpr void dump(T &buffer)
-        {
-            cynes::dump<operation>(buffer, glob_state);
-        }
+        void dump(T &buffer);
     };
 }
 

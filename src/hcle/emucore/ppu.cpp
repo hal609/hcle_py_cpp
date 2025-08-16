@@ -139,55 +139,55 @@ cynes::PPU::PPU(NES &nes)
     : _nes{nes},
       _frame_buffer{new uint8_t[0x2D000]}
 {
-    glob_state.current_x = 0x0000;
-    glob_state.current_y = 0x0000;
-    glob_state.rendering_enabled = false;
-    glob_state.rendering_enabled_delayed = false;
-    glob_state.prevent_vertical_blank = false;
-    glob_state.control_increment_mode = false;
-    glob_state.control_foreground_table = false;
-    glob_state.control_background_table = false;
-    glob_state.control_foreground_large = false;
-    glob_state.control_interrupt_on_vertical_blank = false;
-    glob_state.mask_grayscale_mode = false;
-    glob_state.mask_render_background_left = false;
-    glob_state.mask_render_foreground_left = false;
-    glob_state.mask_render_background = false;
-    glob_state.mask_render_foreground = false;
-    glob_state.mask_color_emphasize = 0x00;
-    glob_state.status_sprite_overflow = false;
-    glob_state.status_sprite_zero_hit = false;
-    glob_state.status_vertical_blank = false;
+    _nes.glob_state.current_x = 0x0000;
+    _nes.glob_state.current_y = 0x0000;
+    _nes.glob_state.rendering_enabled = false;
+    _nes.glob_state.rendering_enabled_delayed = false;
+    _nes.glob_state.prevent_vertical_blank = false;
+    _nes.glob_state.control_increment_mode = false;
+    _nes.glob_state.control_foreground_table = false;
+    _nes.glob_state.control_background_table = false;
+    _nes.glob_state.control_foreground_large = false;
+    _nes.glob_state.control_interrupt_on_vertical_blank = false;
+    _nes.glob_state.mask_grayscale_mode = false;
+    _nes.glob_state.mask_render_background_left = false;
+    _nes.glob_state.mask_render_foreground_left = false;
+    _nes.glob_state.mask_render_background = false;
+    _nes.glob_state.mask_render_foreground = false;
+    _nes.glob_state.mask_color_emphasize = 0x00;
+    _nes.glob_state.status_sprite_overflow = false;
+    _nes.glob_state.status_sprite_zero_hit = false;
+    _nes.glob_state.status_vertical_blank = false;
 
-    glob_state.register_decay = 0x00;
-    glob_state.ppu_latch_cycle = false;
-    glob_state.latch_address = false;
-    glob_state.register_t_ = 0x0000;
-    glob_state.register_v = 0x0000;
-    glob_state.delayed_register_v = 0x0000;
-    glob_state.scroll_x = 0x00;
-    glob_state.delay_data_read_counter = 0x00;
-    glob_state.delay_data_write_counter = 0x00;
-    glob_state.buffer_data = 0x00;
+    _nes.glob_state.register_decay = 0x00;
+    _nes.glob_state.ppu_latch_cycle = false;
+    _nes.glob_state.latch_address = false;
+    _nes.glob_state.register_t_ = 0x0000;
+    _nes.glob_state.register_v = 0x0000;
+    _nes.glob_state.delayed_register_v = 0x0000;
+    _nes.glob_state.scroll_x = 0x00;
+    _nes.glob_state.delay_data_read_counter = 0x00;
+    _nes.glob_state.delay_data_write_counter = 0x00;
+    _nes.glob_state.buffer_data = 0x00;
 
-    glob_state.foreground_data_pointer = 0x00;
-    glob_state.foreground_sprite_count = 0x00;
-    glob_state.foreground_sprite_count_next = 0x00;
-    glob_state.foreground_sprite_pointer = 0x00;
-    glob_state.foreground_read_delay_counter = 0x00;
-    glob_state.foreground_sprite_address = 0x0000;
-    glob_state.foreground_sprite_zero_line = false;
-    glob_state.foreground_sprite_zero_should = false;
-    glob_state.foreground_sprite_zero_hit = false;
-    glob_state.foreground_evaluation_step = SpriteEvaluationStep::LOAD_SECONDARY_OAM;
+    _nes.glob_state.foreground_data_pointer = 0x00;
+    _nes.glob_state.foreground_sprite_count = 0x00;
+    _nes.glob_state.foreground_sprite_count_next = 0x00;
+    _nes.glob_state.foreground_sprite_pointer = 0x00;
+    _nes.glob_state.foreground_read_delay_counter = 0x00;
+    _nes.glob_state.foreground_sprite_address = 0x0000;
+    _nes.glob_state.foreground_sprite_zero_line = false;
+    _nes.glob_state.foreground_sprite_zero_should = false;
+    _nes.glob_state.foreground_sprite_zero_hit = false;
+    _nes.glob_state.foreground_evaluation_step = SpriteEvaluationStep::LOAD_SECONDARY_OAM;
 
-    std::memset(glob_state.clock_decays, 0x00, 0x3);
-    std::memset(glob_state.background_data, 0x00, 0x4);
-    std::memset(glob_state.background_shifter, 0x0000, 0x8);
-    std::memset(glob_state.foreground_data, 0x00, 0x20);
-    std::memset(glob_state.foreground_shifter, 0x00, 0x10);
-    std::memset(glob_state.foreground_attributes, 0x00, 0x8);
-    std::memset(glob_state.foreground_positions, 0x00, 0x8);
+    std::memset(_nes.glob_state.clock_decays, 0x00, 0x3);
+    std::memset(_nes.glob_state.background_data, 0x00, 0x4);
+    std::memset(_nes.glob_state.background_shifter, 0x0000, 0x8);
+    std::memset(_nes.glob_state.foreground_data, 0x00, 0x20);
+    std::memset(_nes.glob_state.foreground_shifter, 0x00, 0x10);
+    std::memset(_nes.glob_state.foreground_attributes, 0x00, 0x8);
+    std::memset(_nes.glob_state.foreground_positions, 0x00, 0x8);
 
     std::memset(_palette_cache, 0, sizeof(_palette_cache));
 }
@@ -218,115 +218,115 @@ void cynes::PPU::setOutputModeGrayscale()
 
 void cynes::PPU::power()
 {
-    glob_state.current_y = 0xFF00;
-    glob_state.current_x = 0xFF00;
+    _nes.glob_state.current_y = 0xFF00;
+    _nes.glob_state.current_x = 0xFF00;
 
-    glob_state.rendering_enabled = false;
-    glob_state.rendering_enabled_delayed = false;
-    glob_state.prevent_vertical_blank = false;
+    _nes.glob_state.rendering_enabled = false;
+    _nes.glob_state.rendering_enabled_delayed = false;
+    _nes.glob_state.prevent_vertical_blank = false;
 
-    glob_state.control_increment_mode = false;
-    glob_state.control_foreground_table = false;
-    glob_state.control_background_table = false;
-    glob_state.control_foreground_large = false;
-    glob_state.control_interrupt_on_vertical_blank = false;
+    _nes.glob_state.control_increment_mode = false;
+    _nes.glob_state.control_foreground_table = false;
+    _nes.glob_state.control_background_table = false;
+    _nes.glob_state.control_foreground_large = false;
+    _nes.glob_state.control_interrupt_on_vertical_blank = false;
 
-    glob_state.mask_grayscale_mode = false;
-    glob_state.mask_render_background_left = false;
-    glob_state.mask_render_foreground_left = false;
-    glob_state.mask_render_background = false;
-    glob_state.mask_render_foreground = false;
+    _nes.glob_state.mask_grayscale_mode = false;
+    _nes.glob_state.mask_render_background_left = false;
+    _nes.glob_state.mask_render_foreground_left = false;
+    _nes.glob_state.mask_render_background = false;
+    _nes.glob_state.mask_render_foreground = false;
 
-    glob_state.mask_color_emphasize = 0x00;
+    _nes.glob_state.mask_color_emphasize = 0x00;
 
-    glob_state.status_sprite_overflow = true;
-    glob_state.status_sprite_zero_hit = false;
-    glob_state.status_vertical_blank = true;
+    _nes.glob_state.status_sprite_overflow = true;
+    _nes.glob_state.status_sprite_zero_hit = false;
+    _nes.glob_state.status_vertical_blank = true;
 
-    glob_state.foreground_sprite_pointer = 0x00;
+    _nes.glob_state.foreground_sprite_pointer = 0x00;
 
-    glob_state.latch_address = false;
-    glob_state.ppu_latch_cycle = false;
+    _nes.glob_state.latch_address = false;
+    _nes.glob_state.ppu_latch_cycle = false;
 
-    glob_state.register_t_ = 0x0000;
-    glob_state.register_v = 0x0000;
-    glob_state.scroll_x = 0x00;
+    _nes.glob_state.register_t_ = 0x0000;
+    _nes.glob_state.register_v = 0x0000;
+    _nes.glob_state.scroll_x = 0x00;
 
-    glob_state.delay_data_write_counter = 0x00;
-    glob_state.delay_data_read_counter = 0x00;
-    glob_state.buffer_data = 0x00;
+    _nes.glob_state.delay_data_write_counter = 0x00;
+    _nes.glob_state.delay_data_read_counter = 0x00;
+    _nes.glob_state.buffer_data = 0x00;
 }
 
 void cynes::PPU::reset()
 {
-    glob_state.current_y = 0xFF00;
-    glob_state.current_x = 0xFF00;
+    _nes.glob_state.current_y = 0xFF00;
+    _nes.glob_state.current_x = 0xFF00;
 
-    glob_state.rendering_enabled = false;
-    glob_state.rendering_enabled_delayed = false;
-    glob_state.prevent_vertical_blank = false;
+    _nes.glob_state.rendering_enabled = false;
+    _nes.glob_state.rendering_enabled_delayed = false;
+    _nes.glob_state.prevent_vertical_blank = false;
 
-    glob_state.control_increment_mode = false;
-    glob_state.control_foreground_table = false;
-    glob_state.control_background_table = false;
-    glob_state.control_foreground_large = false;
-    glob_state.control_interrupt_on_vertical_blank = false;
+    _nes.glob_state.control_increment_mode = false;
+    _nes.glob_state.control_foreground_table = false;
+    _nes.glob_state.control_background_table = false;
+    _nes.glob_state.control_foreground_large = false;
+    _nes.glob_state.control_interrupt_on_vertical_blank = false;
 
-    glob_state.mask_grayscale_mode = false;
-    glob_state.mask_render_background_left = false;
-    glob_state.mask_render_foreground_left = false;
-    glob_state.mask_render_background = false;
-    glob_state.mask_render_foreground = false;
+    _nes.glob_state.mask_grayscale_mode = false;
+    _nes.glob_state.mask_render_background_left = false;
+    _nes.glob_state.mask_render_foreground_left = false;
+    _nes.glob_state.mask_render_background = false;
+    _nes.glob_state.mask_render_foreground = false;
 
-    glob_state.mask_color_emphasize = 0x00;
+    _nes.glob_state.mask_color_emphasize = 0x00;
 
-    glob_state.latch_address = false;
-    glob_state.ppu_latch_cycle = false;
+    _nes.glob_state.latch_address = false;
+    _nes.glob_state.ppu_latch_cycle = false;
 
-    glob_state.register_t_ = 0x0000;
-    glob_state.register_v = 0x0000;
-    glob_state.scroll_x = 0x00;
+    _nes.glob_state.register_t_ = 0x0000;
+    _nes.glob_state.register_v = 0x0000;
+    _nes.glob_state.scroll_x = 0x00;
 
-    glob_state.delay_data_write_counter = 0x00;
-    glob_state.delay_data_read_counter = 0x00;
-    glob_state.buffer_data = 0x00;
+    _nes.glob_state.delay_data_write_counter = 0x00;
+    _nes.glob_state.delay_data_read_counter = 0x00;
+    _nes.glob_state.buffer_data = 0x00;
 }
 
 void cynes::PPU::render_pixel_rgb(size_t pixel_offset, uint8_t color_index)
 {
-    memcpy(_frame_buffer.get() + pixel_offset * 3, PALETTE_COLORS[glob_state.mask_color_emphasize][color_index], 3);
+    memcpy(_frame_buffer.get() + pixel_offset * 3, PALETTE_COLORS[_nes.glob_state.mask_color_emphasize][color_index], 3);
 }
 
 void cynes::PPU::render_pixel_gray(size_t pixel_offset, uint8_t color_index)
 {
-    _frame_buffer.get()[pixel_offset] = GRAYSCALE_PALETTE_LOOKUP[glob_state.mask_color_emphasize][color_index];
+    _frame_buffer.get()[pixel_offset] = GRAYSCALE_PALETTE_LOOKUP[_nes.glob_state.mask_color_emphasize][color_index];
 }
 
 void cynes::PPU::tick()
 {
     // --- OPTIMIZATION: Update the palette cache at the start of the visible frame ---
-    if (glob_state.current_y == 0 && glob_state.current_x == 0 && glob_state.rendering_enabled)
+    if (_nes.glob_state.current_y == 0 && _nes.glob_state.current_x == 0 && _nes.glob_state.rendering_enabled)
     {
         update_palette_cache();
     }
-    if (glob_state.current_x > 339)
+    if (_nes.glob_state.current_x > 339)
     {
-        glob_state.current_x = 0;
+        _nes.glob_state.current_x = 0;
 
-        if (++glob_state.current_y > 261)
+        if (++_nes.glob_state.current_y > 261)
         {
-            glob_state.current_y = 0;
-            glob_state.foreground_sprite_count = 0;
+            _nes.glob_state.current_y = 0;
+            _nes.glob_state.foreground_sprite_count = 0;
 
-            glob_state.ppu_latch_cycle = !glob_state.ppu_latch_cycle;
+            _nes.glob_state.ppu_latch_cycle = !_nes.glob_state.ppu_latch_cycle;
 
             for (int k = 0; k < 3; k++)
             {
-                if (glob_state.clock_decays[k] > 0 && --glob_state.clock_decays[k] == 0)
+                if (_nes.glob_state.clock_decays[k] > 0 && --_nes.glob_state.clock_decays[k] == 0)
                 {
-                    if (glob_state.clock_decays[k] > 0 && --glob_state.clock_decays[k] == 0)
+                    if (_nes.glob_state.clock_decays[k] > 0 && --_nes.glob_state.clock_decays[k] == 0)
                     {
-                        glob_state.register_decay &= DECAY_MASKS[k];
+                        _nes.glob_state.register_decay &= DECAY_MASKS[k];
                     }
                 }
             }
@@ -334,160 +334,160 @@ void cynes::PPU::tick()
 
         reset_foreground_data();
 
-        if (glob_state.current_y == 261)
+        if (_nes.glob_state.current_y == 261)
         {
-            glob_state.status_sprite_overflow = false;
-            glob_state.status_sprite_zero_hit = false;
+            _nes.glob_state.status_sprite_overflow = false;
+            _nes.glob_state.status_sprite_zero_hit = false;
 
-            memset(glob_state.foreground_shifter, 0x00, 0x10);
+            memset(_nes.glob_state.foreground_shifter, 0x00, 0x10);
         }
     }
     else
     {
-        glob_state.current_x++;
+        _nes.glob_state.current_x++;
 
-        if (glob_state.current_y < 240)
+        if (_nes.glob_state.current_y < 240)
         {
-            if (glob_state.current_x < 257 || (glob_state.current_x >= 321 && glob_state.current_x < 337))
+            if (_nes.glob_state.current_x < 257 || (_nes.glob_state.current_x >= 321 && _nes.glob_state.current_x < 337))
             {
                 load_background_shifters();
             }
 
-            if (glob_state.current_x == 256)
+            if (_nes.glob_state.current_x == 256)
             {
                 increment_scroll_y();
             }
-            else if (glob_state.current_x == 257)
+            else if (_nes.glob_state.current_x == 257)
             {
                 reset_scroll_x();
             }
 
-            if (glob_state.current_x >= 2 && glob_state.current_x < 257)
+            if (_nes.glob_state.current_x >= 2 && _nes.glob_state.current_x < 257)
             {
                 update_foreground_shifter();
             }
 
-            if (glob_state.current_x < 65)
+            if (_nes.glob_state.current_x < 65)
             {
                 clear_foreground_data();
             }
-            else if (glob_state.current_x < 257)
+            else if (_nes.glob_state.current_x < 257)
             {
                 fetch_foreground_data();
             }
-            else if (glob_state.current_x < 321)
+            else if (_nes.glob_state.current_x < 321)
             {
                 load_foreground_shifter();
             }
 
-            if (glob_state.current_x > 0 && glob_state.current_x < 257 && glob_state.current_y < 240)
+            if (_nes.glob_state.current_x > 0 && _nes.glob_state.current_x < 257 && _nes.glob_state.current_y < 240)
             {
                 uint8_t color_index = _palette_cache[blend_colors()];
-                (this->*_render_pixel)((glob_state.current_y << 8) + glob_state.current_x - 1, color_index);
+                (this->*_render_pixel)((_nes.glob_state.current_y << 8) + _nes.glob_state.current_x - 1, color_index);
             }
         }
-        else if (glob_state.current_y == 240 && glob_state.current_x == 1)
+        else if (_nes.glob_state.current_y == 240 && _nes.glob_state.current_x == 1)
         {
-            _nes.read_ppu(glob_state.register_v);
+            _nes.read_ppu(_nes.glob_state.register_v);
         }
-        else if (glob_state.current_y == 261)
+        else if (_nes.glob_state.current_y == 261)
         {
-            if (glob_state.current_x == 1)
+            if (_nes.glob_state.current_x == 1)
             {
-                glob_state.status_vertical_blank = false;
+                _nes.glob_state.status_vertical_blank = false;
 
                 _nes.cpu.set_non_maskable_interrupt(false);
             }
 
-            if (glob_state.current_x < 257 || (glob_state.current_x >= 321 && glob_state.current_x < 337))
+            if (_nes.glob_state.current_x < 257 || (_nes.glob_state.current_x >= 321 && _nes.glob_state.current_x < 337))
             {
                 load_background_shifters();
             }
 
-            if (glob_state.current_x == 256)
+            if (_nes.glob_state.current_x == 256)
             {
                 increment_scroll_y();
             }
-            else if (glob_state.current_x == 257)
+            else if (_nes.glob_state.current_x == 257)
             {
                 reset_scroll_x();
             }
-            else if (glob_state.current_x >= 280 && glob_state.current_x < 305)
+            else if (_nes.glob_state.current_x >= 280 && _nes.glob_state.current_x < 305)
             {
                 reset_scroll_y();
             }
 
-            if (glob_state.current_x > 1)
+            if (_nes.glob_state.current_x > 1)
             {
-                if (glob_state.current_x < 257)
+                if (_nes.glob_state.current_x < 257)
                 {
                     update_foreground_shifter();
                 }
-                else if (glob_state.current_x < 321)
+                else if (_nes.glob_state.current_x < 321)
                 {
                     load_foreground_shifter();
                 }
             }
 
-            if (glob_state.rendering_enabled && (glob_state.current_x == 337 || glob_state.current_x == 339))
+            if (_nes.glob_state.rendering_enabled && (_nes.glob_state.current_x == 337 || _nes.glob_state.current_x == 339))
             {
-                _nes.read_ppu(0x2000 | (glob_state.register_v & 0x0FFF));
+                _nes.read_ppu(0x2000 | (_nes.glob_state.register_v & 0x0FFF));
 
-                if (glob_state.current_x == 339 && glob_state.ppu_latch_cycle)
+                if (_nes.glob_state.current_x == 339 && _nes.glob_state.ppu_latch_cycle)
                 {
-                    glob_state.current_x = 340;
+                    _nes.glob_state.current_x = 340;
                 }
             }
         }
-        else if (glob_state.current_x == 1 && glob_state.current_y == 241)
+        else if (_nes.glob_state.current_x == 1 && _nes.glob_state.current_y == 241)
         {
-            if (!glob_state.prevent_vertical_blank)
+            if (!_nes.glob_state.prevent_vertical_blank)
             {
-                glob_state.status_vertical_blank = true;
+                _nes.glob_state.status_vertical_blank = true;
 
-                if (glob_state.control_interrupt_on_vertical_blank)
+                if (_nes.glob_state.control_interrupt_on_vertical_blank)
                 {
                     _nes.cpu.set_non_maskable_interrupt(true);
                 }
             }
 
-            glob_state.prevent_vertical_blank = false;
-            glob_state.frame_ready = true;
+            _nes.glob_state.prevent_vertical_blank = false;
+            _nes.glob_state.frame_ready = true;
         }
     }
 
-    if (glob_state.rendering_enabled_delayed != glob_state.rendering_enabled)
+    if (_nes.glob_state.rendering_enabled_delayed != _nes.glob_state.rendering_enabled)
     {
-        glob_state.rendering_enabled_delayed = glob_state.rendering_enabled;
+        _nes.glob_state.rendering_enabled_delayed = _nes.glob_state.rendering_enabled;
 
-        if (glob_state.current_y < 240 || glob_state.current_y == 261)
+        if (_nes.glob_state.current_y < 240 || _nes.glob_state.current_y == 261)
         {
-            if (!glob_state.rendering_enabled_delayed)
+            if (!_nes.glob_state.rendering_enabled_delayed)
             {
-                _nes.read_ppu(glob_state.register_v);
+                _nes.read_ppu(_nes.glob_state.register_v);
 
-                if (glob_state.current_x >= 65 && glob_state.current_x <= 256)
+                if (_nes.glob_state.current_x >= 65 && _nes.glob_state.current_x <= 256)
                 {
-                    glob_state.foreground_sprite_pointer++;
+                    _nes.glob_state.foreground_sprite_pointer++;
                 }
             }
         }
     }
 
-    if (glob_state.delay_data_write_counter > 0 && --glob_state.delay_data_write_counter == 0)
+    if (_nes.glob_state.delay_data_write_counter > 0 && --_nes.glob_state.delay_data_write_counter == 0)
     {
-        glob_state.register_v = glob_state.delayed_register_v;
-        glob_state.register_t_ = glob_state.register_v;
+        _nes.glob_state.register_v = _nes.glob_state.delayed_register_v;
+        _nes.glob_state.register_t_ = _nes.glob_state.register_v;
 
-        if ((glob_state.current_y >= 240 && glob_state.current_y != 261) || !glob_state.rendering_enabled)
+        if ((_nes.glob_state.current_y >= 240 && _nes.glob_state.current_y != 261) || !_nes.glob_state.rendering_enabled)
         {
-            _nes.read_ppu(glob_state.register_v);
+            _nes.read_ppu(_nes.glob_state.register_v);
         }
     }
 
-    if (glob_state.delay_data_read_counter > 0)
+    if (_nes.glob_state.delay_data_read_counter > 0)
     {
-        glob_state.delay_data_read_counter--;
+        _nes.glob_state.delay_data_read_counter--;
     }
 
     _nes.get_mapper().tick();
@@ -495,28 +495,28 @@ void cynes::PPU::tick()
 
 void cynes::PPU::write(uint8_t address, uint8_t value)
 {
-    memset(glob_state.clock_decays, DECAY_PERIOD, 3);
+    memset(_nes.glob_state.clock_decays, DECAY_PERIOD, 3);
 
-    glob_state.register_decay = value;
+    _nes.glob_state.register_decay = value;
 
     switch (static_cast<Register>(address))
     {
     case Register::PPU_CTRL:
     {
-        glob_state.register_t_ &= 0xF3FF;
-        glob_state.register_t_ |= (value & 0x03) << 10;
+        _nes.glob_state.register_t_ &= 0xF3FF;
+        _nes.glob_state.register_t_ |= (value & 0x03) << 10;
 
-        glob_state.control_increment_mode = value & 0x04;
-        glob_state.control_foreground_table = value & 0x08;
-        glob_state.control_background_table = value & 0x10;
-        glob_state.control_foreground_large = value & 0x20;
-        glob_state.control_interrupt_on_vertical_blank = value & 0x80;
+        _nes.glob_state.control_increment_mode = value & 0x04;
+        _nes.glob_state.control_foreground_table = value & 0x08;
+        _nes.glob_state.control_background_table = value & 0x10;
+        _nes.glob_state.control_foreground_large = value & 0x20;
+        _nes.glob_state.control_interrupt_on_vertical_blank = value & 0x80;
 
-        if (!glob_state.control_interrupt_on_vertical_blank)
+        if (!_nes.glob_state.control_interrupt_on_vertical_blank)
         {
             _nes.cpu.set_non_maskable_interrupt(false);
         }
-        else if (glob_state.status_vertical_blank)
+        else if (_nes.glob_state.status_vertical_blank)
         {
             _nes.cpu.set_non_maskable_interrupt(true);
         }
@@ -526,38 +526,38 @@ void cynes::PPU::write(uint8_t address, uint8_t value)
 
     case Register::PPU_MASK:
     {
-        glob_state.mask_grayscale_mode = value & 0x01;
-        glob_state.mask_render_background_left = value & 0x02;
-        glob_state.mask_render_foreground_left = value & 0x04;
-        glob_state.mask_render_background = value & 0x08;
-        glob_state.mask_render_foreground = value & 0x10;
-        glob_state.mask_color_emphasize = value >> 5;
+        _nes.glob_state.mask_grayscale_mode = value & 0x01;
+        _nes.glob_state.mask_render_background_left = value & 0x02;
+        _nes.glob_state.mask_render_foreground_left = value & 0x04;
+        _nes.glob_state.mask_render_background = value & 0x08;
+        _nes.glob_state.mask_render_foreground = value & 0x10;
+        _nes.glob_state.mask_color_emphasize = value >> 5;
 
-        glob_state.rendering_enabled = glob_state.mask_render_background || glob_state.mask_render_foreground;
+        _nes.glob_state.rendering_enabled = _nes.glob_state.mask_render_background || _nes.glob_state.mask_render_foreground;
         break;
     }
 
     case Register::OAM_ADDR:
     {
-        glob_state.foreground_sprite_pointer = value;
+        _nes.glob_state.foreground_sprite_pointer = value;
 
         break;
     }
 
     case Register::OAM_DATA:
     {
-        if ((glob_state.current_y >= 240 && glob_state.current_y != 261) || !glob_state.rendering_enabled)
+        if ((_nes.glob_state.current_y >= 240 && _nes.glob_state.current_y != 261) || !_nes.glob_state.rendering_enabled)
         {
-            if ((glob_state.foreground_sprite_pointer & 0x03) == 0x02)
+            if ((_nes.glob_state.foreground_sprite_pointer & 0x03) == 0x02)
             {
                 value &= 0xE3;
             }
 
-            _nes.write_oam(glob_state.foreground_sprite_pointer++, value);
+            _nes.write_oam(_nes.glob_state.foreground_sprite_pointer++, value);
         }
         else
         {
-            glob_state.foreground_sprite_pointer += 4;
+            _nes.glob_state.foreground_sprite_pointer += 4;
         }
 
         break;
@@ -565,71 +565,71 @@ void cynes::PPU::write(uint8_t address, uint8_t value)
 
     case Register::PPU_SCROLL:
     {
-        if (!glob_state.latch_address)
+        if (!_nes.glob_state.latch_address)
         {
-            glob_state.scroll_x = value & 0x07;
+            _nes.glob_state.scroll_x = value & 0x07;
 
-            glob_state.register_t_ &= 0xFFE0;
-            glob_state.register_t_ |= value >> 3;
+            _nes.glob_state.register_t_ &= 0xFFE0;
+            _nes.glob_state.register_t_ |= value >> 3;
         }
         else
         {
-            glob_state.register_t_ &= 0x8C1F;
+            _nes.glob_state.register_t_ &= 0x8C1F;
 
-            glob_state.register_t_ |= (value & 0xF8) << 2;
-            glob_state.register_t_ |= (value & 0x07) << 12;
+            _nes.glob_state.register_t_ |= (value & 0xF8) << 2;
+            _nes.glob_state.register_t_ |= (value & 0x07) << 12;
         }
 
-        glob_state.latch_address = !glob_state.latch_address;
+        _nes.glob_state.latch_address = !_nes.glob_state.latch_address;
 
         break;
     }
 
     case Register::PPU_ADDR:
     {
-        if (!glob_state.latch_address)
+        if (!_nes.glob_state.latch_address)
         {
-            glob_state.register_t_ &= 0x00FF;
-            glob_state.register_t_ |= value << 8;
+            _nes.glob_state.register_t_ &= 0x00FF;
+            _nes.glob_state.register_t_ |= value << 8;
         }
         else
         {
-            glob_state.register_t_ &= 0xFF00;
-            glob_state.register_t_ |= value;
+            _nes.glob_state.register_t_ &= 0xFF00;
+            _nes.glob_state.register_t_ |= value;
 
-            glob_state.delay_data_write_counter = 3;
-            glob_state.delayed_register_v = glob_state.register_t_;
+            _nes.glob_state.delay_data_write_counter = 3;
+            _nes.glob_state.delayed_register_v = _nes.glob_state.register_t_;
         }
 
-        glob_state.latch_address = !glob_state.latch_address;
+        _nes.glob_state.latch_address = !_nes.glob_state.latch_address;
 
         break;
     }
 
     case Register::PPU_DATA:
     {
-        if ((glob_state.register_v & 0x3FFF) >= 0x3F00)
+        if ((_nes.glob_state.register_v & 0x3FFF) >= 0x3F00)
         {
-            _nes.write_ppu(glob_state.register_v, value);
+            _nes.write_ppu(_nes.glob_state.register_v, value);
         }
         else
         {
-            if ((glob_state.current_y >= 240 && glob_state.current_y != 261) || !glob_state.rendering_enabled)
+            if ((_nes.glob_state.current_y >= 240 && _nes.glob_state.current_y != 261) || !_nes.glob_state.rendering_enabled)
             {
-                _nes.write_ppu(glob_state.register_v, value);
+                _nes.write_ppu(_nes.glob_state.register_v, value);
             }
             else
             {
-                _nes.write_ppu(glob_state.register_v, glob_state.register_v & 0xFF);
+                _nes.write_ppu(_nes.glob_state.register_v, _nes.glob_state.register_v & 0xFF);
             }
         }
 
-        if ((glob_state.current_y >= 240 && glob_state.current_y != 261) || !glob_state.rendering_enabled)
+        if ((_nes.glob_state.current_y >= 240 && _nes.glob_state.current_y != 261) || !_nes.glob_state.rendering_enabled)
         {
-            glob_state.register_v += glob_state.control_increment_mode ? 32 : 1;
-            glob_state.register_v &= 0x7FFF;
+            _nes.glob_state.register_v += _nes.glob_state.control_increment_mode ? 32 : 1;
+            _nes.glob_state.register_v &= 0x7FFF;
 
-            _nes.read_ppu(glob_state.register_v);
+            _nes.read_ppu(_nes.glob_state.register_v);
         }
         else
         {
@@ -651,21 +651,21 @@ uint8_t cynes::PPU::read(uint8_t address)
     {
     case Register::PPU_STATUS:
     {
-        memset(glob_state.clock_decays, DECAY_PERIOD, 2);
+        memset(_nes.glob_state.clock_decays, DECAY_PERIOD, 2);
 
-        glob_state.latch_address = false;
+        _nes.glob_state.latch_address = false;
 
-        glob_state.register_decay &= 0x1F;
-        glob_state.register_decay |= glob_state.status_sprite_overflow << 5;
-        glob_state.register_decay |= glob_state.status_sprite_zero_hit << 6;
-        glob_state.register_decay |= glob_state.status_vertical_blank << 7;
+        _nes.glob_state.register_decay &= 0x1F;
+        _nes.glob_state.register_decay |= _nes.glob_state.status_sprite_overflow << 5;
+        _nes.glob_state.register_decay |= _nes.glob_state.status_sprite_zero_hit << 6;
+        _nes.glob_state.register_decay |= _nes.glob_state.status_vertical_blank << 7;
 
-        glob_state.status_vertical_blank = false;
+        _nes.glob_state.status_vertical_blank = false;
         _nes.cpu.set_non_maskable_interrupt(false);
 
-        if (glob_state.current_y == 241 && glob_state.current_x == 0)
+        if (_nes.glob_state.current_y == 241 && _nes.glob_state.current_x == 0)
         {
-            glob_state.prevent_vertical_blank = true;
+            _nes.glob_state.prevent_vertical_blank = true;
         }
 
         break;
@@ -673,42 +673,42 @@ uint8_t cynes::PPU::read(uint8_t address)
 
     case Register::OAM_DATA:
     {
-        memset(glob_state.clock_decays, DECAY_PERIOD, 3);
+        memset(_nes.glob_state.clock_decays, DECAY_PERIOD, 3);
 
-        glob_state.register_decay = _nes.read_oam(glob_state.foreground_sprite_pointer);
+        _nes.glob_state.register_decay = _nes.read_oam(_nes.glob_state.foreground_sprite_pointer);
 
         break;
     }
 
     case Register::PPU_DATA:
     {
-        if (glob_state.delay_data_read_counter == 0)
+        if (_nes.glob_state.delay_data_read_counter == 0)
         {
-            uint8_t value = _nes.read_ppu(glob_state.register_v);
+            uint8_t value = _nes.read_ppu(_nes.glob_state.register_v);
 
-            if ((glob_state.register_v & 0x3FFF) >= 0x3F00)
+            if ((_nes.glob_state.register_v & 0x3FFF) >= 0x3F00)
             {
-                glob_state.register_decay &= 0xC0;
-                glob_state.register_decay |= value & 0x3F;
+                _nes.glob_state.register_decay &= 0xC0;
+                _nes.glob_state.register_decay |= value & 0x3F;
 
-                glob_state.clock_decays[0] = glob_state.clock_decays[2] = DECAY_PERIOD;
+                _nes.glob_state.clock_decays[0] = _nes.glob_state.clock_decays[2] = DECAY_PERIOD;
 
-                glob_state.buffer_data = _nes.read_ppu(glob_state.register_v - 0x1000);
+                _nes.glob_state.buffer_data = _nes.read_ppu(_nes.glob_state.register_v - 0x1000);
             }
             else
             {
-                glob_state.register_decay = glob_state.buffer_data;
-                glob_state.buffer_data = value;
+                _nes.glob_state.register_decay = _nes.glob_state.buffer_data;
+                _nes.glob_state.buffer_data = value;
 
-                memset(glob_state.clock_decays, DECAY_PERIOD, 3);
+                memset(_nes.glob_state.clock_decays, DECAY_PERIOD, 3);
             }
 
-            if ((glob_state.current_y >= 240 && glob_state.current_y != 261) || !glob_state.rendering_enabled)
+            if ((_nes.glob_state.current_y >= 240 && _nes.glob_state.current_y != 261) || !_nes.glob_state.rendering_enabled)
             {
-                glob_state.register_v += glob_state.control_increment_mode ? 32 : 1;
-                glob_state.register_v &= 0x7FFF;
+                _nes.glob_state.register_v += _nes.glob_state.control_increment_mode ? 32 : 1;
+                _nes.glob_state.register_v &= 0x7FFF;
 
-                _nes.read_ppu(glob_state.register_v);
+                _nes.read_ppu(_nes.glob_state.register_v);
             }
             else
             {
@@ -716,7 +716,7 @@ uint8_t cynes::PPU::read(uint8_t address)
                 increment_scroll_y();
             }
 
-            glob_state.delay_data_read_counter = 6;
+            _nes.glob_state.delay_data_read_counter = 6;
         }
 
         break;
@@ -726,7 +726,7 @@ uint8_t cynes::PPU::read(uint8_t address)
         break;
     }
 
-    return glob_state.register_decay;
+    return _nes.glob_state.register_decay;
 }
 
 const uint8_t *cynes::PPU::get_frame_buffer() const
@@ -736,48 +736,48 @@ const uint8_t *cynes::PPU::get_frame_buffer() const
 
 bool cynes::PPU::is_frame_ready()
 {
-    bool frame_ready = glob_state.frame_ready;
-    glob_state.frame_ready = false;
+    bool frame_ready = _nes.glob_state.frame_ready;
+    _nes.glob_state.frame_ready = false;
 
     return frame_ready;
 }
 
 void cynes::PPU::increment_scroll_x()
 {
-    if (glob_state.mask_render_background || glob_state.mask_render_foreground)
+    if (_nes.glob_state.mask_render_background || _nes.glob_state.mask_render_foreground)
     {
-        if ((glob_state.register_v & 0x001F) == 0x1F)
+        if ((_nes.glob_state.register_v & 0x001F) == 0x1F)
         {
-            glob_state.register_v &= 0xFFE0;
-            glob_state.register_v ^= 0x0400;
+            _nes.glob_state.register_v &= 0xFFE0;
+            _nes.glob_state.register_v ^= 0x0400;
         }
         else
         {
-            glob_state.register_v++;
+            _nes.glob_state.register_v++;
         }
     }
 }
 
 void cynes::PPU::increment_scroll_y()
 {
-    if (glob_state.mask_render_background || glob_state.mask_render_foreground)
+    if (_nes.glob_state.mask_render_background || _nes.glob_state.mask_render_foreground)
     {
-        if ((glob_state.register_v & 0x7000) != 0x7000)
+        if ((_nes.glob_state.register_v & 0x7000) != 0x7000)
         {
-            glob_state.register_v += 0x1000;
+            _nes.glob_state.register_v += 0x1000;
         }
         else
         {
-            glob_state.register_v &= 0x8FFF;
+            _nes.glob_state.register_v &= 0x8FFF;
 
-            uint8_t coarse_y = (glob_state.register_v & 0x03E0) >> 5;
+            uint8_t coarse_y = (_nes.glob_state.register_v & 0x03E0) >> 5;
 
             if (coarse_y == 0x1D)
             {
                 coarse_y = 0;
-                glob_state.register_v ^= 0x0800;
+                _nes.glob_state.register_v ^= 0x0800;
             }
-            else if (((glob_state.register_v >> 5) & 0x1F) == 0x1F)
+            else if (((_nes.glob_state.register_v >> 5) & 0x1F) == 0x1F)
             {
                 coarse_y = 0;
             }
@@ -786,27 +786,27 @@ void cynes::PPU::increment_scroll_y()
                 coarse_y++;
             }
 
-            glob_state.register_v &= 0xFC1F;
-            glob_state.register_v |= coarse_y << 5;
+            _nes.glob_state.register_v &= 0xFC1F;
+            _nes.glob_state.register_v |= coarse_y << 5;
         }
     }
 }
 
 void cynes::PPU::reset_scroll_x()
 {
-    if (glob_state.mask_render_background || glob_state.mask_render_foreground)
+    if (_nes.glob_state.mask_render_background || _nes.glob_state.mask_render_foreground)
     {
-        glob_state.register_v &= 0xFBE0;
-        glob_state.register_v |= glob_state.register_t_ & 0x041F;
+        _nes.glob_state.register_v &= 0xFBE0;
+        _nes.glob_state.register_v |= _nes.glob_state.register_t_ & 0x041F;
     }
 }
 
 void cynes::PPU::reset_scroll_y()
 {
-    if (glob_state.mask_render_background || glob_state.mask_render_foreground)
+    if (_nes.glob_state.mask_render_background || _nes.glob_state.mask_render_foreground)
     {
-        glob_state.register_v &= 0x841F;
-        glob_state.register_v |= glob_state.register_t_ & 0x7BE0;
+        _nes.glob_state.register_v &= 0x841F;
+        _nes.glob_state.register_v |= _nes.glob_state.register_t_ & 0x7BE0;
     }
 }
 
@@ -814,37 +814,37 @@ void cynes::PPU::load_background_shifters()
 {
     update_background_shifters();
 
-    if (glob_state.rendering_enabled)
+    if (_nes.glob_state.rendering_enabled)
     {
-        switch (glob_state.current_x & 0x07)
+        switch (_nes.glob_state.current_x & 0x07)
         {
         case 0x1:
         {
-            glob_state.background_shifter[0] = (glob_state.background_shifter[0] & 0xFF00) | glob_state.background_data[2];
-            glob_state.background_shifter[1] = (glob_state.background_shifter[1] & 0xFF00) | glob_state.background_data[3];
+            _nes.glob_state.background_shifter[0] = (_nes.glob_state.background_shifter[0] & 0xFF00) | _nes.glob_state.background_data[2];
+            _nes.glob_state.background_shifter[1] = (_nes.glob_state.background_shifter[1] & 0xFF00) | _nes.glob_state.background_data[3];
 
-            if (glob_state.background_data[1] & 0x01)
+            if (_nes.glob_state.background_data[1] & 0x01)
             {
-                glob_state.background_shifter[2] = (glob_state.background_shifter[2] & 0xFF00) | 0xFF;
+                _nes.glob_state.background_shifter[2] = (_nes.glob_state.background_shifter[2] & 0xFF00) | 0xFF;
             }
             else
             {
-                glob_state.background_shifter[2] = (glob_state.background_shifter[2] & 0xFF00);
+                _nes.glob_state.background_shifter[2] = (_nes.glob_state.background_shifter[2] & 0xFF00);
             }
 
-            if (glob_state.background_data[1] & 0x02)
+            if (_nes.glob_state.background_data[1] & 0x02)
             {
-                glob_state.background_shifter[3] = (glob_state.background_shifter[3] & 0xFF00) | 0xFF;
+                _nes.glob_state.background_shifter[3] = (_nes.glob_state.background_shifter[3] & 0xFF00) | 0xFF;
             }
             else
             {
-                glob_state.background_shifter[3] = (glob_state.background_shifter[3] & 0xFF00);
+                _nes.glob_state.background_shifter[3] = (_nes.glob_state.background_shifter[3] & 0xFF00);
             }
 
             uint16_t address = 0x2000;
-            address |= glob_state.register_v & 0x0FFF;
+            address |= _nes.glob_state.register_v & 0x0FFF;
 
-            glob_state.background_data[0] = _nes.read_ppu(address);
+            _nes.glob_state.background_data[0] = _nes.read_ppu(address);
 
             break;
         }
@@ -852,46 +852,46 @@ void cynes::PPU::load_background_shifters()
         case 0x3:
         {
             uint16_t address = 0x23C0;
-            address |= glob_state.register_v & 0x0C00;
-            address |= (glob_state.register_v >> 4) & 0x38;
-            address |= (glob_state.register_v >> 2) & 0x07;
+            address |= _nes.glob_state.register_v & 0x0C00;
+            address |= (_nes.glob_state.register_v >> 4) & 0x38;
+            address |= (_nes.glob_state.register_v >> 2) & 0x07;
 
-            glob_state.background_data[1] = _nes.read_ppu(address);
+            _nes.glob_state.background_data[1] = _nes.read_ppu(address);
 
-            if (glob_state.register_v & 0x0040)
+            if (_nes.glob_state.register_v & 0x0040)
             {
-                glob_state.background_data[1] >>= 4;
+                _nes.glob_state.background_data[1] >>= 4;
             }
 
-            if (glob_state.register_v & 0x0002)
+            if (_nes.glob_state.register_v & 0x0002)
             {
-                glob_state.background_data[1] >>= 2;
+                _nes.glob_state.background_data[1] >>= 2;
             }
 
-            glob_state.background_data[1] &= 0x03;
+            _nes.glob_state.background_data[1] &= 0x03;
 
             break;
         }
 
         case 0x5:
         {
-            uint16_t address = glob_state.control_background_table << 12;
-            address |= glob_state.background_data[0] << 4;
-            address |= glob_state.register_v >> 12;
+            uint16_t address = _nes.glob_state.control_background_table << 12;
+            address |= _nes.glob_state.background_data[0] << 4;
+            address |= _nes.glob_state.register_v >> 12;
 
-            glob_state.background_data[2] = _nes.read_ppu(address);
+            _nes.glob_state.background_data[2] = _nes.read_ppu(address);
 
             break;
         }
 
         case 0x7:
         {
-            uint16_t address = glob_state.control_background_table << 12;
-            address |= glob_state.background_data[0] << 4;
-            address |= glob_state.register_v >> 12;
+            uint16_t address = _nes.glob_state.control_background_table << 12;
+            address |= _nes.glob_state.background_data[0] << 4;
+            address |= _nes.glob_state.register_v >> 12;
             address += 0x8;
 
-            glob_state.background_data[3] = _nes.read_ppu(address);
+            _nes.glob_state.background_data[3] = _nes.read_ppu(address);
 
             break;
         }
@@ -905,87 +905,87 @@ void cynes::PPU::load_background_shifters()
 
 void cynes::PPU::update_background_shifters()
 {
-    if (glob_state.mask_render_background || glob_state.mask_render_foreground)
+    if (_nes.glob_state.mask_render_background || _nes.glob_state.mask_render_foreground)
     {
-        glob_state.background_shifter[0] <<= 1;
-        glob_state.background_shifter[1] <<= 1;
-        glob_state.background_shifter[2] <<= 1;
-        glob_state.background_shifter[3] <<= 1;
+        _nes.glob_state.background_shifter[0] <<= 1;
+        _nes.glob_state.background_shifter[1] <<= 1;
+        _nes.glob_state.background_shifter[2] <<= 1;
+        _nes.glob_state.background_shifter[3] <<= 1;
     }
 }
 
 void cynes::PPU::reset_foreground_data()
 {
-    glob_state.foreground_sprite_count_next = glob_state.foreground_sprite_count;
+    _nes.glob_state.foreground_sprite_count_next = _nes.glob_state.foreground_sprite_count;
 
-    glob_state.foreground_data_pointer = 0;
-    glob_state.foreground_sprite_count = 0;
-    glob_state.foreground_evaluation_step = SpriteEvaluationStep::LOAD_SECONDARY_OAM;
-    glob_state.foreground_sprite_zero_line = glob_state.foreground_sprite_zero_should;
-    glob_state.foreground_sprite_zero_should = false;
-    glob_state.foreground_sprite_zero_hit = false;
+    _nes.glob_state.foreground_data_pointer = 0;
+    _nes.glob_state.foreground_sprite_count = 0;
+    _nes.glob_state.foreground_evaluation_step = SpriteEvaluationStep::LOAD_SECONDARY_OAM;
+    _nes.glob_state.foreground_sprite_zero_line = _nes.glob_state.foreground_sprite_zero_should;
+    _nes.glob_state.foreground_sprite_zero_should = false;
+    _nes.glob_state.foreground_sprite_zero_hit = false;
 }
 
 void cynes::PPU::clear_foreground_data()
 {
-    if (glob_state.current_x & 0x01)
+    if (_nes.glob_state.current_x & 0x01)
     {
-        glob_state.foreground_data[glob_state.foreground_data_pointer++] = 0xFF;
+        _nes.glob_state.foreground_data[_nes.glob_state.foreground_data_pointer++] = 0xFF;
 
-        glob_state.foreground_data_pointer &= 0x1F;
+        _nes.glob_state.foreground_data_pointer &= 0x1F;
     }
 }
 
 void cynes::PPU::fetch_foreground_data()
 {
-    if (glob_state.current_x % 2 == 0 && glob_state.rendering_enabled)
+    if (_nes.glob_state.current_x % 2 == 0 && _nes.glob_state.rendering_enabled)
     {
-        uint8_t sprite_size = glob_state.control_foreground_large ? 16 : 8;
+        uint8_t sprite_size = _nes.glob_state.control_foreground_large ? 16 : 8;
 
-        switch (glob_state.foreground_evaluation_step)
+        switch (_nes.glob_state.foreground_evaluation_step)
         {
         case SpriteEvaluationStep::LOAD_SECONDARY_OAM:
         {
-            uint8_t sprite_data = _nes.read_oam(glob_state.foreground_sprite_pointer);
+            uint8_t sprite_data = _nes.read_oam(_nes.glob_state.foreground_sprite_pointer);
 
-            glob_state.foreground_data[glob_state.foreground_sprite_count * 4 + (glob_state.foreground_sprite_pointer & 0x03)] = sprite_data;
+            _nes.glob_state.foreground_data[_nes.glob_state.foreground_sprite_count * 4 + (_nes.glob_state.foreground_sprite_pointer & 0x03)] = sprite_data;
 
-            if (!(glob_state.foreground_sprite_pointer & 0x3))
+            if (!(_nes.glob_state.foreground_sprite_pointer & 0x3))
             {
-                int16_t offset_y = int16_t(glob_state.current_y) - int16_t(sprite_data);
+                int16_t offset_y = int16_t(_nes.glob_state.current_y) - int16_t(sprite_data);
 
                 if (offset_y >= 0 && offset_y < sprite_size)
                 {
-                    if (!glob_state.foreground_sprite_pointer++)
+                    if (!_nes.glob_state.foreground_sprite_pointer++)
                     {
-                        glob_state.foreground_sprite_zero_should = true;
+                        _nes.glob_state.foreground_sprite_zero_should = true;
                     }
                 }
                 else
                 {
-                    glob_state.foreground_sprite_pointer += 4;
+                    _nes.glob_state.foreground_sprite_pointer += 4;
 
-                    if (!glob_state.foreground_sprite_pointer)
+                    if (!_nes.glob_state.foreground_sprite_pointer)
                     {
-                        glob_state.foreground_evaluation_step = SpriteEvaluationStep::IDLE;
+                        _nes.glob_state.foreground_evaluation_step = SpriteEvaluationStep::IDLE;
                     }
-                    else if (glob_state.foreground_sprite_count == 8)
+                    else if (_nes.glob_state.foreground_sprite_count == 8)
                     {
-                        glob_state.foreground_evaluation_step = SpriteEvaluationStep::INCREMENT_POINTER;
+                        _nes.glob_state.foreground_evaluation_step = SpriteEvaluationStep::INCREMENT_POINTER;
                     }
                 }
             }
-            else if (!(++glob_state.foreground_sprite_pointer & 0x03))
+            else if (!(++_nes.glob_state.foreground_sprite_pointer & 0x03))
             {
-                glob_state.foreground_sprite_count++;
+                _nes.glob_state.foreground_sprite_count++;
 
-                if (!glob_state.foreground_sprite_pointer)
+                if (!_nes.glob_state.foreground_sprite_pointer)
                 {
-                    glob_state.foreground_evaluation_step = SpriteEvaluationStep::IDLE;
+                    _nes.glob_state.foreground_evaluation_step = SpriteEvaluationStep::IDLE;
                 }
-                else if (glob_state.foreground_sprite_count == 8)
+                else if (_nes.glob_state.foreground_sprite_count == 8)
                 {
-                    glob_state.foreground_evaluation_step = SpriteEvaluationStep::INCREMENT_POINTER;
+                    _nes.glob_state.foreground_evaluation_step = SpriteEvaluationStep::INCREMENT_POINTER;
                 }
             }
 
@@ -994,34 +994,34 @@ void cynes::PPU::fetch_foreground_data()
 
         case SpriteEvaluationStep::INCREMENT_POINTER:
         {
-            if (glob_state.foreground_read_delay_counter)
+            if (_nes.glob_state.foreground_read_delay_counter)
             {
-                glob_state.foreground_read_delay_counter--;
+                _nes.glob_state.foreground_read_delay_counter--;
             }
             else
             {
-                int16_t offset_y = int16_t(glob_state.current_y) - int16_t(_nes.read_oam(glob_state.foreground_sprite_pointer));
+                int16_t offset_y = int16_t(_nes.glob_state.current_y) - int16_t(_nes.read_oam(_nes.glob_state.foreground_sprite_pointer));
 
                 if (offset_y >= 0 && offset_y < sprite_size)
                 {
-                    glob_state.status_sprite_overflow = true;
+                    _nes.glob_state.status_sprite_overflow = true;
 
-                    glob_state.foreground_sprite_pointer++;
-                    glob_state.foreground_read_delay_counter = 3;
+                    _nes.glob_state.foreground_sprite_pointer++;
+                    _nes.glob_state.foreground_read_delay_counter = 3;
                 }
                 else
                 {
-                    uint8_t low = (glob_state.foreground_sprite_pointer + 1) & 0x03;
+                    uint8_t low = (_nes.glob_state.foreground_sprite_pointer + 1) & 0x03;
 
-                    glob_state.foreground_sprite_pointer += 0x04;
-                    glob_state.foreground_sprite_pointer &= 0xFC;
+                    _nes.glob_state.foreground_sprite_pointer += 0x04;
+                    _nes.glob_state.foreground_sprite_pointer &= 0xFC;
 
-                    if (!glob_state.foreground_sprite_pointer)
+                    if (!_nes.glob_state.foreground_sprite_pointer)
                     {
-                        glob_state.foreground_evaluation_step = SpriteEvaluationStep::IDLE;
+                        _nes.glob_state.foreground_evaluation_step = SpriteEvaluationStep::IDLE;
                     }
 
-                    glob_state.foreground_sprite_pointer |= low;
+                    _nes.glob_state.foreground_sprite_pointer |= low;
                 }
             }
 
@@ -1029,28 +1029,28 @@ void cynes::PPU::fetch_foreground_data()
         }
 
         default:
-            glob_state.foreground_sprite_pointer = 0;
+            _nes.glob_state.foreground_sprite_pointer = 0;
         }
     }
 }
 
 void cynes::PPU::load_foreground_shifter()
 {
-    if (glob_state.rendering_enabled)
+    if (_nes.glob_state.rendering_enabled)
     {
-        glob_state.foreground_sprite_pointer = 0;
+        _nes.glob_state.foreground_sprite_pointer = 0;
 
-        if (glob_state.current_x == 257)
+        if (_nes.glob_state.current_x == 257)
         {
-            glob_state.foreground_data_pointer = 0;
+            _nes.glob_state.foreground_data_pointer = 0;
         }
 
-        switch (glob_state.current_x & 0x7)
+        switch (_nes.glob_state.current_x & 0x7)
         {
         case 0x1:
         {
             uint16_t address = 0x2000;
-            address |= glob_state.register_v & 0x0FFF;
+            address |= _nes.glob_state.register_v & 0x0FFF;
 
             _nes.read_ppu(address);
 
@@ -1060,9 +1060,9 @@ void cynes::PPU::load_foreground_shifter()
         case 0x3:
         {
             uint16_t address = 0x23C0;
-            address |= glob_state.register_v & 0x0C00;
-            address |= (glob_state.register_v >> 4) & 0x38;
-            address |= (glob_state.register_v >> 2) & 0x07;
+            address |= _nes.glob_state.register_v & 0x0C00;
+            address |= (_nes.glob_state.register_v >> 4) & 0x38;
+            address |= (_nes.glob_state.register_v >> 2) & 0x07;
 
             _nes.read_ppu(address);
 
@@ -1071,85 +1071,85 @@ void cynes::PPU::load_foreground_shifter()
 
         case 0x5:
         {
-            uint8_t sprite_index = glob_state.foreground_data[glob_state.foreground_data_pointer * 4 + 1];
-            uint8_t sprite_attribute = glob_state.foreground_data[glob_state.foreground_data_pointer * 4 + 2];
+            uint8_t sprite_index = _nes.glob_state.foreground_data[_nes.glob_state.foreground_data_pointer * 4 + 1];
+            uint8_t sprite_attribute = _nes.glob_state.foreground_data[_nes.glob_state.foreground_data_pointer * 4 + 2];
 
             uint8_t offset = 0x00;
 
-            if (glob_state.foreground_data_pointer < glob_state.foreground_sprite_count)
+            if (_nes.glob_state.foreground_data_pointer < _nes.glob_state.foreground_sprite_count)
             {
-                offset = glob_state.current_y - glob_state.foreground_data[glob_state.foreground_data_pointer * 4];
+                offset = _nes.glob_state.current_y - _nes.glob_state.foreground_data[_nes.glob_state.foreground_data_pointer * 4];
             }
 
-            glob_state.foreground_sprite_address = 0x0000;
+            _nes.glob_state.foreground_sprite_address = 0x0000;
 
-            if (glob_state.control_foreground_large)
+            if (_nes.glob_state.control_foreground_large)
             {
-                glob_state.foreground_sprite_address = (sprite_index & 0x01) << 12;
+                _nes.glob_state.foreground_sprite_address = (sprite_index & 0x01) << 12;
 
                 if (sprite_attribute & 0x80)
                 {
                     if (offset < 8)
                     {
-                        glob_state.foreground_sprite_address |= ((sprite_index & 0xFE) + 1) << 4;
+                        _nes.glob_state.foreground_sprite_address |= ((sprite_index & 0xFE) + 1) << 4;
                     }
                     else
                     {
-                        glob_state.foreground_sprite_address |= ((sprite_index & 0xFE)) << 4;
+                        _nes.glob_state.foreground_sprite_address |= ((sprite_index & 0xFE)) << 4;
                     }
                 }
                 else
                 {
                     if (offset < 8)
                     {
-                        glob_state.foreground_sprite_address |= ((sprite_index & 0xFE)) << 4;
+                        _nes.glob_state.foreground_sprite_address |= ((sprite_index & 0xFE)) << 4;
                     }
                     else
                     {
-                        glob_state.foreground_sprite_address |= ((sprite_index & 0xFE) + 1) << 4;
+                        _nes.glob_state.foreground_sprite_address |= ((sprite_index & 0xFE) + 1) << 4;
                     }
                 }
             }
             else
             {
-                glob_state.foreground_sprite_address = glob_state.control_foreground_table << 12 | sprite_index << 4;
+                _nes.glob_state.foreground_sprite_address = _nes.glob_state.control_foreground_table << 12 | sprite_index << 4;
             }
 
             if (sprite_attribute & 0x80)
             {
-                glob_state.foreground_sprite_address |= (7 - offset) & 0x07;
+                _nes.glob_state.foreground_sprite_address |= (7 - offset) & 0x07;
             }
             else
             {
-                glob_state.foreground_sprite_address |= offset & 0x07;
+                _nes.glob_state.foreground_sprite_address |= offset & 0x07;
             }
 
-            uint8_t sprite_pattern_lsb_plane = _nes.read_ppu(glob_state.foreground_sprite_address);
+            uint8_t sprite_pattern_lsb_plane = _nes.read_ppu(_nes.glob_state.foreground_sprite_address);
 
             if (sprite_attribute & 0x40)
             {
                 sprite_pattern_lsb_plane = REVERSE_BYTE_LOOKUP[sprite_pattern_lsb_plane];
             }
 
-            glob_state.foreground_shifter[glob_state.foreground_data_pointer * 2] = sprite_pattern_lsb_plane;
+            _nes.glob_state.foreground_shifter[_nes.glob_state.foreground_data_pointer * 2] = sprite_pattern_lsb_plane;
 
             break;
         }
 
         case 0x7:
         {
-            uint8_t sprite_pattern_msb_plane = _nes.read_ppu(glob_state.foreground_sprite_address + 8);
+            uint8_t sprite_pattern_msb_plane = _nes.read_ppu(_nes.glob_state.foreground_sprite_address + 8);
 
-            if (glob_state.foreground_data[glob_state.foreground_data_pointer * 4 + 2] & 0x40)
+            if (_nes.glob_state.foreground_data[_nes.glob_state.foreground_data_pointer * 4 + 2] & 0x40)
             {
                 sprite_pattern_msb_plane = REVERSE_BYTE_LOOKUP[sprite_pattern_msb_plane];
             }
 
-            glob_state.foreground_shifter[glob_state.foreground_data_pointer * 2 + 1] = sprite_pattern_msb_plane;
-            glob_state.foreground_positions[glob_state.foreground_data_pointer] = glob_state.foreground_data[glob_state.foreground_data_pointer * 4 + 3];
-            glob_state.foreground_attributes[glob_state.foreground_data_pointer] = glob_state.foreground_data[glob_state.foreground_data_pointer * 4 + 2];
+            _nes.glob_state.foreground_shifter[_nes.glob_state.foreground_data_pointer * 2 + 1] = sprite_pattern_msb_plane;
+            _nes.glob_state.foreground_positions[_nes.glob_state.foreground_data_pointer] = _nes.glob_state.foreground_data[_nes.glob_state.foreground_data_pointer * 4 + 3];
+            _nes.glob_state.foreground_attributes[_nes.glob_state.foreground_data_pointer] = _nes.glob_state.foreground_data[_nes.glob_state.foreground_data_pointer * 4 + 2];
 
-            glob_state.foreground_data_pointer++;
+            _nes.glob_state.foreground_data_pointer++;
 
             break;
         }
@@ -1159,18 +1159,18 @@ void cynes::PPU::load_foreground_shifter()
 
 void cynes::PPU::update_foreground_shifter()
 {
-    if (glob_state.mask_render_foreground)
+    if (_nes.glob_state.mask_render_foreground)
     {
-        for (uint8_t sprite = 0; sprite < glob_state.foreground_sprite_count_next; sprite++)
+        for (uint8_t sprite = 0; sprite < _nes.glob_state.foreground_sprite_count_next; sprite++)
         {
-            if (glob_state.foreground_positions[sprite] > 0)
+            if (_nes.glob_state.foreground_positions[sprite] > 0)
             {
-                glob_state.foreground_positions[sprite]--;
+                _nes.glob_state.foreground_positions[sprite]--;
             }
             else
             {
-                glob_state.foreground_shifter[sprite * 2] <<= 1;
-                glob_state.foreground_shifter[sprite * 2 + 1] <<= 1;
+                _nes.glob_state.foreground_shifter[sprite * 2] <<= 1;
+                _nes.glob_state.foreground_shifter[sprite * 2 + 1] <<= 1;
             }
         }
     }
@@ -1178,43 +1178,43 @@ void cynes::PPU::update_foreground_shifter()
 
 uint8_t cynes::PPU::blend_colors()
 {
-    if (!glob_state.rendering_enabled && (glob_state.register_v & 0x3FFF) >= 0x3F00)
+    if (!_nes.glob_state.rendering_enabled && (_nes.glob_state.register_v & 0x3FFF) >= 0x3F00)
     {
-        return glob_state.register_v & 0x1F;
+        return _nes.glob_state.register_v & 0x1F;
     }
 
     uint8_t background_pixel = 0x00;
     uint8_t background_palette = 0x00;
 
-    if (glob_state.mask_render_background && (glob_state.current_x > 8 || glob_state.mask_render_background_left))
+    if (_nes.glob_state.mask_render_background && (_nes.glob_state.current_x > 8 || _nes.glob_state.mask_render_background_left))
     {
-        uint16_t bit_mask = 0x8000 >> glob_state.scroll_x;
+        uint16_t bit_mask = 0x8000 >> _nes.glob_state.scroll_x;
 
-        background_pixel = ((glob_state.background_shifter[0] & bit_mask) > 0) | (((glob_state.background_shifter[1] & bit_mask) > 0) << 1);
-        background_palette = ((glob_state.background_shifter[2] & bit_mask) > 0) | (((glob_state.background_shifter[3] & bit_mask) > 0) << 1);
+        background_pixel = ((_nes.glob_state.background_shifter[0] & bit_mask) > 0) | (((_nes.glob_state.background_shifter[1] & bit_mask) > 0) << 1);
+        background_palette = ((_nes.glob_state.background_shifter[2] & bit_mask) > 0) | (((_nes.glob_state.background_shifter[3] & bit_mask) > 0) << 1);
     }
 
     uint8_t foreground_pixel = 0x00;
     uint8_t foreground_palette = 0x00;
     uint8_t foreground_priority = 0x00;
 
-    if (glob_state.mask_render_foreground && (glob_state.current_x > 8 || glob_state.mask_render_foreground_left))
+    if (_nes.glob_state.mask_render_foreground && (_nes.glob_state.current_x > 8 || _nes.glob_state.mask_render_foreground_left))
     {
-        glob_state.foreground_sprite_zero_hit = false;
+        _nes.glob_state.foreground_sprite_zero_hit = false;
 
-        for (uint8_t sprite = 0; sprite < glob_state.foreground_sprite_count_next; sprite++)
+        for (uint8_t sprite = 0; sprite < _nes.glob_state.foreground_sprite_count_next; sprite++)
         {
-            if (glob_state.foreground_positions[sprite] == 0)
+            if (_nes.glob_state.foreground_positions[sprite] == 0)
             {
-                foreground_pixel = ((glob_state.foreground_shifter[sprite * 2] & 0x80) > 0) | (((glob_state.foreground_shifter[sprite * 2 + 1] & 0x80) > 0) << 1);
-                foreground_palette = (glob_state.foreground_attributes[sprite] & 0x03) + 0x04;
-                foreground_priority = (glob_state.foreground_attributes[sprite] & 0x20) == 0x00;
+                foreground_pixel = ((_nes.glob_state.foreground_shifter[sprite * 2] & 0x80) > 0) | (((_nes.glob_state.foreground_shifter[sprite * 2 + 1] & 0x80) > 0) << 1);
+                foreground_palette = (_nes.glob_state.foreground_attributes[sprite] & 0x03) + 0x04;
+                foreground_priority = (_nes.glob_state.foreground_attributes[sprite] & 0x20) == 0x00;
 
                 if (foreground_pixel != 0)
                 {
-                    if (sprite == 0 && glob_state.current_x != 256)
+                    if (sprite == 0 && _nes.glob_state.current_x != 256)
                     {
-                        glob_state.foreground_sprite_zero_hit = true;
+                        _nes.glob_state.foreground_sprite_zero_hit = true;
                     }
 
                     break;
@@ -1240,14 +1240,14 @@ uint8_t cynes::PPU::blend_colors()
         final_palette = foreground_palette;
     }
 
-    if (b_is_opaque && f_is_opaque && glob_state.foreground_sprite_zero_hit && glob_state.foreground_sprite_zero_line && (glob_state.current_x > 8 || glob_state.mask_render_background_left || glob_state.mask_render_foreground_left))
+    if (b_is_opaque && f_is_opaque && _nes.glob_state.foreground_sprite_zero_hit && _nes.glob_state.foreground_sprite_zero_line && (_nes.glob_state.current_x > 8 || _nes.glob_state.mask_render_background_left || _nes.glob_state.mask_render_foreground_left))
     {
-        glob_state.status_sprite_zero_hit = true;
+        _nes.glob_state.status_sprite_zero_hit = true;
     }
 
     final_pixel |= final_palette << 2;
 
-    if (glob_state.mask_grayscale_mode)
+    if (_nes.glob_state.mask_grayscale_mode)
     {
         final_pixel &= 0x30;
     }

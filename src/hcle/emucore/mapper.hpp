@@ -298,19 +298,7 @@ namespace cynes
     class MMC : public Mapper
     {
     public:
-        MMC(NES &nes, const ParsedMemory &metadata, MirroringMode mode) : Mapper(nes, metadata, mode)
-        {
-            map_bank_chr(0x0, 0x8, 0x0);
-
-            map_bank_prg(0x20, BANK_SIZE, 0x0);
-            map_bank_prg(0x20 + BANK_SIZE, 0x20 - BANK_SIZE, _banks_prg - 0x20 + BANK_SIZE);
-
-            map_bank_cpu_ram(0x18, 0x8, 0x0, true);
-
-            memset(glob_state.latches, false, 0x2);
-            memset(glob_state.selected_banks, 0x0, 0x4);
-        }
-
+        MMC(NES &nes, const ParsedMemory &metadata, MirroringMode mode);
         ~MMC() = default;
 
     public:
@@ -319,103 +307,17 @@ namespace cynes
         /// should not be used as a memory set function.
         /// @param address Memory address within the console memory address space.
         /// @param value Value to write.
-        virtual void write_cpu(uint16_t address, uint8_t value)
-        {
-            if (address < 0xA000)
-            {
-                Mapper::write_cpu(address, value);
-            }
-            else if (address < 0xB000)
-            {
-                map_bank_prg(0x20, BANK_SIZE, (value & 0xF) * BANK_SIZE);
-            }
-            else if (address < 0xC000)
-            {
-                glob_state.selected_banks[0x0] = value & 0x1F;
-                update_banks();
-            }
-            else if (address < 0xD000)
-            {
-                glob_state.selected_banks[0x1] = value & 0x1F;
-                update_banks();
-            }
-            else if (address < 0xE000)
-            {
-                glob_state.selected_banks[0x2] = value & 0x1F;
-                update_banks();
-            }
-            else if (address < 0xF000)
-            {
-                glob_state.selected_banks[0x3] = value & 0x1F;
-                update_banks();
-            }
-            else
-            {
-                if (value & 0x01)
-                {
-                    set_mirroring_mode(MirroringMode::HORIZONTAL);
-                }
-                else
-                {
-                    set_mirroring_mode(MirroringMode::VERTICAL);
-                }
-            }
-        }
+        void write_cpu(uint16_t address, uint8_t value) override;
 
         /// Read from the PPU memory mapped banks.
         /// @note This function has other side effects than simply reading from memory, it
         /// should not be used as a memory watch function.
         /// @param address Memory address within the console memory address space.
         /// @return The value stored at the given address.
-        virtual uint8_t read_ppu(uint16_t address)
-        {
-            uint8_t value = Mapper::read_ppu(address);
-
-            if (address == 0x0FD8)
-            {
-                glob_state.latches[0] = true;
-                update_banks();
-            }
-            else if (address == 0x0FE8)
-            {
-                glob_state.latches[0] = false;
-                update_banks();
-            }
-            else if (address >= 0x1FD8 && address < 0x1FE0)
-            {
-                glob_state.latches[1] = true;
-                update_banks();
-            }
-            else if (address >= 0x1FE8 && address < 0x1FF0)
-            {
-                glob_state.latches[1] = false;
-                update_banks();
-            }
-
-            return value;
-        }
+        virtual uint8_t read_ppu(uint16_t address);
 
     private:
-        void update_banks()
-        {
-            if (glob_state.latches[0])
-            {
-                map_bank_chr(0x0, 0x4, glob_state.selected_banks[0x0] << 2);
-            }
-            else
-            {
-                map_bank_chr(0x0, 0x4, glob_state.selected_banks[0x1] << 2);
-            }
-
-            if (glob_state.latches[1])
-            {
-                map_bank_chr(0x4, 0x4, glob_state.selected_banks[0x2] << 2);
-            }
-            else
-            {
-                map_bank_chr(0x4, 0x4, glob_state.selected_banks[0x3] << 2);
-            }
-        }
+        void update_banks();
     };
 
     using MMC2 = MMC<0x08>;
