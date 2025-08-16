@@ -9,30 +9,6 @@
 
 #include "utils.hpp"
 
-struct MemoryBankNew
-{
-    size_t offset;
-    bool read_only;
-    bool mapped;
-};
-
-struct MapperState
-{
-    const uint16_t banks_prg;
-    const uint16_t banks_chr;
-    const uint8_t banks_cpu_ram;
-    const uint8_t banks_ppu_ram;
-
-    const size_t size_prg;
-    const size_t size_chr;
-    const size_t size_cpu_ram;
-    const size_t size_ppu_ram;
-    const bool read_only_chr;
-
-    std::array<MemoryBankNew, 0x40> _banks_cpu;
-    std::array<MemoryBankNew, 0x10> _banks_ppu;
-};
-
 namespace cynes
 {
     // Forward declaration.
@@ -121,46 +97,25 @@ namespace cynes
         virtual uint8_t read_ppu(uint16_t address);
 
     protected:
-        /// A memory bank provides a view within the mapper memory.
-        // Each bank is exactly 0x400 bytes large.
-        struct MemoryBank
-        {
-        public:
-            /// Initialize an unmapped bank.
-            MemoryBank();
-
-            /// Initialize a mapped bank using the given offset.
-            /// @param offset Mapper memory offset.
-            /// @param read_only Bank read only flag.
-            MemoryBank(size_t offset, bool read_only);
-
-            /// Default destructor.
-            ~MemoryBank() = default;
-
-        public:
-            size_t offset;
-            bool read_only;
-            bool mapped;
-
-            template <DumpOperation operation, typename T>
-            constexpr void dump(T &buffer)
-            {
-                cynes::dump<operation>(buffer, offset);
-                cynes::dump<operation>(buffer, read_only);
-                cynes::dump<operation>(buffer, mapped);
-            }
-        };
-
-    protected:
         NES &_nes;
 
-    public:
-        MapperState _state;
+    protected:
+        const uint16_t _banks_prg;
+        const uint16_t _banks_chr;
+        const uint8_t _banks_cpu_ram;
+        const uint8_t _banks_ppu_ram;
+
+    private:
+        const size_t _size_prg;
+        const size_t _size_chr;
+        const size_t _size_cpu_ram;
+        const size_t _size_ppu_ram;
+        const bool _read_only_chr;
 
         std::unique_ptr<uint8_t[]> _memory;
 
-        std::array<MemoryBank, 0x40> _banks_cpu;
-        std::array<MemoryBank, 0x10> _banks_ppu;
+        uint8_t *start_addr;
+        size_t data_size;
 
     protected:
         void map_bank_prg(uint8_t page, uint16_t address);
@@ -187,30 +142,25 @@ namespace cynes
         template <DumpOperation operation, typename T>
         constexpr void dump(T &buffer)
         {
-            for (uint8_t k = 0x00; k < 0x40; k++)
-            {
-                _banks_cpu[k].dump<operation>(buffer);
-            }
 
-            for (uint8_t k = 0x00; k < 0x10; k++)
-            {
-                _banks_ppu[k].dump<operation>(buffer);
-            }
+            cynes::dump<operation>(buffer, start_addr, data_size);
 
-            if (!_state.read_only_chr)
-            {
-                cynes::dump<operation>(buffer, _memory.get() + _state.size_prg, _state.size_chr);
-            }
+            // Note to self: I'm commenting this out on the assumption that if !_size_ppu_ram then
+            // _size_ppu_ram == 0 and so adding it to the start address does not increase the size
+            // of the dump and therefore naturally prevents that data from being copied.
 
-            if (_state.size_cpu_ram)
-            {
-                cynes::dump<operation>(buffer, _memory.get() + _state.size_prg + _state.size_chr, _state.size_cpu_ram);
-            }
-
-            if (_state.size_ppu_ram)
-            {
-                cynes::dump<operation>(buffer, _memory.get() + _state.size_prg + _state.size_chr + _state.size_cpu_ram, _state.size_ppu_ram);
-            }
+            // if (_size_cpu_ram && _size_ppu_ram)
+            // {
+            //     cynes::dump<operation>(buffer, start_addr, _size_cpu_ram + _size_ppu_ram);
+            // }
+            // else if (!_size_ppu_ram)
+            // {
+            //     cynes::dump<operation>(buffer, start_addr, _size_cpu_ram);
+            // }
+            // else
+            // {
+            //     cynes::dump<operation>(buffer, start_addr + _size_cpu_ram, _size_ppu_ram);
+            // }
         }
     };
 
@@ -243,24 +193,6 @@ namespace cynes
     private:
         void write_registers(uint8_t register_target, uint8_t value);
         void update_banks();
-
-    private:
-        uint8_t _tick;
-        uint8_t _registers[0x4];
-        uint8_t _register;
-        uint8_t _counter;
-
-    public:
-        template <DumpOperation operation, typename T>
-        constexpr void dump(T &buffer)
-        {
-            Mapper::dump<operation>(buffer);
-
-            cynes::dump<operation>(buffer, _tick);
-            cynes::dump<operation>(buffer, _registers);
-            cynes::dump<operation>(buffer, _register);
-            cynes::dump<operation>(buffer, _counter);
-        }
     };
 
     /// UxROM mapper (see https://www.nesdev.org/wiki/UxROM).
@@ -343,36 +275,6 @@ namespace cynes
 
     private:
         void update_state(bool state);
-
-    private:
-        uint32_t _tick;
-        uint32_t _registers[0x8];
-        uint16_t _counter;
-        uint16_t _counter_reset_value;
-
-        uint8_t _register_target;
-
-        bool _mode_prg;
-        bool _mode_chr;
-        bool _enable_interrupt;
-        bool _should_reload_interrupt;
-
-    public:
-        template <DumpOperation operation, typename T>
-        constexpr void dump(T &buffer)
-        {
-            Mapper::dump<operation>(buffer);
-
-            cynes::dump<operation>(buffer, _tick);
-            cynes::dump<operation>(buffer, _registers);
-            cynes::dump<operation>(buffer, _counter);
-            cynes::dump<operation>(buffer, _counter_reset_value);
-            cynes::dump<operation>(buffer, _register_target);
-            cynes::dump<operation>(buffer, _mode_prg);
-            cynes::dump<operation>(buffer, _mode_chr);
-            cynes::dump<operation>(buffer, _enable_interrupt);
-            cynes::dump<operation>(buffer, _should_reload_interrupt);
-        }
     };
 
     /// AxROM mapper (see https://www.nesdev.org/wiki/AxROM).
@@ -401,12 +303,12 @@ namespace cynes
             map_bank_chr(0x0, 0x8, 0x0);
 
             map_bank_prg(0x20, BANK_SIZE, 0x0);
-            map_bank_prg(0x20 + BANK_SIZE, 0x20 - BANK_SIZE, _state.banks_prg - 0x20 + BANK_SIZE);
+            map_bank_prg(0x20 + BANK_SIZE, 0x20 - BANK_SIZE, _banks_prg - 0x20 + BANK_SIZE);
 
             map_bank_cpu_ram(0x18, 0x8, 0x0, true);
 
-            memset(_latches, false, 0x2);
-            memset(_selected_banks, 0x0, 0x4);
+            memset(glob_state.latches, false, 0x2);
+            memset(glob_state.selected_banks, 0x0, 0x4);
         }
 
         ~MMC() = default;
@@ -429,22 +331,22 @@ namespace cynes
             }
             else if (address < 0xC000)
             {
-                _selected_banks[0x0] = value & 0x1F;
+                glob_state.selected_banks[0x0] = value & 0x1F;
                 update_banks();
             }
             else if (address < 0xD000)
             {
-                _selected_banks[0x1] = value & 0x1F;
+                glob_state.selected_banks[0x1] = value & 0x1F;
                 update_banks();
             }
             else if (address < 0xE000)
             {
-                _selected_banks[0x2] = value & 0x1F;
+                glob_state.selected_banks[0x2] = value & 0x1F;
                 update_banks();
             }
             else if (address < 0xF000)
             {
-                _selected_banks[0x3] = value & 0x1F;
+                glob_state.selected_banks[0x3] = value & 0x1F;
                 update_banks();
             }
             else
@@ -471,22 +373,22 @@ namespace cynes
 
             if (address == 0x0FD8)
             {
-                _latches[0] = true;
+                glob_state.latches[0] = true;
                 update_banks();
             }
             else if (address == 0x0FE8)
             {
-                _latches[0] = false;
+                glob_state.latches[0] = false;
                 update_banks();
             }
             else if (address >= 0x1FD8 && address < 0x1FE0)
             {
-                _latches[1] = true;
+                glob_state.latches[1] = true;
                 update_banks();
             }
             else if (address >= 0x1FE8 && address < 0x1FF0)
             {
-                _latches[1] = false;
+                glob_state.latches[1] = false;
                 update_banks();
             }
 
@@ -496,38 +398,23 @@ namespace cynes
     private:
         void update_banks()
         {
-            if (_latches[0])
+            if (glob_state.latches[0])
             {
-                map_bank_chr(0x0, 0x4, _selected_banks[0x0] << 2);
+                map_bank_chr(0x0, 0x4, glob_state.selected_banks[0x0] << 2);
             }
             else
             {
-                map_bank_chr(0x0, 0x4, _selected_banks[0x1] << 2);
+                map_bank_chr(0x0, 0x4, glob_state.selected_banks[0x1] << 2);
             }
 
-            if (_latches[1])
+            if (glob_state.latches[1])
             {
-                map_bank_chr(0x4, 0x4, _selected_banks[0x2] << 2);
+                map_bank_chr(0x4, 0x4, glob_state.selected_banks[0x2] << 2);
             }
             else
             {
-                map_bank_chr(0x4, 0x4, _selected_banks[0x3] << 2);
+                map_bank_chr(0x4, 0x4, glob_state.selected_banks[0x3] << 2);
             }
-        }
-
-    private:
-        bool _latches[0x2];
-
-        uint8_t _selected_banks[0x4];
-
-    public:
-        template <DumpOperation operation, typename T>
-        constexpr void dump(T &buffer)
-        {
-            Mapper::dump<operation>(buffer);
-
-            cynes::dump<operation>(buffer, _latches);
-            cynes::dump<operation>(buffer, _selected_banks);
         }
     };
 

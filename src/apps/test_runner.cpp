@@ -27,16 +27,16 @@ void saveObsToRaw(std::vector<uint8_t> *obs_buffer)
 int main(int argc, char **argv)
 {
     // --- Configuration ---
-    const int num_envs = 64;
+    const int num_envs = 1;
     const std::string rom_path = "C:\\Users\\offan\\Downloads\\hcle_py_cpp\\src\\hcle\\python\\hcle_py\\roms\\smb1.bin";
     const std::string game_name = "smb1";
-    const std::string render_mode = "rgb_array";
+    const std::string render_mode = "human";
     const int num_steps = 1000;
 
     try
     {
         std::cout << "Creating HCLEVectorEnvironment (num_envs=" << num_envs << ")...\n";
-        hcle::environment::HCLEVectorEnvironment env(num_envs, rom_path, game_name, render_mode, 84, 84, 4, true, true, 4);
+        hcle::environment::HCLEVectorEnvironment env(num_envs, rom_path, game_name, render_mode, 84, 84, 4, true, false, 4);
         printf("HCLEVectorEnvironment created.\n");
 
         // --- Pre-allocate memory buffers for results ---

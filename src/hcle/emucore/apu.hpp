@@ -5,43 +5,6 @@
 
 #include "utils.hpp"
 
-struct APUState
-{
-    bool latch_cycle;
-
-    uint8_t delay_dma;
-    uint8_t address_dma;
-
-    bool pending_dma;
-
-    uint32_t frame_counter_clock;
-    uint32_t delay_frame_reset;
-
-    uint8_t channels_counters[0x4];
-
-    bool channel_enabled[0x4];
-    bool channel_halted[0x4];
-
-    bool step_mode;
-
-    bool inhibit_frame_interrupt;
-    bool send_frame_interrupt;
-
-    uint16_t delta_channel_remaining_bytes;
-    uint16_t delta_channel_sample_length;
-    uint16_t delta_channel_period_counter;
-    uint16_t delta_channel_period_load;
-
-    uint8_t delta_channel_bits_in_buffer;
-
-    bool delta_channel_should_loop;
-    bool delta_channel_enable_interrupt;
-    bool delta_channel_sample_buffer_empty;
-
-    bool enable_dmc;
-    bool send_delta_channel_interrupt;
-};
-
 namespace cynes
 {
     // Forward declaration.
@@ -86,7 +49,6 @@ namespace cynes
 
     private:
         NES &_nes;
-        APUState _state;
 
     private:
         void update_counters();
@@ -118,13 +80,6 @@ namespace cynes
             CTRL_STATUS = 0x15,
             FRAME_COUNTER = 0x17
         };
-
-    public:
-        template <DumpOperation operation, typename T>
-        constexpr void dump(T &buffer)
-        {
-            cynes::dump<operation>(buffer, _state);
-        }
     };
 }
 

@@ -77,7 +77,7 @@ namespace cynes
 
     private:
         NES &_nes;
-        CPUState _state;
+        // CPUState _state;
 
     private:
         uint8_t fetch_next();
@@ -217,7 +217,7 @@ namespace cynes
         template <DumpOperation operation, typename T>
         constexpr void dump(T &buffer)
         {
-            cynes::dump<operation>(buffer, _state);
+            cynes::dump<operation>(buffer, glob_state);
         }
     };
 }

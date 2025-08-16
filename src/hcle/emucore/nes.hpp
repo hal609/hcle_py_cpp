@@ -24,6 +24,10 @@ struct NESState
     // Add mapper state variables here if they need to be saved.
 };
 
+struct MemoryStruct
+{
+};
+
 namespace cynes
 {
     /// Main NES class, contains the RAM, CPU, PPU, APU, Mapper, etc...
@@ -148,9 +152,7 @@ namespace cynes
         std::unique_ptr<Mapper> _mapper;
 
     private:
-        std::unique_ptr<uint8_t[]> _memory_cpu;
-        std::unique_ptr<uint8_t[]> _memory_oam;
-        std::unique_ptr<uint8_t[]> _memory_palette;
+        MemoryStruct _mem;
 
         uint8_t _open_bus;
 

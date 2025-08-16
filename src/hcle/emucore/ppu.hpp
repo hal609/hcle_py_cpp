@@ -6,79 +6,12 @@
 
 #include "utils.hpp"
 
-enum class SpriteEvaluationStep
-{
-    LOAD_SECONDARY_OAM,
-    INCREMENT_POINTER,
-    IDLE
-};
-
-struct PPUState
-{
-    uint16_t current_x;
-    uint16_t current_y;
-
-    bool frame_ready;
-
-    bool rendering_enabled;
-    bool rendering_enabled_delayed;
-    bool prevent_vertical_blank;
-
-    bool control_increment_mode;
-    bool control_foreground_table;
-    bool control_background_table;
-    bool control_foreground_large;
-    bool control_interrupt_on_vertical_blank;
-
-    bool mask_grayscale_mode;
-    bool mask_render_background_left;
-    bool mask_render_foreground_left;
-    bool mask_render_background;
-    bool mask_render_foreground;
-
-    uint8_t mask_color_emphasize;
-
-    bool status_sprite_overflow;
-    bool status_sprite_zero_hit;
-    bool status_vertical_blank;
-
-    uint8_t clock_decays[3];
-    uint8_t register_decay;
-
-    bool latch_cycle;
-    bool latch_address;
-
-    uint16_t register_t_;
-    uint16_t register_v;
-    uint16_t delayed_register_v;
-
-    uint8_t scroll_x;
-    uint8_t delay_data_read_counter;
-    uint8_t delay_data_write_counter;
-    uint8_t buffer_data;
-
-    uint8_t background_data[0x4];
-    uint16_t background_shifter[0x4];
-
-    uint8_t foreground_data[0x20];
-    uint8_t foreground_shifter[0x10];
-    uint8_t foreground_attributes[0x8];
-    uint8_t foreground_positions[0x8];
-
-    uint8_t foreground_data_pointer;
-    uint8_t foreground_sprite_count;
-    uint8_t foreground_sprite_count_next;
-    uint8_t foreground_sprite_pointer;
-    uint8_t foreground_read_delay_counter;
-
-    uint16_t foreground_sprite_address;
-
-    bool foreground_sprite_zero_line;
-    bool foreground_sprite_zero_should;
-    bool foreground_sprite_zero_hit;
-
-    SpriteEvaluationStep foreground_evaluation_step;
-};
+// enum struct SpriteEvaluationStep
+// {
+//     LOAD_SECONDARY_OAM,
+//     INCREMENT_POINTER,
+//     IDLE
+// };
 
 namespace cynes
 {
@@ -131,7 +64,7 @@ namespace cynes
 
     private:
         NES &_nes;
-        PPUState _state;
+        // PPUState _state;
 
     private:
         std::unique_ptr<uint8_t[]> _frame_buffer;
@@ -181,13 +114,6 @@ namespace cynes
             PPU_ADDR = 0x06,
             PPU_DATA = 0x07
         };
-
-    public:
-        template <DumpOperation operation, typename T>
-        constexpr void dump(T &buffer)
-        {
-            cynes::dump<operation>(buffer, _state);
-        }
     };
 }
 
