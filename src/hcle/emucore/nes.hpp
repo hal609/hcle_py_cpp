@@ -131,14 +131,16 @@ namespace cynes
         PPU ppu;
         APU apu;
 
-        FullState glob_state;
-
         Mapper &get_mapper();
 
     private:
         std::unique_ptr<Mapper> _mapper;
 
     private:
+        std::unique_ptr<uint8_t[]> _memory_cpu;
+        std::unique_ptr<uint8_t[]> _memory_oam;
+        std::unique_ptr<uint8_t[]> _memory_palette;
+
         uint8_t _open_bus;
 
         uint8_t _controller_status[0x2];

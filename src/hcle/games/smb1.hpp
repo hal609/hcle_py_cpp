@@ -33,8 +33,8 @@ namespace hcle
             static const int X_POS = 0x0086;
             static const int LEVEL_LOADING = 0x0772;
 
-            static bool has_backup;
-            static uint8_t backup_state[cynes::FULL_STATE_SIZE];
+            static bool has_backup_;
+            static std::vector<uint8_t> backup_state_;
 
             std::vector<uint8_t> action_set;
         };

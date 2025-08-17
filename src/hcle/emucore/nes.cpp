@@ -5,8 +5,6 @@
 #include "ppu.hpp"
 #include "mapper.hpp"
 
-#include "utils.hpp"
-
 static constexpr uint8_t PALETTE_RAM_BOOT_VALUES[0x20] = {
     0x09, 0x01, 0x00, 0x01, 0x00, 0x02, 0x02, 0x0D,
     0x08, 0x10, 0x08, 0x24, 0x00, 0x00, 0x04, 0x2C,
@@ -14,19 +12,15 @@ static constexpr uint8_t PALETTE_RAM_BOOT_VALUES[0x20] = {
     0x08, 0x3A, 0x00, 0x02, 0x00, 0x20, 0x2C, 0x08};
 
 cynes::NES::NES(const char *path)
-    : cpu{*this},
-      ppu{*this},
-      apu{*this},
-      _mapper{Mapper::load_mapper(static_cast<NES &>(*this), path)}
+    : cpu{*this}, ppu{*this}, apu{*this}, _mapper{Mapper::load_mapper(static_cast<NES &>(*this), path)}, _memory_cpu{new uint8_t[0x800]}, _memory_oam{new uint8_t[0x100]}, _memory_palette{new uint8_t[0x20]}
 {
-    printf("Full global state has size: %zu bytes\n", sizeof(glob_state));
     cpu.power();
     ppu.power();
     apu.power();
 
-    std::memcpy(glob_state.mem_palette, PALETTE_RAM_BOOT_VALUES, sizeof(glob_state.mem_palette));
-    std::memset(glob_state.mem_cpu, 0x00, sizeof(glob_state.mem_cpu));
-    std::memset(glob_state.mem_oam, 0x00, sizeof(glob_state.mem_oam));
+    std::memcpy(_memory_palette.get(), PALETTE_RAM_BOOT_VALUES, 0x20);
+    std::memset(_memory_cpu.get(), 0x00, 0x800);
+    std::memset(_memory_oam.get(), 0x00, 0x100);
     std::memset(_controller_status, 0x00, 0x2);
     std::memset(_controller_shifters, 0x00, 0x2);
 
@@ -58,6 +52,7 @@ void cynes::NES::dummy_read()
     apu.tick(true);
     ppu.tick();
     ppu.tick();
+    ppu.tick();
     cpu.poll();
 }
 
@@ -79,7 +74,7 @@ void cynes::NES::write_cpu(uint16_t address, uint8_t value)
 
     if (address < 0x2000)
     {
-        glob_state.mem_cpu[address & 0x7FF] = value;
+        _memory_cpu[address & 0x7FF] = value;
     }
     else if (address < 0x4000)
     {
@@ -128,13 +123,13 @@ void cynes::NES::write_ppu(uint16_t address, uint8_t value)
             address = 0x0C;
         }
 
-        glob_state.mem_palette[address] = value & 0x3F;
+        _memory_palette[address] = value & 0x3F;
     }
 }
 
 void cynes::NES::write_oam(uint8_t address, uint8_t value)
 {
-    glob_state.mem_oam[address] = value;
+    _memory_oam[address] = value;
 }
 
 uint8_t cynes::NES::read(uint16_t address)
@@ -153,14 +148,14 @@ uint8_t cynes::NES::read(uint16_t address)
 
 const uint8_t *cynes::NES::get_ram_pointer() const
 {
-    return glob_state.mem_cpu;
+    return reinterpret_cast<const uint8_t *>(_memory_cpu.get());
 }
 
 uint8_t cynes::NES::read_cpu(uint16_t address)
 {
     if (address < 0x2000)
     {
-        return glob_state.mem_cpu[address & 0x7FF];
+        return _memory_cpu[address & 0x7FF];
     }
     else if (address < 0x4000)
     {
@@ -201,13 +196,13 @@ uint8_t cynes::NES::read_ppu(uint16_t address)
     }
     else
     {
-        return glob_state.mem_palette[PALETTE_MIRROR_MAP[address & 0x1F]];
+        return _memory_palette[PALETTE_MIRROR_MAP[address & 0x1F]];
     }
 }
 
 uint8_t cynes::NES::read_oam(uint8_t address) const
 {
-    return glob_state.mem_oam[address];
+    return _memory_oam[address];
 }
 
 uint8_t cynes::NES::get_open_bus() const
@@ -246,26 +241,12 @@ unsigned int cynes::NES::size()
 
 void cynes::NES::save(uint8_t *buffer)
 {
-    if (_mapper->chr_is_read_only())
-    {
-        std::memcpy(buffer, &glob_state, FULL_STATE_SIZE - MAX_CHR_SIZE);
-    }
-    else
-    {
-        std::memcpy(buffer, &glob_state, FULL_STATE_SIZE);
-    }
+    dump<DumpOperation::DUMP>(buffer);
 }
 
 void cynes::NES::load(uint8_t *buffer)
 {
-    if (_mapper->chr_is_read_only())
-    {
-        std::memcpy(&glob_state, buffer, FULL_STATE_SIZE - MAX_CHR_SIZE);
-    }
-    else
-    {
-        std::memcpy(&glob_state, buffer, FULL_STATE_SIZE);
-    }
+    dump<DumpOperation::LOAD>(buffer);
 }
 
 cynes::Mapper &cynes::NES::get_mapper()
@@ -294,15 +275,17 @@ template <cynes::DumpOperation operation, typename T>
 void cynes::NES::dump(T &buffer)
 {
     cpu.dump<operation>(buffer);
-    // ppu.dump<operation>(buffer);
-    // apu.dump<operation>(buffer);
+    ppu.dump<operation>(buffer);
+    apu.dump<operation>(buffer);
 
     _mapper->dump<operation>(buffer);
 
-    // cynes::dump<operation>(buffer, glob_state, sizeof(glob_state));
+    cynes::dump<operation>(buffer, _memory_cpu.get(), 0x800);
+    cynes::dump<operation>(buffer, _memory_oam.get(), 0x100);
+    cynes::dump<operation>(buffer, _memory_palette.get(), 0x20);
 
-    // cynes::dump<operation>(buffer, _controller_status);
-    // cynes::dump<operation>(buffer, _controller_shifters);
+    cynes::dump<operation>(buffer, _controller_status);
+    cynes::dump<operation>(buffer, _controller_shifters);
 }
 
 template void cynes::NES::dump<cynes::DumpOperation::SIZE>(unsigned int &);
