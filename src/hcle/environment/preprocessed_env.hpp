@@ -27,13 +27,11 @@ namespace hcle::environment
 
     void step(uint8_t action_index, uint8_t *obs_output_buffer);
 
-    // --- Getters for state information ---
-    bool isDone() const;
-    float getReward() const;
-
-    // Return by value to avoid dangling reference issues.
-    std::vector<uint8_t> getActionSet() const;
-    size_t getObservationSize() const;
+    // --- Getters ---
+    bool isDone() const { return done_; }
+    float getReward() const { return reward_; }
+    std::vector<uint8_t> getActionSet() const { return action_set_; }
+    size_t getObservationSize() const { return m_stacked_obs_size; }
 
   private:
     void process_screen();
@@ -66,7 +64,7 @@ namespace hcle::environment
     size_t m_obs_size; // Size of a single processed (resized, grayscale) observation frame
     size_t m_stacked_obs_size;
 
-    std::vector<uint8_t> m_raw_frame;   // Buffers for raw frames for max-pooling
+    std::vector<uint8_t> prev_frame_;   // Previous frame for max-pooling
     std::vector<uint8_t> m_frame_stack; // Circular buffer for stacked processed frames
     int m_frame_stack_idx;
   };

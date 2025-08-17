@@ -46,7 +46,7 @@ namespace hcle
             if (render_mode_ == "human")
                 display_ = std::make_unique<hcle::common::Display>("HCLEnvironment", 256, 240, 3);
 
-            frame_ptr_ = emu->get_frame_buffer();
+            frame_ptr = emu->get_frame_buffer();
 
             hcle::games::GameLogic *wrapper = createGameLogic(rom_path);
             game_logic.reset(wrapper);
@@ -94,8 +94,6 @@ namespace hcle
             {
                 throw std::runtime_error("Environment must be loaded with a ROM before calling step.");
             }
-            // sleep for 10ms
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
             game_logic->updateRAM();
             emu->step(controller_input, 1);
             this->current_step_++;
@@ -118,7 +116,7 @@ namespace hcle
         {
             if (this->display_)
             {
-                this->display_->update(frame_ptr_);
+                this->display_->update(frame_ptr);
 
                 if (this->display_->processEvents())
                 {
@@ -130,25 +128,6 @@ namespace hcle
         bool HCLEnvironment::isDone()
         {
             return game_logic->isDone();
-        }
-
-        void HCLEnvironment::getFrameBufferData(uint8_t *buffer, bool mix_in) const
-        {
-            if (!emu)
-            {
-                throw std::runtime_error("Cannot get screen; no game loaded.");
-            }
-            if (!mix_in)
-            {
-                std::copy(frame_ptr_, frame_ptr_ + frame_size_, buffer);
-            }
-            else
-            {
-                for (size_t i = 0; i < frame_size_; ++i)
-                {
-                    buffer[i] = std::max(buffer[i], frame_ptr_[i]);
-                }
-            }
         }
 
     } // namespace environment
