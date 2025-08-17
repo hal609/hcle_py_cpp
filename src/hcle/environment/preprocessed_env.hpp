@@ -50,7 +50,7 @@ namespace hcle::environment
 
     bool requires_resize_;
 
-        // Core environment
+    // Core environment
     std::unique_ptr<HCLEnvironment> env_;
     std::vector<uint8_t> action_set_;
 

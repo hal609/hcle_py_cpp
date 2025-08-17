@@ -55,7 +55,7 @@ namespace hcle
             int current_x = (static_cast<int>(current_ram_ptr_[CURRENT_PAGE]) << 8) | current_ram_ptr_[X_POS];
             int previous_x = (static_cast<int>(previous_ram_[CURRENT_PAGE]) << 8) | previous_ram_[X_POS];
 
-            float x_reward = static_cast<float>(current_x - previous_x);
+            float x_reward = static_cast<float>(current_x - previous_x) * 0.1f;
 
             // Give a small penalty for each frame to encourage progress
             float time_penalty = -0.1f;

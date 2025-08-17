@@ -1,5 +1,6 @@
 #include <stdexcept>
 #include <iostream>
+#include <chrono>
 
 #include "hcle/environment/hcle_environment.hpp"
 
@@ -93,10 +94,11 @@ namespace hcle
             {
                 throw std::runtime_error("Environment must be loaded with a ROM before calling step.");
             }
-
+            // sleep for 10ms
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            game_logic->updateRAM();
             emu->step(controller_input, 1);
             this->current_step_++;
-            game_logic->updateRAM();
             game_logic->onStep();
 
             if (this->render_mode_ == "human")

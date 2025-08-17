@@ -5,10 +5,12 @@
 #include <cstring>
 #include <array>
 
-static constexpr size_t MAX_PRG_SIZE = 1024 * 1024;   // 1 MB
-static constexpr size_t MAX_CPU_RAM_SIZE = 32 * 1024; // 32 KB
-static constexpr size_t MAX_PPU_RAM_SIZE = 4 * 1024;  // 4 KB
-static constexpr size_t MAX_CHR_SIZE = 1024 * 1024;   // Optional block 1 MB (for mappers like MMC2/MMC5)
+// static constexpr size_t MAX_PRG_SIZE = 1024 * 1024;   // 1 MB
+static constexpr size_t MAX_PRG_SIZE = 32 * 1024;    // 32 KB
+static constexpr size_t MAX_CPU_RAM_SIZE = 4 * 1024; // 32 KB
+static constexpr size_t MAX_PPU_RAM_SIZE = 4 * 1024; // 4 KB
+// static constexpr size_t MAX_CHR_SIZE = 1024 * 1024;   // Optional block 1 MB (for mappers like MMC2/MMC5)
+static constexpr size_t MAX_CHR_SIZE = 16 * 1024; // Optional block 1 MB (for mappers like MMC2/MMC5)
 static constexpr size_t TOTAL_MAPPER_MEM = MAX_PRG_SIZE + MAX_CPU_RAM_SIZE + MAX_PPU_RAM_SIZE + MAX_CHR_SIZE;
 
 static constexpr size_t PRG_BASE = 0;
