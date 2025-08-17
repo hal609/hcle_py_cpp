@@ -5,7 +5,19 @@
 #include <cstring>
 #include <array>
 
-enum class SpriteEvaluationStep
+static constexpr size_t MAX_PRG_SIZE = 1024 * 1024;   // 1 MB
+static constexpr size_t MAX_CPU_RAM_SIZE = 32 * 1024; // 32 KB
+static constexpr size_t MAX_PPU_RAM_SIZE = 4 * 1024;  // 4 KB
+static constexpr size_t MAX_CHR_SIZE = 1024 * 1024;   // Optional block 1 MB (for mappers like MMC2/MMC5)
+static constexpr size_t TOTAL_MAPPER_MEM = MAX_PRG_SIZE + MAX_CPU_RAM_SIZE + MAX_PPU_RAM_SIZE + MAX_CHR_SIZE;
+
+static constexpr size_t PRG_BASE = 0;
+static constexpr size_t CPU_RAM_BASE = PRG_BASE + MAX_PRG_SIZE;
+static constexpr size_t PPU_RAM_BASE = CPU_RAM_BASE + MAX_CPU_RAM_SIZE;
+// Place CHR_BASE last, after all other mapper memory
+static constexpr size_t CHR_BASE = PPU_RAM_BASE + MAX_PPU_RAM_SIZE;
+
+enum SpriteEvaluationStep
 {
     LOAD_SECONDARY_OAM,
     INCREMENT_POINTER,
@@ -148,8 +160,8 @@ struct FullState
     uint8_t mem_palette[0x20];
 
     // ====== MAPPER VARS =======
-    std::array<MemoryBank, 0x40> banks_cpu{};
-    std::array<MemoryBank, 0x10> banks_ppu{};
+    MemoryBank banks_cpu[0x40];
+    MemoryBank banks_ppu[0x10];
 
     // Generalised mapper-specific data
     // MMC1
@@ -167,10 +179,16 @@ struct FullState
     // MMC
     bool latches[0x2];
     uint8_t selected_banks[0x4];
+
+    // General
+    uint8_t memory[TOTAL_MAPPER_MEM];
+    // std::array<uint8_t, TOTAL_MAPPER_MEM> memory{};
 };
 
 namespace cynes
 {
+    static constexpr size_t FULL_STATE_SIZE = sizeof(FullState);
+
     enum class DumpOperation
     {
         SIZE,

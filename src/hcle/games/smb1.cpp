@@ -8,7 +8,7 @@ namespace hcle
     {
 
         bool SMB1Logic::has_backup = false;
-        std::vector<uint8_t> SMB1Logic::backup_state;
+        uint8_t SMB1Logic::backup_state[cynes::FULL_STATE_SIZE];
 
         bool SMB1Logic::in_game() { return current_ram_ptr_[LEVEL_LOADING] == 3 && current_ram_ptr_[GAME_MODE] != 0; }
         bool SMB1Logic::is_dead() { return current_ram_ptr_[PLAYER_STATE] == 0x0B || current_ram_ptr_[Y_VIEWPORT] > 0x1; }
@@ -22,10 +22,7 @@ namespace hcle
                 {
                     static std::mutex backup_mutex;
                     std::lock_guard<std::mutex> lock(backup_mutex);
-
-                    unsigned int state_size = nes_->size();
-                    backup_state.resize(state_size);
-                    nes_->save(backup_state.data());
+                    nes_->save(backup_state);
                     has_backup = true;
                 }
             }
@@ -40,7 +37,7 @@ namespace hcle
         {
             if (has_backup)
             {
-                nes_->load(backup_state.data());
+                nes_->load(backup_state);
             }
             else
             {

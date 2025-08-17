@@ -1,6 +1,7 @@
 // src/hcle/games/smb1.hpp
 #pragma once
 #include "hcle/environment/game_logic.hpp"
+// #include "hcle/environment/utils.hpp"
 
 namespace hcle
 {
@@ -33,7 +34,7 @@ namespace hcle
             static const int LEVEL_LOADING = 0x0772;
 
             static bool has_backup;
-            static std::vector<uint8_t> backup_state;
+            static uint8_t backup_state[cynes::FULL_STATE_SIZE];
 
             std::vector<uint8_t> action_set;
         };

@@ -7,6 +7,7 @@
 #include <mutex>
 
 #include "hcle/emucore/nes.hpp"
+#include "hcle/emucore/utils.hpp"
 
 const uint8_t NES_INPUT_NONE = 0x00;
 const uint8_t NES_INPUT_RIGHT = 0x01;

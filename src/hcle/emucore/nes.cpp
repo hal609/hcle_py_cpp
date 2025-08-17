@@ -19,6 +19,7 @@ cynes::NES::NES(const char *path)
       apu{*this},
       _mapper{Mapper::load_mapper(static_cast<NES &>(*this), path)}
 {
+    printf("Full global state has size: %zu bytes\n", sizeof(glob_state));
     cpu.power();
     ppu.power();
     apu.power();
@@ -245,12 +246,26 @@ unsigned int cynes::NES::size()
 
 void cynes::NES::save(uint8_t *buffer)
 {
-    dump<DumpOperation::DUMP>(buffer);
+    if (_mapper->chr_is_read_only())
+    {
+        std::memcpy(buffer, &glob_state, FULL_STATE_SIZE - MAX_CHR_SIZE);
+    }
+    else
+    {
+        std::memcpy(buffer, &glob_state, FULL_STATE_SIZE);
+    }
 }
 
 void cynes::NES::load(uint8_t *buffer)
 {
-    dump<DumpOperation::LOAD>(buffer);
+    if (_mapper->chr_is_read_only())
+    {
+        std::memcpy(&glob_state, buffer, FULL_STATE_SIZE - MAX_CHR_SIZE);
+    }
+    else
+    {
+        std::memcpy(&glob_state, buffer, FULL_STATE_SIZE);
+    }
 }
 
 cynes::Mapper &cynes::NES::get_mapper()

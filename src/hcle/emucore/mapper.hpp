@@ -64,6 +64,8 @@ namespace cynes
             NES &nes,
             const std::filesystem::path &path_rom);
 
+        inline bool chr_is_read_only() const { return _read_only_chr; }
+
     public:
         /// Tick the mapper.
         virtual void tick();
@@ -111,8 +113,6 @@ namespace cynes
         const size_t _size_cpu_ram;
         const size_t _size_ppu_ram;
         const bool _read_only_chr;
-
-        std::unique_ptr<uint8_t[]> _memory;
 
         uint8_t *start_addr;
         size_t data_size;

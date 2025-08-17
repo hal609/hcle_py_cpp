@@ -24,61 +24,54 @@ cynes::Mapper::Mapper(
                             _size_chr{static_cast<size_t>(_banks_chr) << 10},
                             _size_cpu_ram{static_cast<size_t>(_banks_cpu_ram) << 10},
                             _size_ppu_ram{static_cast<size_t>(_banks_ppu_ram) << 10},
-                            _read_only_chr{metadata.read_only_chr},
-                            _memory{new uint8_t[_size_prg + _size_chr + _size_cpu_ram + _size_ppu_ram]}
+                            _read_only_chr{metadata.read_only_chr}
+// _nes.glob_state.memory{new uint8_t[_size_prg + _size_chr + _size_cpu_ram + _size_ppu_ram]}
 {
-    start_addr = _memory.get() + _size_prg + _size_chr;
-    data_size = _size_cpu_ram + _size_ppu_ram;
-
-    if (!_read_only_chr)
-    {
-        data_size += _size_chr;
-        start_addr -= _size_chr;
-    }
+    // start_addr = _nes.glob_state.memory.get() + _size_prg + _size_chr;
+    // data_size = _size_cpu_ram + _size_ppu_ram;
+    // if (!_read_only_chr)
+    // {
+    //     data_size += _size_chr;
+    //     start_addr -= _size_chr;
+    // }
 
     if (_size_prg > 0)
     {
-        std::memcpy(
-            _memory.get(),
-            metadata.memory_prg.get(),
-            _size_prg);
+        std::memcpy(_nes.glob_state.memory + PRG_BASE, metadata.memory_prg.get(), _size_prg);
     }
 
     if (_size_chr > 0)
     {
-        std::memcpy(
-            _memory.get() + _size_prg,
-            metadata.memory_chr.get(),
-            _size_chr);
+        std::memcpy(_nes.glob_state.memory + CHR_BASE, metadata.memory_chr.get(), _size_chr);
     }
 
     random_bytes_engine engine{};
 
+    uint8_t *cpu_ram_ptr = _nes.glob_state.memory + CPU_RAM_BASE;
+
     if (metadata.trainer != nullptr)
     {
-        std::memcpy(
-            _memory.get() + _size_prg + _size_chr,
-            metadata.trainer.get(),
-            0x200);
+        std::memcpy(cpu_ram_ptr, metadata.trainer.get(), 0x200);
 
         std::generate(
-            _memory.get() + _size_prg + _size_chr + 0x200,
-            _memory.get() + _size_prg + _size_chr + _size_cpu_ram,
+            cpu_ram_ptr + 0x200,
+            cpu_ram_ptr + _size_cpu_ram,
             std::ref(engine));
     }
     else
     {
         std::generate(
-            _memory.get() + _size_prg + _size_chr,
-            _memory.get() + _size_prg + _size_chr + _size_cpu_ram,
+            cpu_ram_ptr,
+            cpu_ram_ptr + _size_cpu_ram,
             std::ref(engine));
     }
 
     if (_size_ppu_ram > 0)
     {
+        uint8_t *ppu_ram_ptr = _nes.glob_state.memory + PPU_RAM_BASE;
         std::generate(
-            _memory.get() + _size_prg + _size_chr + _size_cpu_ram,
-            _memory.get() + _size_prg + _size_chr + _size_cpu_ram + _size_ppu_ram,
+            ppu_ram_ptr,
+            ppu_ram_ptr + _size_ppu_ram,
             std::ref(engine));
     }
 
@@ -195,7 +188,7 @@ void cynes::Mapper::write_cpu(uint16_t address, uint8_t value)
 
     if (!bank.read_only && bank.mapped)
     {
-        _memory[bank.offset + (address & 0x3FF)] = value;
+        _nes.glob_state.memory[bank.offset + (address & 0x3FF)] = value;
     }
 }
 void cynes::Mapper::write_ppu(uint16_t address, uint8_t value)
@@ -204,7 +197,7 @@ void cynes::Mapper::write_ppu(uint16_t address, uint8_t value)
 
     if (!bank.read_only && bank.mapped)
     {
-        _memory[bank.offset + (address & 0x3FF)] = value;
+        _nes.glob_state.memory[bank.offset + (address & 0x3FF)] = value;
     }
 }
 
@@ -217,7 +210,7 @@ uint8_t cynes::Mapper::read_cpu(uint16_t address)
         return _nes.get_open_bus();
     }
 
-    return _memory[bank.offset + (address & 0x3FF)];
+    return _nes.glob_state.memory[bank.offset + (address & 0x3FF)];
 }
 
 uint8_t cynes::Mapper::read_ppu(uint16_t address)
@@ -229,13 +222,13 @@ uint8_t cynes::Mapper::read_ppu(uint16_t address)
         return 0x00;
     }
 
-    return _memory[bank.offset + (address & 0x3FF)];
+    return _nes.glob_state.memory[bank.offset + (address & 0x3FF)];
 }
 
 void cynes::Mapper::map_bank_prg(uint8_t page, uint16_t address)
 {
     _nes.glob_state.banks_cpu[page] = {
-        static_cast<size_t>(address << 10),
+        PRG_BASE + static_cast<size_t>(address << 10),
         true, true};
 }
 
@@ -250,7 +243,7 @@ void cynes::Mapper::map_bank_prg(uint8_t page, uint8_t size, uint16_t address)
 void cynes::Mapper::map_bank_cpu_ram(uint8_t page, uint16_t address, bool read_only)
 {
     _nes.glob_state.banks_cpu[page] = {
-        _size_prg + _size_chr + static_cast<size_t>(address << 10),
+        CPU_RAM_BASE + static_cast<size_t>(address << 10),
         read_only, true};
 }
 
@@ -265,7 +258,7 @@ void cynes::Mapper::map_bank_cpu_ram(uint8_t page, uint8_t size, uint16_t addres
 void cynes::Mapper::map_bank_chr(uint8_t page, uint16_t address)
 {
     _nes.glob_state.banks_ppu[page] = {
-        _size_prg + static_cast<size_t>(address << 10),
+        CHR_BASE + static_cast<size_t>(address << 10),
         _read_only_chr,
         true};
 }
@@ -281,7 +274,7 @@ void cynes::Mapper::map_bank_chr(uint8_t page, uint8_t size, uint16_t address)
 void cynes::Mapper::map_bank_ppu_ram(uint8_t page, uint16_t address, bool read_only)
 {
     _nes.glob_state.banks_ppu[page] = {
-        _size_prg + _size_chr + _size_cpu_ram + static_cast<size_t>(address << 10),
+        PPU_RAM_BASE + static_cast<size_t>(address << 10),
         read_only, true};
 }
 
