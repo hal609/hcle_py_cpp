@@ -1,5 +1,6 @@
 #include <stdexcept>
 #include <iostream>
+#include <chrono>
 
 #include "hcle/environment/hcle_environment.hpp"
 
@@ -24,17 +25,28 @@ namespace hcle
             was_welcomed = true;
         }
 
+        void HCLEnvironment::setOutputModeGrayscale()
+        {
+            if (!emu)
+            {
+                throw std::runtime_error("Environment must be loaded with a ROM before setting output mode.");
+            }
+            emu->setOutputModeGrayscale();
+            frame_size_ = GRAYSCALE_FRAME_SIZE;
+        }
+
         void HCLEnvironment::loadROM(const std::string &rom_path, const std::string &render_mode)
         {
             rom_path_ = rom_path;
             render_mode_ = render_mode;
+            frame_size_ = RAW_FRAME_SIZE;
 
             emu.reset(new cynes::NES(rom_path.c_str()));
 
             if (render_mode_ == "human")
                 display_ = std::make_unique<hcle::common::Display>("HCLEnvironment", 256, 240, 3);
 
-            frame_ptr_ = emu->get_frame_buffer();
+            frame_ptr = emu->get_frame_buffer();
 
             hcle::games::GameLogic *wrapper = createGameLogic(rom_path);
             game_logic.reset(wrapper);
@@ -71,13 +83,9 @@ namespace hcle
             {
                 throw std::runtime_error("Environment must be loaded with a ROM before reset.");
             }
-            if (!game_logic->onReset())
-            {
-                emu->reset();
-            }
+            game_logic->reset();
             this->current_step_ = 0;
             game_logic->updateRAM();
-            emu->step(NES_INPUT_NONE, 1);
         }
 
         float HCLEnvironment::act(uint8_t controller_input)
@@ -86,10 +94,9 @@ namespace hcle
             {
                 throw std::runtime_error("Environment must be loaded with a ROM before calling step.");
             }
-
+            game_logic->updateRAM();
             emu->step(controller_input, 1);
             this->current_step_++;
-            game_logic->updateRAM();
             game_logic->onStep();
 
             if (this->render_mode_ == "human")
@@ -109,7 +116,7 @@ namespace hcle
         {
             if (this->display_)
             {
-                this->display_->update(frame_ptr_);
+                this->display_->update(frame_ptr);
 
                 if (this->display_->processEvents())
                 {
@@ -121,15 +128,6 @@ namespace hcle
         bool HCLEnvironment::isDone()
         {
             return game_logic->isDone();
-        }
-
-        void HCLEnvironment::getScreenRGB(uint8_t *buffer) const
-        {
-            if (!emu)
-            {
-                throw std::runtime_error("Cannot get screen; no game loaded.");
-            }
-            std::copy(frame_ptr_, frame_ptr_ + RAW_FRAME_SIZE, buffer);
         }
 
     } // namespace environment

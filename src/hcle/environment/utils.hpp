@@ -3,6 +3,8 @@
 #include <mutex>
 #include <memory>
 
+// static constexpr size_t FULL_STATE_SIZE = 0x209F20;
+
 namespace hcle::vector
 {
     struct Timestep

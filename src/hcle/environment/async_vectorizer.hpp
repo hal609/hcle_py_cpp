@@ -1,3 +1,14 @@
+#pragma once
+
+#include <vector>
+#include <memory>
+#include <thread>
+#include <atomic>
+#include <functional>
+#include <string>
+#include <algorithm> // For std::min
+#include <stdexcept> // For std::runtime_error
+
 #include "hcle/common/thread_safe_queue.hpp"
 #include "hcle/environment/preprocessed_env.hpp"
 
@@ -8,28 +19,38 @@ namespace hcle::environment
     public:
         AsyncVectorizer(
             const int num_envs,
-            const std::function<std::unique_ptr<PreprocessedEnv>(int)> &env_factory) : num_envs_(num_envs)
+            const std::function<std::unique_ptr<PreprocessedEnv>(int)> &env_factory) : num_envs_(num_envs), stop_(false)
         {
-
             if (num_envs <= 0)
                 throw std::invalid_argument("Number of environments must be positive.");
 
-            //  Create environments
-            envs_.resize(num_envs_);
+            envs_.reserve(num_envs_);
             for (int i = 0; i < num_envs_; ++i)
             {
-                envs_[i] = env_factory(i);
+                envs_.push_back(env_factory(i));
             }
 
-            // Cache the action set from the first environment
-            if (!envs_.empty())
-                action_set_cache_ = envs_[0]->getActionSet();
+            if (envs_.empty())
+                throw std::runtime_error("Environment creation failed.");
 
-            // Setup worker threads
+            action_set_cache_ = envs_[0]->getActionSet();
+
+            // Pre-allocate internal buffers to avoid allocations in the main loop.
+            const size_t single_obs_size = getObservationSize();
+            internal_obs_buffers_.resize(num_envs_);
+            for (int i = 0; i < num_envs_; ++i)
+            {
+                internal_obs_buffers_[i].resize(single_obs_size);
+            }
+            internal_reward_buffers_.resize(num_envs_);
+            internal_done_buffers_.resize(num_envs_);
+
+            // Determine the number of worker threads to use.
             const std::size_t processor_count = std::thread::hardware_concurrency();
             num_threads_ = std::min<int>(num_envs_, static_cast<int>(processor_count));
 
-            // Start worker threads
+            // Start worker threads.
+            workers_.reserve(num_threads_);
             for (int i = 0; i < num_threads_; ++i)
             {
                 workers_.emplace_back([this]
@@ -40,12 +61,12 @@ namespace hcle::environment
         ~AsyncVectorizer()
         {
             stop_ = true;
-            // Push dummy actions to wake up any waiting workers
-            for (int i = 0; i < num_envs_; ++i)
+            // Push dummy actions to wake up any waiting workers.
+            for (int i = 0; i < num_threads_; ++i)
             {
-                action_queue_.push({-1, 0});
+                action_queue_.push({-1, 0, false});
             }
-            // Wait for all worker threads to terminate
+            // Wait for all worker threads to terminate.
             for (auto &worker : workers_)
             {
                 if (worker.joinable())
@@ -55,13 +76,13 @@ namespace hcle::environment
             }
         }
 
-        std::vector<hcle::vector::Timestep> reset()
+        void reset(uint8_t *obs_buffer, float *reward_buffer, uint8_t *done_buffer)
         {
             for (int i = 0; i < num_envs_; ++i)
             {
                 action_queue_.push({i, 0, true});
             }
-            return collect_results();
+            collect_results(obs_buffer, reward_buffer, done_buffer);
         }
 
         void send(const std::vector<int> &action_ids)
@@ -70,22 +91,16 @@ namespace hcle::environment
             {
                 throw std::runtime_error("Number of actions must equal number of environments.");
             }
-            // Enqueue a step command for every environment
+            // Queue a step command for every environment.
             for (int i = 0; i < num_envs_; ++i)
             {
                 action_queue_.push({i, static_cast<uint8_t>(action_ids[i]), false});
             }
         }
 
-        std::vector<hcle::vector::Timestep> recv()
-        {
-            return collect_results();
-        }
+        void recv(uint8_t *obs_buffer, float *reward_buffer, uint8_t *done_buffer) { collect_results(obs_buffer, reward_buffer, done_buffer); }
 
-        const std::vector<uint8_t> getActionSet() const
-        {
-            return action_set_cache_;
-        }
+        const std::vector<uint8_t> &getActionSet() const { return action_set_cache_; }
 
         const size_t getObservationSize() const
         {
@@ -94,24 +109,35 @@ namespace hcle::environment
             return envs_[0]->getObservationSize();
         }
 
-        // --- PRIVATE HELPER ---
+        const int getNumEnvs() const { return num_envs_; }
+
     private:
+        struct ActionTask
+        {
+            int env_id;
+            uint8_t action_value;
+            bool force_reset;
+        };
+
         std::vector<uint8_t> action_set_cache_;
         int num_envs_;
         int num_threads_;
-        common::ThreadSafeQueue<hcle::vector::Action> action_queue_;
-        common::ThreadSafeQueue<hcle::vector::Timestep> result_queue_;
+        common::ThreadSafeQueue<ActionTask> action_queue_;
+        common::ThreadSafeQueue<int> result_queue_; // Queue for "work complete" notifications.
         std::vector<std::thread> workers_;
         std::atomic<bool> stop_;
-        std::vector<std::unique_ptr<PreprocessedEnv>> envs_; // Environment instances
+        std::vector<std::unique_ptr<PreprocessedEnv>> envs_;
 
-        mutable std::vector<std::vector<uint8_t>> final_obs_storage_; // For same-step autoreset
+        // Internal buffers for thread-safe data transfer.
+        std::vector<std::vector<uint8_t>> internal_obs_buffers_;
+        std::vector<float> internal_reward_buffers_;
+        std::vector<bool> internal_done_buffers_;
 
         void worker_function()
         {
             while (!stop_)
             {
-                hcle::vector::Action work = action_queue_.pop();
+                ActionTask work = action_queue_.pop();
                 if (stop_ || work.env_id < 0)
                 {
                     break;
@@ -119,35 +145,50 @@ namespace hcle::environment
 
                 auto &env = envs_[work.env_id];
 
+                // Get a pointer to this worker's dedicated internal observation buffer.
+                uint8_t *current_obs_buffer = internal_obs_buffers_[work.env_id].data();
+
+                // Perform the action (step or reset), writing the observation
+                // directly into the internal buffer.
                 if (work.force_reset || env->isDone())
                 {
-                    env->reset();
+                    env->reset(current_obs_buffer);
                 }
                 else
                 {
-                    env->step(work.action_value);
+                    env->step(work.action_value, current_obs_buffer);
                 }
 
-                hcle::vector::Timestep timestep = env->get_timestep();
-                timestep.env_id = work.env_id;
+                // Store scalar results in their respective internal buffers.
+                internal_reward_buffers_[work.env_id] = env->getReward();
+                internal_done_buffers_[work.env_id] = env->isDone();
 
-                result_queue_.push(timestep);
+                // Push ONLY the env_id as a "work complete" notification.
+                result_queue_.push(work.env_id);
             }
         }
 
-        std::vector<hcle::vector::Timestep> collect_results()
+        void collect_results(uint8_t *obs_buffer, float *reward_buffer, uint8_t *done_buffer)
         {
-            std::vector<hcle::vector::Timestep> results(num_envs_);
+            const size_t single_obs_size = getObservationSize();
+
             for (int i = 0; i < num_envs_; ++i)
             {
-                hcle::vector::Timestep timestep = result_queue_.pop();
+                // Pop the completed env_id notification from the queue.
+                int completed_env_id = result_queue_.pop();
 
-                if (timestep.env_id >= 0 && timestep.env_id < num_envs_)
+                if (completed_env_id >= 0 && completed_env_id < num_envs_)
                 {
-                    results[timestep.env_id] = std::move(timestep);
+                    // Copy scalar data from internal buffers to the user-provided buffers.
+                    reward_buffer[completed_env_id] = internal_reward_buffers_[completed_env_id];
+                    done_buffer[completed_env_id] = internal_done_buffers_[completed_env_id];
+
+                    // Safely copy the observation data from our internal buffer to the user's buffer.
+                    std::memcpy(obs_buffer + (completed_env_id * single_obs_size),
+                                internal_obs_buffers_[completed_env_id].data(),
+                                single_obs_size);
                 }
             }
-            return results;
         }
     };
 }

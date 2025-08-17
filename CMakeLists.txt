@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 set(CMAKE_TOOLCHAIN_FILE C:/dev/vcpkg/scripts/buildsystems/vcpkg.cmake)
 project(hcle CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(MSVC)
@@ -22,7 +22,7 @@ find_package(pybind11 CONFIG REQUIRED)
 find_package(SDL2 CONFIG REQUIRED)
 find_package(pybind11 CONFIG REQUIRED)
 find_package(OpenCV REQUIRED COMPONENTS core imgproc)
-find_package(zlib REQUIRED)
+find_package(ZLIB REQUIRED)
 
 
 set(HCLE_CORE_SOURCES

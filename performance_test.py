@@ -9,13 +9,13 @@ def simulate_agent_work(delay_ms: int):
 
 def run_performance_test():
     num_envs = 64
-    num_steps = 500
-    agent_think_time_ms = 16  # Simulate a 16ms delay, ~60 FPS agent
+    num_steps = 100
+    agent_think_time_ms = 16
 
     print("--- HCLE Performance Test ---")
     print(f"Envs: {num_envs}, Steps: {num_steps}, Agent Think Time: {agent_think_time_ms}ms")
 
-    envs = HCLEVectorEnv(game="smb1", num_envs=num_envs, render_mode="rgb_array")
+    envs = HCLEVectorEnv(game="smb1", num_envs=num_envs, render_mode="rgb_array", maxpool=False, grayscale=True, stack_num=1)
     
     # --- 1. Synchronous Test (Your current method) ---
     print("\nRunning SYNCHRONOUS test...")

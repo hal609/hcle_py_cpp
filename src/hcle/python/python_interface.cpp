@@ -33,17 +33,7 @@ PYBIND11_MODULE(_hcle_py, m)
         .def("reset", &hcle::environment::HCLEnvironment::reset, "Resets the environment")
         .def("is_done", &hcle::environment::HCLEnvironment::isDone, "Checks if the episode is terminated")
         .def("get_action_set", [](hcle::environment::HCLEnvironment &env)
-             { return env.getActionSet(); })
-        .def("get_ram", [](hcle::environment::HCLEnvironment &env)
-             { return vector_to_numpy(env.getRAM()); })
-        .def("get_screen_rgb", [](hcle::environment::HCLEnvironment &self)
-             {
-            // Create a NumPy array to hold the screen data
-            auto obs = py::array_t<uint8_t>({240, 256, 3});
-            // Call the C++ function, passing a pointer to the array's buffer
-            self.getScreenRGB(obs.mutable_data());
-            // Return the populated NumPy array
-            return obs; });
+             { return env.getActionSet(); });
     init_vector_bindings(m);
     py::register_exception<hcle::common::WindowClosedException>(m, "WindowClosedException");
 }
