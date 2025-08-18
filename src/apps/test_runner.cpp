@@ -115,7 +115,7 @@ int main(int argc, char **argv)
             {
                 total_reward += reward_buffer[i];
             }
-            printf("Step %d: Total Reward = %.2f\n", step + 1, total_reward);
+            // printf("Step %d: Total Reward = %.2f\n", step + 1, total_reward);
 
             if ((step + 1) % 100 == 0)
             {

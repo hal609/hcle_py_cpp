@@ -60,6 +60,7 @@ namespace hcle
             {
                 if (has_backup_)
                 {
+                    std::lock_guard<std::mutex> lock(backup_mutex_);
                     nes_->load(backup_state_.data());
                 }
                 else

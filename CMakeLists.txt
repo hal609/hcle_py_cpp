@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.15)
-set(CMAKE_TOOLCHAIN_FILE C:/dev/vcpkg/scripts/buildsystems/vcpkg.cmake)
+if(MSVC)
+    set(CMAKE_TOOLCHAIN_FILE C:/dev/vcpkg/scripts/buildsystems/vcpkg.cmake)
+else()
+    set(CMAKE_CXX_COMPILER /usr/bin/g++)
+endif()
+
 project(hcle CXX)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -14,7 +19,7 @@ if(MSVC)
     set(CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO "${CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO} /PROFILE")
 else()
     set(CMAKE_CXX_FLAGS_RELEASE "-Ofast")
-    add_compile_options(-Wall -Wextra -Wpedantic -Werror)
+    set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -Wextra -Wpedantic -fsanitize=address")
 endif()
 
 find_package(Python COMPONENTS Interpreter Development)
@@ -39,7 +44,11 @@ set(HCLE_CORE_SOURCES
 # CORE FILES
 add_library(hcle_core STATIC ${HCLE_CORE_SOURCES})
 target_include_directories(hcle_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
-target_link_libraries(hcle_core PUBLIC SDL2::SDL2 SDL2::SDL2main ${OpenCV_LIBS})
+if (MSVC)
+    target_link_libraries(hcle_core PUBLIC SDL2::SDL2 SDL2::SDL2main ${OpenCV_LIBS})
+else()
+    target_link_libraries(hcle_core PUBLIC SDL2::SDL2 ${OpenCV_LIBS})
+endif()
 
 # PYTHON MODULE
 pybind11_add_module(_hcle_py
@@ -56,13 +65,3 @@ install(FILES $<TARGET_RUNTIME_DLLS:_hcle_py> DESTINATION hcle_py)
 # TEST CPP RUNNER
 add_executable(hcle_test src/apps/test_runner.cpp)
 target_link_libraries(hcle_test PRIVATE hcle_core)
-
-# COPY SDL2.dll TEST DIR
-add_custom_command(
-    TARGET hcle_test
-    POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "$<TARGET_FILE:SDL2::SDL2>" 
-        "$<TARGET_FILE_DIR:hcle_test>"
-    COMMENT "Copying SDL2.dll to output directory"
-)
