@@ -108,7 +108,7 @@ void cynes::CPU::reset()
     _program_counter |= _nes.read_cpu(0xFFFD) << 8;
 }
 
-void cynes::CPU::tick(bool skip_draw)
+void cynes::CPU::tick()
 {
     if (_frozen)
     {
@@ -125,14 +125,14 @@ void cynes::CPU::tick(bool skip_draw)
         _nes.read(_program_counter);
         _nes.read(_program_counter);
 
-        _nes.write(0x100 | _stack_pointer--, _program_counter >> 8, skip_draw);
-        _nes.write(0x100 | _stack_pointer--, _program_counter & 0x00FF, skip_draw);
+        _nes.write(0x100 | _stack_pointer--, _program_counter >> 8);
+        _nes.write(0x100 | _stack_pointer--, _program_counter & 0x00FF);
 
         uint16_t address = _should_issue_non_maskable_interrupt ? 0xFFFA : 0xFFFE;
 
         _should_issue_non_maskable_interrupt = false;
 
-        _nes.write(0x100 | _stack_pointer--, _status | Flag::U, skip_draw);
+        _nes.write(0x100 | _stack_pointer--, _status | Flag::U);
 
         set_status(Flag::I, true);
 

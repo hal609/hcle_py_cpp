@@ -28,7 +28,7 @@ namespace cynes
         void reset();
 
         /// Tick the CPU.
-        void tick(bool skip_draw);
+        void tick();
 
         /// Poll the CPU for the non-maskable interrupt.
         void poll();

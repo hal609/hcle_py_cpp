@@ -700,9 +700,16 @@ void cynes::PPU::render_pixel_gray(size_t pixel_offset, uint8_t color_index)
     _frame_buffer.get()[pixel_offset] = GRAYSCALE_PALETTE_LOOKUP[_mask_color_emphasize][color_index];
 }
 
+void cynes::PPU::set_frame_ready(bool ready)
+{
+    _frame_ready = ready;
+}
+
 void cynes::PPU::tick()
 {
-    // --- OPTIMIZATION: Update the palette cache at the start of the visible frame ---
+    if (_frame_ready)
+        return;
+
     if (_current_y == 0 && _current_x == 0 && _rendering_enabled)
     {
         update_palette_cache();

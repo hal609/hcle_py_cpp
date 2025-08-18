@@ -55,8 +55,13 @@ namespace cynes
 
         void setOutputModeGrayscale();
 
+        void set_frame_ready(bool ready);
+
     private:
         NES &_nes;
+
+    public:
+        bool skip_draw;
 
     private:
         std::unique_ptr<uint8_t[]> _frame_buffer;
