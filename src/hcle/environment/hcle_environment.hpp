@@ -5,7 +5,7 @@
 #include <memory>
 
 #include "hcle/emucore/nes.hpp"
-#include "hcle/environment/game_logic.hpp"
+#include "hcle/games/game_logic.hpp"
 #include "hcle/common/display.hpp"
 #include "hcle/common/exceptions.hpp"
 #include "hcle/games/smb1.hpp"

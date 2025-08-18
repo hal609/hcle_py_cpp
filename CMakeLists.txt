@@ -34,7 +34,6 @@ set(HCLE_CORE_SOURCES
     src/hcle/environment/preprocessed_env.cpp
     src/hcle/environment/hcle_environment.cpp
     src/hcle/common/display.cpp
-    src/hcle/games/smb1.cpp
 )
 
 # CORE FILES
