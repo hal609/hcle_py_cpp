@@ -56,15 +56,21 @@ void cynes::NES::dummy_read()
     cpu.poll();
 }
 
-void cynes::NES::write(uint16_t address, uint8_t value)
+void cynes::NES::write(uint16_t address, uint8_t value, bool skip_draw)
 {
     apu.tick(false);
-    ppu.tick();
-    ppu.tick();
+    if (!skip_draw)
+    {
+        ppu.tick();
+        ppu.tick();
+    }
 
     write_cpu(address, value);
 
-    ppu.tick();
+    if (!skip_draw)
+    {
+        ppu.tick();
+    }
     cpu.poll();
 }
 
@@ -219,7 +225,7 @@ bool cynes::NES::step(uint16_t controllers, unsigned int frames)
     {
         while (!ppu.is_frame_ready())
         {
-            cpu.tick();
+            cpu.tick(!(k == (frames - 1)));
 
             if (cpu.is_frozen())
             {

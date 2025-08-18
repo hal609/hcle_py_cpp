@@ -43,7 +43,7 @@ namespace cynes
         /// should not be used as a memory set function.
         /// @param address Memory address within the console memory address space.
         /// @param value Value to write.
-        void write(uint16_t address, uint8_t value);
+        void write(uint16_t address, uint8_t value, bool skip_draw = false);
 
         /// Write to the console memory.
         /// @note This function has other side effects than simply writing to the memory, it
