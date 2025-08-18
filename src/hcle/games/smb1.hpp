@@ -13,7 +13,7 @@ namespace hcle
             SMB1Logic() { action_set = {NES_INPUT_RIGHT | NES_INPUT_B,
                                         NES_INPUT_RIGHT | NES_INPUT_B | NES_INPUT_A}; }
 
-            GameLogic *SMB1Logic::clone() const override { return new SMB1Logic(*this); }
+            GameLogic *clone() const override { return new SMB1Logic(*this); }
 
         private:
             bool in_game() { return current_ram_ptr_[LEVEL_LOADING] == 3 && current_ram_ptr_[GAME_MODE] != 0; }
