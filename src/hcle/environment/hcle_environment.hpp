@@ -6,7 +6,6 @@
 
 #include "hcle/emucore/nes.hpp"
 #include "hcle/games/game_logic.hpp"
-#include "hcle/common/display.hpp"
 #include "hcle/common/exceptions.hpp"
 #include "hcle/games/smb1.hpp"
 #include "hcle/version.hpp"
@@ -34,14 +33,13 @@ namespace hcle
 
       static void WelcomeMessage();
 
-      void loadROM(const std::string &rom_path, const std::string &render_mode);
+      void loadROM(const std::string &rom_path);
       void setOutputModeGrayscale();
-      float act(uint8_t controller_input);
+      float act(uint8_t controller_input, unsigned int frames);
 
       const std::vector<uint8_t> getActionSet() const;
       float getReward() const;
 
-      void render();
       bool isDone();
       void reset();
 
@@ -56,10 +54,8 @@ namespace hcle
 
       std::string rom_path_;
       std::string game_name_;
-      std::string render_mode_;
 
       std::unique_ptr<hcle::games::GameLogic> game_logic_;
-      std::unique_ptr<hcle::common::Display> display_;
 
       size_t frame_size_;
 

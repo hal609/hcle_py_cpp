@@ -87,7 +87,7 @@ namespace hcle::environment
 
         void send(const std::vector<int> &action_ids)
         {
-            if (action_ids.size() != num_envs_)
+            if (static_cast<int>(action_ids.size()) != num_envs_)
             {
                 throw std::runtime_error("Number of actions must equal number of environments.");
             }
@@ -98,18 +98,20 @@ namespace hcle::environment
             }
         }
 
+        const uint8_t *getRawFramePointer(int index) { return envs_[index]->getFramePointer(); }
+
         void recv(uint8_t *obs_buffer, float *reward_buffer, uint8_t *done_buffer) { collect_results(obs_buffer, reward_buffer, done_buffer); }
 
         const std::vector<uint8_t> &getActionSet() const { return action_set_cache_; }
 
-        const size_t getObservationSize() const
+        size_t getObservationSize() const
         {
             if (envs_.empty())
                 return 0;
             return envs_[0]->getObservationSize();
         }
 
-        const int getNumEnvs() const { return num_envs_; }
+        int getNumEnvs() const { return num_envs_; }
 
     private:
         struct ActionTask

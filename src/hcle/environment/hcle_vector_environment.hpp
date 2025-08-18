@@ -5,6 +5,7 @@
 #include <string>
 #include <functional>
 
+#include "hcle/common/display.hpp"
 #include "hcle/environment/async_vectorizer.hpp"
 #include "hcle/environment/preprocessed_env.hpp"
 
@@ -28,16 +29,22 @@ namespace hcle::environment
             const bool maxpool = false,
             const bool grayscale = true,
             const int stack_num = 4)
-
+            : render_mode_(render_mode) // Store the render mode
         {
-            // Create a factory function that the AsyncVectorizer can use to
-            // construct PreprocessedEnv instances with the correct settings.
-            auto env_factory = [=](int env_id)
+            // Only create a display window if in "human" mode.
+            if (render_mode_ == "human")
             {
-                // Only the first environment should render to a window if requested.
-                std::string current_render_mode = (env_id == 0) ? render_mode : "rgb_array";
+                display_ = std::make_unique<hcle::common::Display>("HCLEnvironment", 256, 240, 3);
+            }
+
+            // Create a factory function that the AsyncVectorizer can use to
+            // construct PreprocessedEnv instances.
+            // CORRECTED: Explicitly capture 'this' to fix the compiler warning.
+            auto env_factory = [=]([[maybe_unused]] int env_id)
+            {
+                // The underlying environments always run in "rgb_array" mode for performance.
                 return std::make_unique<PreprocessedEnv>(
-                    rom_path, game_name, current_render_mode, obs_height, obs_width,
+                    rom_path, game_name, obs_height, obs_width,
                     frame_skip, maxpool, grayscale, stack_num);
             };
 
@@ -45,7 +52,21 @@ namespace hcle::environment
             vectorizer_ = std::make_unique<AsyncVectorizer>(num_envs, env_factory);
         }
 
-        // --- Public API (Pass-through calls to the vectorizer) ---
+        void render()
+        {
+            if (render_mode_ == "human" && display_)
+            {
+                const uint8_t *frame_ptr = vectorizer_->getRawFramePointer(0);
+                if (frame_ptr)
+                {
+                    display_->update(frame_ptr);
+                    if (display_->processEvents())
+                    {
+                        throw hcle::common::WindowClosedException();
+                    }
+                }
+            }
+        }
 
         void reset(uint8_t *obs_buffer, float *reward_buffer, uint8_t *done_buffer)
         {
@@ -54,6 +75,7 @@ namespace hcle::environment
 
         void send(const std::vector<int> &action_ids)
         {
+            render();
             vectorizer_->send(action_ids);
         }
 
@@ -72,11 +94,11 @@ namespace hcle::environment
             return vectorizer_->getObservationSize();
         }
 
-        const int getNumEnvs() const { return vectorizer_->getNumEnvs(); }
+        int getNumEnvs() const { return vectorizer_->getNumEnvs(); }
 
     private:
         std::unique_ptr<AsyncVectorizer> vectorizer_;
-
-        std::vector<uint8_t> action_set_;
+        std::unique_ptr<hcle::common::Display> display_;
+        std::string render_mode_;
     };
 }

@@ -15,7 +15,6 @@ namespace hcle::environment
     PreprocessedEnv(
         const std::string &rom_path,
         const std::string &game_name,
-        const std::string &render_mode,
         const int obs_height,
         const int obs_width,
         const int frame_skip,
@@ -32,6 +31,7 @@ namespace hcle::environment
     float getReward() const { return reward_; }
     std::vector<uint8_t> getActionSet() const { return action_set_; }
     size_t getObservationSize() const { return m_stacked_obs_size; }
+    const uint8_t *getFramePointer() const { return env_->frame_ptr; }
 
   private:
     void process_screen();

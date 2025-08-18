@@ -35,16 +35,12 @@ namespace hcle
             frame_size_ = GRAYSCALE_FRAME_SIZE;
         }
 
-        void HCLEnvironment::loadROM(const std::string &rom_path, const std::string &render_mode)
+        void HCLEnvironment::loadROM(const std::string &rom_path)
         {
             rom_path_ = rom_path;
-            render_mode_ = render_mode;
             frame_size_ = RAW_FRAME_SIZE;
 
             emu.reset(new cynes::NES(rom_path.c_str()));
-
-            if (render_mode_ == "human")
-                display_ = std::make_unique<hcle::common::Display>("HCLEnvironment", 256, 240, 3);
 
             frame_ptr = emu->get_frame_buffer();
 
@@ -88,19 +84,16 @@ namespace hcle
             game_logic->updateRAM();
         }
 
-        float HCLEnvironment::act(uint8_t controller_input)
+        float HCLEnvironment::act(uint8_t controller_input, unsigned int frames)
         {
             if (!emu || !game_logic)
             {
                 throw std::runtime_error("Environment must be loaded with a ROM before calling step.");
             }
             game_logic->updateRAM();
-            emu->step(controller_input, 1);
+            emu->step(controller_input, frames);
             this->current_step_++;
             game_logic->onStep();
-
-            if (this->render_mode_ == "human")
-                this->render();
 
             return game_logic->getReward();
         }
@@ -110,19 +103,6 @@ namespace hcle
             if (!game_logic)
                 throw std::runtime_error("Environment must be loaded with a ROM before getting reward.");
             return game_logic->getReward();
-        }
-
-        void HCLEnvironment::render()
-        {
-            if (this->display_)
-            {
-                this->display_->update(frame_ptr);
-
-                if (this->display_->processEvents())
-                {
-                    throw hcle::common::WindowClosedException();
-                }
-            }
         }
 
         bool HCLEnvironment::isDone()

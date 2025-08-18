@@ -7,7 +7,6 @@ namespace hcle::environment
     PreprocessedEnv::PreprocessedEnv(
         const std::string &rom_path,
         const std::string &game_name,
-        const std::string &render_mode,
         const int obs_height,
         const int obs_width,
         const int frame_skip,
@@ -24,7 +23,7 @@ namespace hcle::environment
           done_(false)
     {
         env_ = std::make_unique<HCLEnvironment>();
-        env_->loadROM(rom_path, render_mode);
+        env_->loadROM(rom_path);
 
         if (grayscale_)
             env_->setOutputModeGrayscale();
@@ -76,24 +75,17 @@ namespace hcle::environment
         uint8_t controller_input = action_set_[action_index];
         float accumulated_reward = 0.0f;
 
-        // --- FRAME SKIPPING LOOP ---
-        for (int skip = 0; skip < frame_skip_; ++skip)
+        if (maxpool_)
         {
-            accumulated_reward += env_->act(controller_input);
-            done_ = env_->isDone();
-
-            if (done_)
-                break;
-
-            // Capture penultimate frame directly from emu for max-pooling
-            if (maxpool_)
-            {
-                if (skip == frame_skip_ - 2)
-                {
-                    std::memcpy(prev_frame_.data(), env_->frame_ptr, m_raw_size);
-                }
-            }
+            accumulated_reward += env_->act(controller_input, frame_skip_ - 1);
+            std::memcpy(prev_frame_.data(), env_->frame_ptr, m_raw_size);
+            accumulated_reward += env_->act(controller_input, 1);
         }
+        else
+        {
+            accumulated_reward += env_->act(controller_input, frame_skip_);
+        }
+        done_ = env_->isDone();
         reward_ = accumulated_reward;
 
         process_screen();
