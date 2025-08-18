@@ -132,7 +132,7 @@ void cynes::CPU::tick(bool skip_draw)
 
         _should_issue_non_maskable_interrupt = false;
 
-        _nes.write(0x100 | _stack_pointer--, _status | Flag::U);
+        _nes.write(0x100 | _stack_pointer--, _status | Flag::U, skip_draw);
 
         set_status(Flag::I, true);
 
