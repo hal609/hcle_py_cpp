@@ -56,13 +56,10 @@ namespace hcle::environment
         for (int i = 1; i < stack_num_; ++i)
         {
             std::memcpy(m_frame_stack.data() + (i * m_obs_size),
-                        env_->frame_ptr,
+                        m_frame_stack.data(),
                         m_obs_size);
         }
-        std::memcpy(
-            obs_output_buffer,
-            m_frame_stack.data(),
-            m_stacked_obs_size);
+        write_observation(obs_output_buffer);
     }
 
     void PreprocessedEnv::step(uint8_t action_index, uint8_t *obs_output_buffer)
@@ -96,14 +93,13 @@ namespace hcle::environment
     void PreprocessedEnv::process_screen()
     {
         auto cv2_format = grayscale_ ? CV_8UC1 : CV_8UC3;
-        cv::Mat source_mat;
         uint8_t *frame_pointer = const_cast<uint8_t *>(env_->frame_ptr);
 
         if (maxpool_)
         {
             frame_pointer = std::max(frame_pointer, prev_frame_.data());
         }
-        source_mat = cv::Mat(m_raw_frame_height, m_raw_frame_width, cv2_format, frame_pointer);
+        cv::Mat source_mat = cv::Mat(m_raw_frame_height, m_raw_frame_width, cv2_format, frame_pointer);
 
         // Get pointer to current position in circular frame stack
         uint8_t *dest_ptr = m_frame_stack.data() + (m_frame_stack_idx * m_obs_size);
