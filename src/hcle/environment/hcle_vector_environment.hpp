@@ -21,6 +21,7 @@ namespace hcle::environment
             const int num_envs,
             const std::string &rom_path,
             const std::string &game_name,
+
             const std::string &render_mode = "rgb_array",
             const int obs_height = 84,
             const int obs_width = 84,
@@ -28,6 +29,7 @@ namespace hcle::environment
             const bool maxpool = false,
             const bool grayscale = true,
             const int stack_num = 4)
+
         {
             // Create a factory function that the AsyncVectorizer can use to
             // construct PreprocessedEnv instances with the correct settings.
@@ -75,5 +77,18 @@ namespace hcle::environment
 
     private:
         std::unique_ptr<AsyncVectorizer> vectorizer_;
+
+        std::vector<uint8_t> action_set_;
+
+        const int num_envs_;
+        const std::string &rom_path_;
+        const std::string &game_name_;
+        const std::string &render_mode_;
+        const int obs_height_;
+        const int obs_width_;
+        const int frame_skip_;
+        const bool maxpool_;
+        const bool grayscale_;
+        const int stack_num_;
     };
 }
