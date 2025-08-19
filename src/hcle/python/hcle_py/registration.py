@@ -46,7 +46,6 @@ GAME_REGISTRY = {
 def register_hcle_envs():
     for game_name, rom_file in GAME_REGISTRY.items():
         rom_path = os.path.join(ROMS_DIR, rom_file)
-        print(rom_path)
         
         # Register a single ID for the game
         gym.register(

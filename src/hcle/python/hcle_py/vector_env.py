@@ -9,7 +9,7 @@ from . import _hcle_py
 
 ObsType = TypeVar("ObsType")
 
-class HCLEVectorEnv(VectorEnv):
+class NESVectorEnv(VectorEnv):
     """
     Gymnasium VectorEnv wrapper for the C++ HCLEVectorEnvironment.
 
@@ -23,8 +23,8 @@ class HCLEVectorEnv(VectorEnv):
         game: str,
         num_envs: int = 2,
         render_mode: str = "rgb_array",
-        obs_height: int = 84,
-        obs_width: int = 84,
+        img_height: int = 84,
+        img_width: int = 84,
         frame_skip: int = 4,
         maxpool: bool = True,
         grayscale: bool = True,
@@ -36,8 +36,8 @@ class HCLEVectorEnv(VectorEnv):
             rom_path=roms.get_rom_path(game),
             game_name=game,
             render_mode=render_mode,
-            obs_height=obs_height,
-            obs_width=obs_width,
+            obs_height=img_height,
+            obs_width=img_width,
             frame_skip=frame_skip,
             maxpool=maxpool,
             grayscale=grayscale,
@@ -48,7 +48,7 @@ class HCLEVectorEnv(VectorEnv):
         channels = 1 if grayscale else 3
         
         # The shape of a single environment's observation
-        single_obs_shape = (stack_num, obs_height, obs_width) if grayscale else (stack_num, obs_height, obs_width, channels)
+        single_obs_shape = (stack_num, img_height, img_width) if grayscale else (stack_num, img_height, img_width, channels)
         
         self.single_observation_space = Box(
             low=0, high=255, shape=single_obs_shape, dtype=np.uint8
