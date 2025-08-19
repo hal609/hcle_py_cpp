@@ -3,7 +3,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
-#include "hcle/environment/hcle_environment.hpp"
+#include "hcle/environment/preprocessed_env.hpp"
 #include "hcle/common/exceptions.hpp"
 
 namespace py = pybind11;
@@ -25,15 +25,36 @@ py::array_t<uint8_t> vector_to_numpy(const std::vector<uint8_t> &vec)
 
 PYBIND11_MODULE(_hcle_py, m)
 {
-    // Use the fully qualified name: hcle::environment::HCLEnvironment
-    py::class_<hcle::environment::HCLEnvironment>(m, "HCLEnvironment")
-        .def(py::init())
-        .def("load_rom", &hcle::environment::HCLEnvironment::loadROM, "Loads a ROM file")
-        .def("act", &hcle::environment::HCLEnvironment::act, "Performs an action and returns the reward")
-        .def("reset", &hcle::environment::HCLEnvironment::reset, "Resets the environment")
-        .def("is_done", &hcle::environment::HCLEnvironment::isDone, "Checks if the episode is terminated")
-        .def("get_action_set", [](hcle::environment::HCLEnvironment &env)
+    // Use the fully qualified name: hcle::environment::PreprocessedEnv
+    py::class_<hcle::environment::PreprocessedEnv>(m, "PreprocessedEnv")
+
+        .def(py::init<std::string, std::string, int, int, int, bool, bool, int>(),
+             py::arg("rom_path"),
+             py::arg("game_name"),
+             py::arg("obs_height"),
+             py::arg("obs_width"),
+             py::arg("frame_skip"),
+             py::arg("maxpool"),
+             py::arg("grayscale"),
+             py::arg("stack_num"))
+
+        .def("step", [](hcle::environment::PreprocessedEnv &self, int action_index, py::array_t<uint8_t> obs_np)
+             {  auto *obs_ptr = static_cast<uint8_t *>(obs_np.mutable_data());
+                py::gil_scoped_release release;
+                self.step(action_index, obs_ptr); })
+
+        .def("reset", [](hcle::environment::PreprocessedEnv &self, py::array_t<uint8_t> obs_np)
+             {  auto *obs_ptr = static_cast<uint8_t *>(obs_np.mutable_data());
+                py::gil_scoped_release release;
+                self.reset(obs_ptr); })
+
+        .def("is_done", &hcle::environment::PreprocessedEnv::isDone, "Checks if the episode is terminated")
+
+        .def("get_reward", &hcle::environment::PreprocessedEnv::getReward, "Returns the float reward value")
+
+        .def("get_action_set", [](hcle::environment::PreprocessedEnv &env)
              { return env.getActionSet(); });
+
     init_vector_bindings(m);
     py::register_exception<hcle::common::WindowClosedException>(m, "WindowClosedException");
 }
