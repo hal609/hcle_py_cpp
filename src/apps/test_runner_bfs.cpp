@@ -30,11 +30,11 @@ int main(int argc, char **argv)
     // =========================================================================
     //  1. CONFIGURATION
     // =========================================================================
-    constexpr int SEARCH_DEPTH = 7;
-    constexpr int NUM_ENVS = 64;
+    constexpr int SEARCH_DEPTH = 10;
+    constexpr int NUM_ENVS = 72;
     constexpr int ACTION_SPACE_SIZE = 2;
 
-    const std::string rom_path = "C:\\Users\\offan\\Downloads\\hcle_py_cpp\\src\\hcle\\python\\hcle_py\\roms\\smb1.bin";
+    const std::string rom_path = "C:\\Users\\offan\\Downloads\\hcle_py_cpp\\src\\hcle\\python\\hcle_py\\roms\\smb3.bin";
     const std::string game_name = "smb1";
     constexpr int num_steps = 1000;
 
@@ -78,9 +78,9 @@ int main(int argc, char **argv)
     {
         env.step(0, obs_buffer.data());
     }
-    env.saveToState(0);
+    env.saveState();
     double total_reward = 0.0;
-
+    printf("About to start sim\n");
     // =========================================================================
     //  3. MAIN SIMULATION LOOP
     // =========================================================================
@@ -89,7 +89,7 @@ int main(int argc, char **argv)
         // --- BEGIN BREADTH-FIRST SEARCH ---
         for (int batch = 0; batch < num_batches; ++batch)
         {
-            vec_env.loadFromState(0);
+            vec_env.loadState();
             std::fill(total_reward_buffer.begin(), total_reward_buffer.end(), 0.0f);
 
             for (int depth = 0; depth < SEARCH_DEPTH; ++depth)
@@ -137,7 +137,7 @@ int main(int argc, char **argv)
         env.step(best_first_action, obs_buffer.data());
         render(frame_pointer, display);
         total_reward += env.getReward();
-        env.saveToState(0);
+        env.saveState();
     }
 
     return 0;
