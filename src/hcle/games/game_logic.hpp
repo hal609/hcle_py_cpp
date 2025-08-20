@@ -5,6 +5,7 @@
 #include <memory>
 #include <algorithm>
 #include <mutex>
+#include <shared_mutex>
 
 #include "hcle/emucore/nes.hpp"
 #include "hcle/emucore/utils.hpp"
@@ -38,6 +39,10 @@ namespace hcle
                 nes_ = nes;
                 current_ram_ptr_ = nes_->get_ram_pointer();
                 backup_state_.resize(nes_->size());
+                std::unique_lock lock(g_savestate_mutex);
+                state0.resize(nes_->size());
+                state1.resize(nes_->size());
+                state2.resize(nes_->size());
                 updateRAM();
             }
 
@@ -70,6 +75,66 @@ namespace hcle
                 }
             }
 
+            void saveToState(int state_num)
+            {
+
+                std::unique_lock lock(g_savestate_mutex);
+                if (state_num == 0)
+                {
+                    nes_->save(state0.data());
+                    state0_full = true;
+                }
+                else if (state_num == 1)
+                {
+                    nes_->save(state1.data());
+                    state1_full = true;
+                }
+                else if (state_num == 2)
+                {
+                    nes_->save(state2.data());
+                    state2_full = true;
+                }
+                else
+                {
+                    throw std::out_of_range("Invalid state number. Must be 0, 1, or 2.");
+                }
+            }
+
+            void loadFromState(int state_num)
+            {
+
+                std::shared_lock lock(g_savestate_mutex);
+
+                if (state_num == 0)
+                {
+                    if (!state0_full)
+                    {
+                        throw std::runtime_error("No savestate in slot 0.");
+                    }
+                    nes_->load(state0.data());
+                }
+                else if (state_num == 1)
+                {
+                    if (!state1_full)
+                    {
+                        throw std::runtime_error("No savestate in slot 1.");
+                    }
+                    nes_->load(state1.data());
+                }
+                else if (state_num == 2)
+                {
+                    if (!state2_full)
+                    {
+                        throw std::runtime_error("No savestate in slot 2.");
+                    }
+                    nes_->load(state2.data());
+                }
+                else
+                {
+                    throw std::out_of_range("Invalid state number. Must be 0, 1, or 2.");
+                }
+            }
+
         protected:
             cynes::NES *nes_ = nullptr;
             const uint8_t *current_ram_ptr_ = nullptr;
@@ -80,6 +145,15 @@ namespace hcle
             static inline bool has_backup_ = false;
             static inline std::vector<uint8_t> backup_state_;
             static inline std::mutex backup_mutex_;
+
+            static inline std::shared_mutex g_savestate_mutex;
+
+            static inline std::vector<uint8_t> state0;
+            static inline std::vector<uint8_t> state1;
+            static inline std::vector<uint8_t> state2;
+            static inline bool state0_full = false;
+            static inline bool state1_full = false;
+            static inline bool state2_full = false;
 
             void createBackup()
             {

@@ -10,8 +10,9 @@ namespace hcle
         class SMB1Logic : public GameLogic
         {
         public:
-            SMB1Logic() { action_set = {NES_INPUT_RIGHT | NES_INPUT_B,
-                                        NES_INPUT_RIGHT | NES_INPUT_B | NES_INPUT_A}; }
+            SMB1Logic() { action_set = {
+                              NES_INPUT_RIGHT | NES_INPUT_B,
+                              NES_INPUT_RIGHT | NES_INPUT_B | NES_INPUT_A}; }
 
             GameLogic *clone() const override { return new SMB1Logic(*this); }
 
@@ -43,15 +44,16 @@ namespace hcle
                 int previous_x = (static_cast<int>(previous_ram_[CURRENT_PAGE]) << 8) | previous_ram_[X_POS];
 
                 float x_reward = static_cast<float>(current_x - previous_x);
-                float level_reward = changeIn(LEVEL_NUM);
-                float world_reward = changeIn(WORLD_NUM);
-                float powerup_reward = changeIn(POWERUP_STATE);
-                float coin_reward = changeIn(COINS);
+                float level_reward = std::abs(changeIn(LEVEL_NUM));
+                float world_reward = std::abs(changeIn(WORLD_NUM));
+                float powerup_reward = std::abs(changeIn(POWERUP_STATE));
+                float coin_reward = std::abs(changeIn(COINS));
 
                 // Give a small penalty for each frame to encourage progress
                 float time_penalty = -0.1f;
 
-                return x_reward + level_reward * 50.0f + world_reward * 100.0f + powerup_reward * 10.0f + coin_reward + time_penalty;
+                float reward = x_reward + level_reward * 30.0f + powerup_reward * 10.0f + coin_reward + time_penalty;
+                return reward / 1.0f;
             }
 
             void onStep() override
