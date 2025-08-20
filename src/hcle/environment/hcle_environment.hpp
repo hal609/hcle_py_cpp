@@ -8,6 +8,7 @@
 #include "hcle/games/game_logic.hpp"
 #include "hcle/common/exceptions.hpp"
 #include "hcle/games/smb1.hpp"
+#include "hcle/games/kungfu.hpp"
 #include "hcle/version.hpp"
 
 struct StepResult
@@ -42,6 +43,9 @@ namespace hcle
 
       bool isDone();
       void reset();
+
+      void saveToState(int state_num);
+      void loadFromState(int state_num);
 
       const uint8_t *frame_ptr;
 

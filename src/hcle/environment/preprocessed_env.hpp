@@ -33,6 +33,9 @@ namespace hcle::environment
     size_t getObservationSize() const { return m_stacked_obs_size; }
     const uint8_t *getFramePointer() const { return env_->frame_ptr; }
 
+    void saveToState(int state_num);
+    void loadFromState(int state_num);
+
   private:
     void process_screen();
 

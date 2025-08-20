@@ -138,6 +138,16 @@ namespace hcle::environment
         }
     }
 
+    void PreprocessedEnv::saveToState(int state_num)
+    {
+        env_->saveToState(state_num);
+    }
+
+    void PreprocessedEnv::loadFromState(int state_num)
+    {
+        env_->loadFromState(state_num);
+    }
+
     // --- Getters ---
 
 } // namespace environment

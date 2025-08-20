@@ -8,6 +8,7 @@
 #include <string>
 #include <algorithm> // For std::min
 #include <stdexcept> // For std::runtime_error
+#include <execution>
 
 #include "hcle/common/thread_safe_queue.hpp"
 #include "hcle/environment/preprocessed_env.hpp"
@@ -112,6 +113,22 @@ namespace hcle::environment
         }
 
         int getNumEnvs() const { return num_envs_; }
+
+        void loadFromState(int state_num)
+        {
+            std::for_each(
+                std::execution::par, // Parallel execution policy
+                envs_.begin(),
+                envs_.end(),
+                [](auto &env)
+                {
+                    env->loadFromState(0); // Lambda function to call on each element
+                });
+            // for (int i = 0; i < num_envs_; ++i)
+            // {
+            //     envs_[i]->loadFromState(state_num);
+            // }
+        }
 
     private:
         struct ActionTask

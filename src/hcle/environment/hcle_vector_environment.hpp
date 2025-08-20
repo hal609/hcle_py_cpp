@@ -31,18 +31,9 @@ namespace hcle::environment
             const int stack_num = 4)
             : render_mode_(render_mode) // Store the render mode
         {
-            // Only create a display window if in "human" mode.
-            if (render_mode_ == "human")
-            {
-                display_ = std::make_unique<hcle::common::Display>("HCLEnvironment", 256, 240, 3);
-            }
 
-            // Create a factory function that the AsyncVectorizer can use to
-            // construct PreprocessedEnv instances.
-            // CORRECTED: Explicitly capture 'this' to fix the compiler warning.
             auto env_factory = [=]([[maybe_unused]] int env_id)
             {
-                // The underlying environments always run in "rgb_array" mode for performance.
                 return std::make_unique<PreprocessedEnv>(
                     rom_path, game_name, obs_height, obs_width,
                     frame_skip, maxpool, grayscale, stack_num);
@@ -50,13 +41,19 @@ namespace hcle::environment
 
             // Create and own the vectorizer engine.
             vectorizer_ = std::make_unique<AsyncVectorizer>(num_envs, env_factory);
+
+            // Only create a display window if in "human" mode.
+            if (render_mode_ == "human")
+            {
+                display_ = std::make_unique<hcle::common::Display>("HCLEnvironment", 256, 240, 3);
+                frame_ptr = vectorizer_->getRawFramePointer(0);
+            }
         }
 
         void render()
         {
             if (render_mode_ == "human" && display_)
             {
-                const uint8_t *frame_ptr = vectorizer_->getRawFramePointer(0);
                 if (frame_ptr)
                 {
                     display_->update(frame_ptr);
@@ -96,9 +93,15 @@ namespace hcle::environment
 
         int getNumEnvs() const { return vectorizer_->getNumEnvs(); }
 
+        void loadFromState(int state_num)
+        {
+            vectorizer_->loadFromState(state_num);
+        }
+
     private:
         std::unique_ptr<AsyncVectorizer> vectorizer_;
         std::unique_ptr<hcle::common::Display> display_;
         std::string render_mode_;
+        const uint8_t *frame_ptr = nullptr;
     };
 }

@@ -57,11 +57,19 @@ namespace hcle
             // Temporarily just assume the game is SMB1. Later we will
             // probably move this logic elsewhere and check the md5 of the rom
             // to grab the correct game logic.
-
-            static const hcle::games::GameLogic *roms[] = {
-                new hcle::games::SMB1Logic(),
-            };
-            return roms[0]->clone();
+            if (rom_path.find("smb1") != std::string::npos)
+            {
+                return new hcle::games::SMB1Logic();
+            }
+            else if (rom_path.find("kungfu") != std::string::npos)
+            {
+                return new hcle::games::KungFuLogic();
+            }
+            // static const hcle::games::GameLogic *roms[] = {
+            //     new hcle::games::SMB1Logic(),
+            //     new hcle::games::KungFuLogic(),
+            // };
+            // return roms[1]->clone();
         }
 
         const std::vector<uint8_t> HCLEnvironment::getActionSet() const
@@ -96,6 +104,20 @@ namespace hcle
             game_logic->onStep();
 
             return game_logic->getReward();
+        }
+
+        void HCLEnvironment::saveToState(int state_num)
+        {
+            if (!game_logic)
+            {
+                throw std::runtime_error("Environment must be loaded with a ROM before saving state.");
+            }
+            game_logic->saveToState(state_num);
+        }
+
+        void HCLEnvironment::loadFromState(int state_num)
+        {
+            game_logic->loadFromState(state_num);
         }
 
         float HCLEnvironment::getReward() const
