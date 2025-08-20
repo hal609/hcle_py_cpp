@@ -38,7 +38,6 @@ namespace hcle
             {
                 nes_ = nes;
                 current_ram_ptr_ = nes_->get_ram_pointer();
-                backup_state_.resize(nes_->size());
                 std::unique_lock lock(g_savestate_mutex);
                 state0.resize(nes_->size());
                 state1.resize(nes_->size());
@@ -65,7 +64,7 @@ namespace hcle
             {
                 if (has_backup_)
                 {
-                    std::lock_guard<std::mutex> lock(backup_mutex_);
+                    std::shared_lock lock(g_savestate_mutex);
                     nes_->load(backup_state_.data());
                 }
                 else
@@ -144,7 +143,7 @@ namespace hcle
 
             static inline bool has_backup_ = false;
             static inline std::vector<uint8_t> backup_state_;
-            static inline std::mutex backup_mutex_;
+            static inline std::shared_mutex backup_mutex_;
 
             static inline std::shared_mutex g_savestate_mutex;
 
@@ -157,7 +156,8 @@ namespace hcle
 
             void createBackup()
             {
-                std::lock_guard<std::mutex> lock(backup_mutex_);
+                std::unique_lock lock_backup(backup_mutex_);
+                backup_state_.resize(nes_->size());
                 nes_->save(backup_state_.data());
                 has_backup_ = true;
             }
