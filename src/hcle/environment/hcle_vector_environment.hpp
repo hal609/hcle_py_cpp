@@ -29,7 +29,8 @@ namespace hcle::environment
             const bool maxpool = false,
             const bool grayscale = true,
             const int stack_num = 4)
-            : render_mode_(render_mode) // Store the render mode
+            : render_mode_(render_mode),
+              grayscale_(grayscale)
         {
 
             auto env_factory = [=]([[maybe_unused]] int env_id)
@@ -56,7 +57,7 @@ namespace hcle::environment
             {
                 if (frame_ptr)
                 {
-                    display_->update(frame_ptr);
+                    display_->update(frame_ptr, grayscale_);
                     if (display_->processEvents())
                     {
                         throw hcle::common::WindowClosedException();
@@ -103,5 +104,7 @@ namespace hcle::environment
         std::unique_ptr<hcle::common::Display> display_;
         std::string render_mode_;
         const uint8_t *frame_ptr = nullptr;
+
+        bool grayscale_;
     };
 }
