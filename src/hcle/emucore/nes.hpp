@@ -81,7 +81,7 @@ namespace cynes
         uint8_t read_cpu(uint16_t address);
 
         /// Returns the pointer to the console's memory.
-        const uint8_t *get_ram_pointer() const;
+        uint8_t *get_ram_pointer() const;
 
         /// Read from the PPU memory.
         /// @note This function has other side effects than simply reading from memory, it

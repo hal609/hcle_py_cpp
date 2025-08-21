@@ -700,20 +700,114 @@ void cynes::PPU::render_pixel_gray(size_t pixel_offset, uint8_t color_index)
     _frame_buffer.get()[pixel_offset] = GRAYSCALE_PALETTE_LOOKUP[_mask_color_emphasize][color_index];
 }
 
-// void cynes::PPU::set_frame_ready(bool ready)
-// {
-//     _frame_ready = ready;
-// }
+void cynes::PPU::tick_no_draw()
+{
 
-// void cynes::PPU::set_render_skip(bool skip)
-// {
-//     _render_skip = skip;
-// }
+    if (_current_x > 339)
+    {
+        _current_x = 0;
+
+        if (++_current_y > 261)
+        {
+            _current_y = 0;
+            _foreground_sprite_count = 0;
+
+            _latch_cycle = !_latch_cycle;
+
+            for (int k = 0; k < 3; k++)
+            {
+                if (_clock_decays[k] > 0 && --_clock_decays[k] == 0)
+                {
+                    if (_clock_decays[k] > 0 && --_clock_decays[k] == 0)
+                    {
+                        _register_decay &= DECAY_MASKS[k];
+                    }
+                }
+            }
+        }
+
+        reset_foreground_data();
+
+        if (_current_y == 261)
+        {
+            _status_sprite_overflow = false;
+            _status_sprite_zero_hit = false;
+
+            memset(_foreground_shifter, 0x00, 0x10);
+        }
+    }
+    else
+    {
+        _current_x++;
+
+        if (_current_y < 240)
+        {
+            if (_current_x < 257 || (_current_x >= 321 && _current_x < 337))
+            {
+                _background_shifter[1] = 0xFF00;
+            }
+
+            if (_current_x >= 2 && _current_x < 257)
+            {
+                _foreground_positions[0] = 0;
+            }
+
+            if (_current_x >= 240 && _current_x < 250)
+            {
+
+                _foreground_data[0] = 248;
+                _foreground_sprite_count = 3;
+                _foreground_sprite_pointer = 0;
+                if (int16_t(_current_y) >= int16_t(_nes.read_oam(0)))
+                {
+                    _foreground_sprite_zero_should = true;
+                }
+                _foreground_sprite_pointer = 255;
+                _current_x = 250;
+            }
+
+            if (_current_x > 0 && _current_x < 257 && _current_y < 240)
+            {
+                _foreground_shifter[0] = 0x80;
+                uint8_t color_index = _palette_cache[blend_colors()];
+                (this->*_render_pixel)((_current_y << 8) + _current_x - 1, color_index);
+            }
+        }
+        else if (_current_x == 1 && _current_y == 241)
+        {
+            if (!_prevent_vertical_blank)
+            {
+                _status_vertical_blank = true;
+
+                if (_control_interrupt_on_vertical_blank)
+                {
+                    _nes.cpu.set_non_maskable_interrupt(true);
+                }
+            }
+            // _foreground_sprite_zero_hit = true;
+            _prevent_vertical_blank = false;
+            _frame_ready = true;
+        }
+    }
+
+    if (_delay_data_write_counter > 0 && --_delay_data_write_counter == 0)
+    {
+        _register_v = _delayed_register_v;
+        _register_t = _register_v;
+    }
+
+    _nes.get_mapper().tick();
+}
+
+void cynes::PPU::set_render_skip(bool skip)
+{
+    _render_skip = skip;
+}
 
 void cynes::PPU::tick()
 {
-    // if (_render_skip)
-    //     return tick_no_draw();
+    if (_render_skip)
+        return tick_no_draw();
 
     if (_current_y == 0 && _current_x == 0 && _rendering_enabled)
     {
