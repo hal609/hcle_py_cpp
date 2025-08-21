@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <mutex>
 #include <shared_mutex>
+#include <numeric>
 
 #include "hcle/emucore/nes.hpp"
 #include "hcle/emucore/utils.hpp"
@@ -136,7 +137,7 @@ namespace hcle
 
         protected:
             cynes::NES *nes_ = nullptr;
-            const uint8_t *current_ram_ptr_ = nullptr;
+            uint8_t *current_ram_ptr_ = nullptr;
             std::array<uint8_t, 2048> previous_ram_;
 
             std::vector<uint8_t> action_set = std::vector<uint8_t>{0};
