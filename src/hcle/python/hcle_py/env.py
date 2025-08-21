@@ -39,3 +39,9 @@ class HCLEnv(gym.Env):
     def close(self):
         # Add any C++ cleanup here if necessary
         pass
+
+    def save_to_state(self, state_num:int):
+        self.hcle.save_to_state(state_num)
+
+    def load_from_state(self, state_num:int):
+        self.hcle.load_from_state(state_num)

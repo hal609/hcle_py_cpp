@@ -49,7 +49,8 @@ class NESVectorEnv(VectorEnv):
         
         # The shape of a single environment's observation
         single_obs_shape = (stack_num, img_height, img_width) if grayscale else (stack_num, img_height, img_width, channels)
-        
+        # single_obs_shape = (img_height, img_width, stack_num) if grayscale else (img_height, img_width, stack_num, channels)
+
         self.single_observation_space = Box(
             low=0, high=255, shape=single_obs_shape, dtype=np.uint8
         )
