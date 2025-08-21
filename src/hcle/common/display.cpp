@@ -7,7 +7,7 @@ namespace hcle
     {
 
         Display::Display(const std::string &title, int screen_width, int screen_height, int scale)
-            : m_screen_width(screen_width)
+            : m_screen_width(screen_width), m_screen_height(screen_height)
         {
 
             if (SDL_Init(SDL_INIT_VIDEO) < 0)
@@ -62,14 +62,30 @@ namespace hcle
             SDL_Quit();
         }
 
-        void Display::update(const uint8_t *pixel_data)
+        void Display::update(const uint8_t *pixel_data, bool grayscale)
         {
-            // Update the texture with the new frame data from the emulator
-            SDL_UpdateTexture(m_texture, nullptr, pixel_data, m_screen_width * 3);
+            const uint8_t *data_to_render = pixel_data;
+            int pitch = m_screen_width * 3;
+
+            if (grayscale)
+            {
+                if (m_display_buffer.size() != m_screen_width * m_screen_height * 3)
+                {
+                    m_display_buffer.resize(m_screen_width * m_screen_height * 3);
+                }
+                for (int i = 0; i < m_screen_width * m_screen_height; ++i)
+                {
+                    uint8_t gray_value = pixel_data[i];
+                    m_display_buffer[i * 3 + 0] = gray_value; // Red
+                    m_display_buffer[i * 3 + 1] = gray_value; // Green
+                    m_display_buffer[i * 3 + 2] = gray_value; // Blue
+                }
+                data_to_render = m_display_buffer.data();
+            }
+
+            SDL_UpdateTexture(m_texture, nullptr, data_to_render, pitch);
             SDL_RenderClear(m_renderer);
-            // Copy the texture to the renderer
             SDL_RenderCopy(m_renderer, m_texture, nullptr, nullptr);
-            // Present the renderer to the screen
             SDL_RenderPresent(m_renderer);
         }
 
