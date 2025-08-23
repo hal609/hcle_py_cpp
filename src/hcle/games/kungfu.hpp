@@ -10,14 +10,17 @@ namespace hcle
         class KungFuLogic : public GameLogic
         {
         public:
-            KungFuLogic() { action_set = {
-                                NES_INPUT_UP,
-                                NES_INPUT_DOWN,
-                                NES_INPUT_LEFT,
-                                NES_INPUT_RIGHT,
-                                NES_INPUT_B,
-                                NES_INPUT_A,
-                            }; }
+            KungFuLogic()
+            {
+                action_set = {
+                    NES_INPUT_UP,
+                    NES_INPUT_DOWN,
+                    NES_INPUT_LEFT,
+                    NES_INPUT_RIGHT,
+                    NES_INPUT_B,
+                    NES_INPUT_A,
+                };
+            }
 
             GameLogic *clone() const override { return new KungFuLogic(*this); }
 

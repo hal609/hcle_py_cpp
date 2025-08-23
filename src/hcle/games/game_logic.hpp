@@ -51,8 +51,10 @@ namespace hcle
             virtual float getReward() = 0;
             virtual bool isDone() = 0;
             virtual void onStep() {}
+            virtual void onReset() {}
+            virtual void onStartup() {}
             virtual const std::vector<uint8_t> getActionSet() { return action_set; }
-            void frameadvance(uint8_t controller_value) { nes_->step(controller_value, 1); }
+            void frameadvance(uint8_t controller_value, int n = 1) { nes_->step(controller_value, n); }
 
             void updateRAM()
             {
@@ -72,7 +74,9 @@ namespace hcle
                 {
                     nes_->reset();
                     nes_->step(NES_INPUT_NONE, 1);
+                    onStartup();
                 }
+                onReset();
             }
 
             void saveToState(int state_num)
