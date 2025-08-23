@@ -38,6 +38,9 @@ namespace hcle
             static const int TIME_H = 0x07F8;
             static const int TIME_M = 0x07F9;
             static const int TIME_L = 0x07FA;
+            static const int PLAYER_FLOAT_STATE = 0x001D; // set to 3 when sliding down flagpole
+            inline static const std::vector<int> ENEMY_TYPE_ADDRESSES = {0x0016, 0x0017, 0x0018, 0x0019, 0x001A};
+            inline static const std::vector<int> STAGE_OVER_ENEMIES = {0x2D, 0x31}; // Bowser = 0x2D, Flagpole = 0x31
 
             bool in_game() { return current_ram_ptr_[LEVEL_LOADING] == 3 && current_ram_ptr_[GAME_MODE] != 0; }
 
@@ -79,7 +82,14 @@ namespace hcle
                 while (is_busy() || is_world_over())
                 {
                     runout_prelevel_timer();
-                    frameadvance(NES_INPUT_NONE);
+                    if (is_stage_over(current_ram_ptr_))
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        frameadvance(NES_INPUT_NONE);
+                    }
                 }
             }
 
@@ -95,8 +105,23 @@ namespace hcle
                 }
             }
 
+            bool is_stage_over(uint8_t *ram_pointer)
+            {
+                for (const int &address : ENEMY_TYPE_ADDRESSES)
+                {
+                    if (count(STAGE_OVER_ENEMIES.begin(), STAGE_OVER_ENEMIES.end(), ram_pointer[address]) > 0)
+                    {
+                        return ram_pointer[0x001D] == 3;
+                    }
+                }
+                return false;
+            }
+
         public:
-            bool isDone() override { return is_dead(); }
+            bool isDone() override
+            {
+                return is_dead();
+            }
 
             float getReward() override
             {
@@ -109,7 +134,8 @@ namespace hcle
 
                 float x_reward = static_cast<float>(current_x - previous_x);
                 float level_reward = std::abs(changeIn(LEVEL_NUM));
-                float world_reward = std::abs(changeIn(WORLD_NUM));
+                level_reward = std::abs(static_cast<float>(is_stage_over(current_ram_ptr_) - is_stage_over(previous_ram_.data())));
+                // float world_reward = std::abs(changeIn(WORLD_NUM));
                 float powerup_reward = std::abs(changeIn(POWERUP_STATE));
                 float coin_reward = std::abs(changeIn(COINS));
 
