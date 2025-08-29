@@ -48,11 +48,12 @@ namespace hcle
 
             virtual ~GameLogic() = default;
             virtual GameLogic *clone() const = 0;
-            virtual float getReward() = 0;
+            virtual double getReward() = 0;
             virtual bool isDone() = 0;
             virtual void onStep() {}
+            virtual void onReset() {}
             virtual const std::vector<uint8_t> getActionSet() { return action_set; }
-            void frameadvance(uint8_t controller_value) { nes_->step(controller_value, 1); }
+            void frameadvance(uint8_t controller_value, int n = 1) { nes_->step(controller_value, n); }
 
             void updateRAM()
             {
@@ -73,6 +74,7 @@ namespace hcle
                     nes_->reset();
                     nes_->step(NES_INPUT_NONE, 1);
                 }
+                onReset();
             }
 
             void saveToState(int state_num)
@@ -163,9 +165,9 @@ namespace hcle
                 has_backup_ = true;
             }
 
-            float changeIn(int address)
+            int changeIn(int address)
             {
-                return static_cast<float>(current_ram_ptr_[address] - previous_ram_[address]);
+                return static_cast<int>(current_ram_ptr_[address]) - static_cast<int>(previous_ram_[address]);
             }
         };
     } // namespace games

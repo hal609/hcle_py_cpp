@@ -34,6 +34,7 @@ namespace cynes
         void render();
 
         void setOutputModeGrayscale();
+        void setOutputModeColorIndex();
 
         /// Perform a dummy read cycle.
         void dummy_read();

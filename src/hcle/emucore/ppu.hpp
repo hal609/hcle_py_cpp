@@ -55,6 +55,7 @@ namespace cynes
         bool is_frame_ready();
 
         void setOutputModeGrayscale();
+        void setOutputModeColorIndex();
 
         void set_frame_ready(bool ready);
         void set_render_skip(bool skip);
@@ -97,6 +98,7 @@ namespace cynes
 
         void render_pixel_rgb(size_t pixel_offset, uint8_t color_index);
         void render_pixel_gray(size_t pixel_offset, uint8_t color_index);
+        void render_color_index(size_t pixel_offset, uint8_t color_index);
 
         void update_palette_cache();
         uint8_t _palette_cache[32];

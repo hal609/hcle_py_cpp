@@ -10,7 +10,7 @@ namespace py = pybind11;
 void init_vector_bindings(py::module_ &m)
 {
      py::class_<hcle::environment::HCLEVectorEnvironment>(m, "HCLEVectorEnvironment")
-         .def(py::init<int, std::string, std::string, std::string, int, int, int, bool, bool, int>(),
+         .def(py::init<int, std::string, std::string, std::string, int, int, int, bool, bool, int, bool>(),
               py::arg("num_envs"),
               py::arg("rom_path"),
               py::arg("game_name"),
@@ -20,7 +20,8 @@ void init_vector_bindings(py::module_ &m)
               py::arg("frame_skip") = 4,
               py::arg("maxpool") = true,
               py::arg("grayscale") = true,
-              py::arg("stack_num") = 4)
+              py::arg("stack_num") = 4,
+              py::arg("color_index_grayscale") = false)
          .def_property_readonly("num_envs", &hcle::environment::HCLEVectorEnvironment::getNumEnvs)
          // --- Helper functions for Python wrapper ---
          .def("getActionSet", &hcle::environment::HCLEVectorEnvironment::getActionSet,
@@ -34,7 +35,7 @@ void init_vector_bindings(py::module_ &m)
 
                  // Create dummy buffers with the CORRECT size
                  const int num_envs = self.getNumEnvs();
-                 std::vector<float> reward_buffer(num_envs);
+                 std::vector<double> reward_buffer(num_envs);
                  std::vector<uint8_t> done_buffer(num_envs);
 
                  py::gil_scoped_release release;
@@ -53,11 +54,11 @@ void init_vector_bindings(py::module_ &m)
               },
               py::arg("actions").noconvert(), "Sends a batch of actions to the environments to be executed.")
 
-         .def("recv", [](hcle::environment::HCLEVectorEnvironment &self, py::array_t<uint8_t> obs_np, py::array_t<float> rewards_np, py::array_t<uint8_t> dones_np)
+         .def("recv", [](hcle::environment::HCLEVectorEnvironment &self, py::array_t<uint8_t> obs_np, py::array_t<double> rewards_np, py::array_t<uint8_t> dones_np)
               {
                    // Get pointers to the NumPy array data
                    auto *obs_ptr = static_cast<uint8_t *>(obs_np.mutable_data());
-                   auto *rewards_ptr = static_cast<float *>(rewards_np.mutable_data());
+                   auto *rewards_ptr = static_cast<double *>(rewards_np.mutable_data());
                    auto *dones_ptr = static_cast<uint8_t *>(dones_np.mutable_data());
 
                    // Release the GIL while waiting for C++ threads to finish

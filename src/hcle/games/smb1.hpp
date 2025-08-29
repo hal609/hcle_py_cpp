@@ -16,6 +16,7 @@ namespace hcle
                 // std::iota(action_set.begin(), action_set.end(), 0);
                 action_set = {
                     NES_INPUT_LEFT,
+                    // NES_INPUT_DOWN,
                     NES_INPUT_RIGHT | NES_INPUT_B,
                     NES_INPUT_RIGHT | NES_INPUT_B | NES_INPUT_A};
             }
@@ -68,43 +69,6 @@ namespace hcle
 
             void runout_prelevel_timer() { current_ram_ptr_[PRE_LEVEL_TIMER] = 0; }
 
-            void skip_change_area()
-            {
-                uint8_t timer = current_ram_ptr_[CHANGE_AREA_TIMER];
-                if (timer > 1 && timer < 255)
-                {
-                    current_ram_ptr_[CHANGE_AREA_TIMER] = 1;
-                }
-            }
-
-            void skip_occupied_states()
-            {
-                while (is_busy() || is_world_over())
-                {
-                    runout_prelevel_timer();
-                    if (is_stage_over(current_ram_ptr_))
-                    {
-                        break;
-                    }
-                    else
-                    {
-                        frameadvance(NES_INPUT_NONE);
-                    }
-                }
-            }
-
-            void skip_end_of_world()
-            {
-                if (is_world_over())
-                {
-                    int time = get_time();
-                    while (get_time() == time)
-                    {
-                        frameadvance(NES_INPUT_NONE);
-                    }
-                }
-            }
-
             bool is_stage_over(uint8_t *ram_pointer)
             {
                 for (const int &address : ENEMY_TYPE_ADDRESSES)
@@ -123,26 +87,27 @@ namespace hcle
                 return is_dead();
             }
 
-            float getReward() override
+            double getReward() override
             {
+                double reward = 0.0;
+
                 if (is_dead())
-                    return -0.2f;
+                    reward -= 10;
 
                 // Calculate change in X position
                 int current_x = (static_cast<int>(current_ram_ptr_[CURRENT_PAGE]) << 8) | current_ram_ptr_[X_POS];
                 int previous_x = (static_cast<int>(previous_ram_[CURRENT_PAGE]) << 8) | previous_ram_[X_POS];
 
-                float x_reward = static_cast<float>(current_x - previous_x);
-                float level_reward = std::abs(changeIn(LEVEL_NUM));
-                level_reward = std::abs(static_cast<float>(is_stage_over(current_ram_ptr_) - is_stage_over(previous_ram_.data())));
-                // float world_reward = std::abs(changeIn(WORLD_NUM));
-                float powerup_reward = std::abs(changeIn(POWERUP_STATE));
-                float coin_reward = std::abs(changeIn(COINS));
+                double x_reward = static_cast<float>(current_x - previous_x);
+                x_reward = (x_reward < -3) ? 0 : x_reward;
+                double level_reward = std::abs(changeIn(LEVEL_NUM));
+                double powerup_reward = std::abs(changeIn(POWERUP_STATE));
+                double coin_reward = std::abs(changeIn(COINS));
 
-                float time_penalty = -0.1f;
+                double time_penalty = -0.1;
 
-                float reward = x_reward + level_reward * 100.0f + powerup_reward * 10.0f + coin_reward + time_penalty;
-                return reward / 100.0f;
+                reward = x_reward + (level_reward * 500.0) + (powerup_reward * 10.0) + coin_reward + time_penalty;
+                return (reward / 500.0);
             }
 
             void onStep() override
@@ -157,9 +122,15 @@ namespace hcle
                     this->frameadvance(NES_INPUT_START);
                     this->frameadvance(NES_INPUT_NONE);
                 }
-                skip_occupied_states();
-                skip_change_area();
-                skip_end_of_world();
+                if (is_busy() || is_world_over())
+                {
+                    runout_prelevel_timer();
+                }
+                uint8_t timer = current_ram_ptr_[CHANGE_AREA_TIMER];
+                if (timer > 1 && timer < 255)
+                {
+                    current_ram_ptr_[CHANGE_AREA_TIMER] = 1;
+                }
             }
         };
 

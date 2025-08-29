@@ -28,7 +28,8 @@ namespace hcle::environment
             const int frame_skip = 4,
             const bool maxpool = false,
             const bool grayscale = true,
-            const int stack_num = 4)
+            const int stack_num = 4,
+            const bool color_index_grayscale = false)
             : render_mode_(render_mode),
               grayscale_(grayscale)
         {
@@ -37,7 +38,7 @@ namespace hcle::environment
             {
                 return std::make_unique<PreprocessedEnv>(
                     rom_path, game_name, obs_height, obs_width,
-                    frame_skip, maxpool, grayscale, stack_num);
+                    frame_skip, maxpool, grayscale, stack_num, color_index_grayscale);
             };
 
             // Create and own the vectorizer engine.
@@ -53,31 +54,23 @@ namespace hcle::environment
 
         void render()
         {
-            if (render_mode_ == "human" && display_)
-            {
-                if (frame_ptr)
-                {
-                    display_->update(frame_ptr, grayscale_);
-                    if (display_->processEvents())
-                    {
-                        throw hcle::common::WindowClosedException();
-                    }
-                }
-            }
         }
 
-        void reset(uint8_t *obs_buffer, float *reward_buffer, uint8_t *done_buffer)
+        void reset(uint8_t *obs_buffer, double *reward_buffer, uint8_t *done_buffer)
         {
             vectorizer_->reset(obs_buffer, reward_buffer, done_buffer);
         }
 
         void send(const std::vector<int> &action_ids)
         {
-            render();
+            if (render_mode_ == "human" && display_ && frame_ptr)
+            {
+                hcle::common::Display::update_window(display_, frame_ptr, grayscale_);
+            }
             vectorizer_->send(action_ids);
         }
 
-        void recv(uint8_t *obs_buffer, float *reward_buffer, uint8_t *done_buffer)
+        void recv(uint8_t *obs_buffer, double *reward_buffer, uint8_t *done_buffer)
         {
             vectorizer_->recv(obs_buffer, reward_buffer, done_buffer);
         }

@@ -12,7 +12,8 @@ namespace hcle::environment
         const int frame_skip,
         const bool maxpool,
         const bool grayscale,
-        const int stack_num)
+        const int stack_num,
+        const bool color_index_grayscale)
         : obs_height_(obs_height),
           obs_width_(obs_width),
           frame_skip_(frame_skip),
@@ -23,10 +24,10 @@ namespace hcle::environment
           done_(false)
     {
         env_ = std::make_unique<HCLEnvironment>();
-        env_->loadROM(rom_path);
+        env_->loadROM(game_name);
 
         if (grayscale_)
-            env_->setOutputModeGrayscale();
+            env_->setOutputMode((color_index_grayscale) ? "index" : "grayscale");
 
         action_set_ = env_->getActionSet();
 
@@ -70,7 +71,7 @@ namespace hcle::environment
         }
 
         uint8_t controller_input = action_set_[action_index];
-        float accumulated_reward = 0.0f;
+        double accumulated_reward = 0.0f;
 
         if (maxpool_)
         {
@@ -146,6 +147,16 @@ namespace hcle::environment
     void PreprocessedEnv::loadFromState(int state_num)
     {
         env_->loadFromState(state_num);
+    }
+
+    void PreprocessedEnv::createWindow(uint8_t fps_limit)
+    {
+        env_->createWindow(fps_limit);
+    }
+
+    void PreprocessedEnv::updateWindow()
+    {
+        env_->updateWindow();
     }
 
     // --- Getters ---

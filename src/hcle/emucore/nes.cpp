@@ -35,6 +35,11 @@ void cynes::NES::setOutputModeGrayscale()
     ppu.setOutputModeGrayscale();
 }
 
+void cynes::NES::setOutputModeColorIndex()
+{
+    ppu.setOutputModeColorIndex();
+}
+
 void cynes::NES::reset()
 {
     cpu.reset();

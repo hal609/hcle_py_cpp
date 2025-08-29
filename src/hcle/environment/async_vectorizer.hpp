@@ -77,7 +77,7 @@ namespace hcle::environment
             }
         }
 
-        void reset(uint8_t *obs_buffer, float *reward_buffer, uint8_t *done_buffer)
+        void reset(uint8_t *obs_buffer, double *reward_buffer, uint8_t *done_buffer)
         {
             for (int i = 0; i < num_envs_; ++i)
             {
@@ -101,7 +101,7 @@ namespace hcle::environment
 
         const uint8_t *getRawFramePointer(int index) { return envs_[index]->getFramePointer(); }
 
-        void recv(uint8_t *obs_buffer, float *reward_buffer, uint8_t *done_buffer) { collect_results(obs_buffer, reward_buffer, done_buffer); }
+        void recv(uint8_t *obs_buffer, double *reward_buffer, uint8_t *done_buffer) { collect_results(obs_buffer, reward_buffer, done_buffer); }
 
         const std::vector<uint8_t> &getActionSet() const { return action_set_cache_; }
 
@@ -149,7 +149,7 @@ namespace hcle::environment
 
         // Internal buffers for thread-safe data transfer.
         std::vector<std::vector<uint8_t>> internal_obs_buffers_;
-        std::vector<float> internal_reward_buffers_;
+        std::vector<double> internal_reward_buffers_;
         std::vector<bool> internal_done_buffers_;
 
         void worker_function()
@@ -187,7 +187,7 @@ namespace hcle::environment
             }
         }
 
-        void collect_results(uint8_t *obs_buffer, float *reward_buffer, uint8_t *done_buffer)
+        void collect_results(uint8_t *obs_buffer, double *reward_buffer, uint8_t *done_buffer)
         {
             const size_t single_obs_size = getObservationSize();
 

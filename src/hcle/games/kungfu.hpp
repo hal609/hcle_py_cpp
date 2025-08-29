@@ -74,7 +74,7 @@ namespace hcle
                 int64_t change = static_cast<int64_t>(current_ram_ptr_[HP]) - static_cast<int64_t>(previous_ram_[HP]);
                 if (change > 0 || current_ram_ptr_[HP] == 0)
                 {
-                    return 0.0f;
+                    return 0.0;
                 }
                 return static_cast<float>(change);
             }
@@ -82,14 +82,14 @@ namespace hcle
         public:
             bool isDone() override { return is_dead(); }
 
-            float getReward() override
+            double getReward() override
             {
                 if (in_attract_mode())
                 {
-                    return 0.0f;
+                    return 0.0;
                 }
 
-                float reward = -0.01f; // Time penalty
+                double reward = -0.01; // Time penalty
 
                 float x_reward = x_change();
                 if (current_ram_ptr_[FLOOR] % 2 == 0)
@@ -101,12 +101,12 @@ namespace hcle
                     reward += x_reward;
                 }
 
-                reward += score_change() / 100.0f;
+                reward += score_change() / 100.0;
                 reward += hp_change();
 
                 if (is_dead())
                 {
-                    reward -= 100.0f;
+                    reward -= 100.0;
                 }
 
                 return reward;

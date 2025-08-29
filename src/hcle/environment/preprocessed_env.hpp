@@ -20,7 +20,8 @@ namespace hcle::environment
         const int frame_skip,
         const bool maxpool,
         const bool grayscale,
-        const int stack_num);
+        const int stack_num,
+        const bool color_index_grayscale = false);
 
     void reset(uint8_t *obs_output_buffer);
 
@@ -28,13 +29,16 @@ namespace hcle::environment
 
     // --- Getters ---
     bool isDone() const { return done_; }
-    float getReward() const { return reward_; }
+    double getReward() const { return reward_; }
     std::vector<uint8_t> getActionSet() const { return action_set_; }
     size_t getObservationSize() const { return m_stacked_obs_size; }
     const uint8_t *getFramePointer() const { return env_->frame_ptr; }
 
     void saveToState(int state_num);
     void loadFromState(int state_num);
+
+    void createWindow(uint8_t fps_limit = 0);
+    void updateWindow();
 
   private:
     void process_screen();
@@ -56,7 +60,7 @@ namespace hcle::environment
     std::vector<uint8_t> action_set_;
 
     // State variables
-    float reward_;
+    double reward_;
     bool done_;
 
     // Buffers and dimensions

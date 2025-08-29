@@ -47,10 +47,12 @@ PYBIND11_MODULE(_hcle_py, m)
              {  auto *obs_ptr = static_cast<uint8_t *>(obs_np.mutable_data());
                 py::gil_scoped_release release;
                 self.reset(obs_ptr); })
-
+        .def("create_window", &hcle::environment::PreprocessedEnv::createWindow, "Creates a window for human mode rendering")
+        .def("update_window", &hcle::environment::PreprocessedEnv::updateWindow, "Tells the window to update displayed frame to match emulator frame buffer")
         .def("is_done", &hcle::environment::PreprocessedEnv::isDone, "Checks if the episode is terminated")
-
-        .def("get_reward", &hcle::environment::PreprocessedEnv::getReward, "Returns the float reward value")
+        .def("get_reward", &hcle::environment::PreprocessedEnv::getReward, "Returns the double reward value")
+        .def("save_to_state", &hcle::environment::PreprocessedEnv::saveToState, "Saves the current environment state")
+        .def("load_from_state", &hcle::environment::PreprocessedEnv::loadFromState, "Loads a previously saved environment state")
 
         .def("get_action_set", [](hcle::environment::PreprocessedEnv &env)
              { return env.getActionSet(); });

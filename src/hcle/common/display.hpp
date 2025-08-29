@@ -4,6 +4,9 @@
 #include <string>
 #include <cstdint>
 #include <vector>
+#include <memory>
+
+#include "exceptions.hpp"
 
 namespace hcle
 {
@@ -17,6 +20,15 @@ namespace hcle
 
             void update(const uint8_t *pixel_data, bool grayscale);
             bool processEvents();
+
+            static void update_window(std::unique_ptr<Display> &display, const uint8_t *frame_ptr, bool grayscale)
+            {
+                display->update(frame_ptr, grayscale);
+                if (display->processEvents())
+                {
+                    throw WindowClosedException::WindowClosedException();
+                }
+            }
 
         private:
             SDL_Window *m_window = nullptr;
