@@ -3,17 +3,36 @@
 #include <chrono>
 
 #include "hcle/environment/hcle_environment.hpp"
+#include "hcle/games/roms.hpp"
 
 namespace hcle
 {
     namespace environment
     {
-
         bool HCLEnvironment::was_welcomed = false;
 
         HCLEnvironment::HCLEnvironment()
         {
-            // this->WelcomeMessage();
+            this->WelcomeMessage();
+        }
+
+        void HCLEnvironment::createWindow(uint8_t fps_limit)
+        {
+            m_display = std::make_unique<hcle::common::Display>("HCLEnvironment", 256, 240, 3);
+            m_fps_limit = fps_limit;
+            m_fps_sleep_ms = static_cast<milliseconds>(static_cast<int>((1.0f / static_cast<float>(m_fps_limit)) * 1000));
+            m_last_update = steady_clock::now();
+        }
+
+        void HCLEnvironment::updateWindow()
+        {
+            if (m_fps_limit > 0)
+            {
+                milliseconds time_dif = duration_cast<milliseconds>(steady_clock::now() - m_last_update);
+                m_last_update = steady_clock::now();
+                std::this_thread::sleep_for(m_fps_sleep_ms - time_dif);
+            }
+            hcle::common::Display::update_window(m_display, frame_ptr, m_single_channel);
         }
 
         void HCLEnvironment::WelcomeMessage()
@@ -32,40 +51,43 @@ namespace hcle
                 throw std::runtime_error("Environment must be loaded with a ROM before setting output mode.");
             }
             emu->setOutputModeGrayscale();
-            frame_size_ = GRAYSCALE_FRAME_SIZE;
+            m_frame_size = SINGLE_CHAN_FRAME_SIZE;
+            m_single_channel = true;
         }
 
-        void HCLEnvironment::loadROM(const std::string &rom_path, const std::string &render_mode)
+        void HCLEnvironment::setOutputMode(std::string mode)
         {
-            rom_path_ = rom_path;
-            render_mode_ = render_mode;
-            frame_size_ = RAW_FRAME_SIZE;
+            if (mode == "grayscale")
+            {
+                emu->setOutputModeGrayscale();
+                m_frame_size = SINGLE_CHAN_FRAME_SIZE;
+                m_single_channel = true;
+            }
+            else if (mode == "index")
+            {
+                emu->setOutputModeColorIndex();
+                m_frame_size = SINGLE_CHAN_FRAME_SIZE;
+                m_single_channel = true;
+            }
+        }
 
-            emu.reset(new cynes::NES(rom_path.c_str()));
+        void HCLEnvironment::loadROM(const std::string &game_name)
+        {
+            m_rom_path = hcle::get_rom_path(game_name);
+            m_frame_size = RAW_FRAME_SIZE;
 
-            if (render_mode_ == "human")
-                display_ = std::make_unique<hcle::common::Display>("HCLEnvironment", 256, 240, 3);
+            emu.reset(new cynes::NES(m_rom_path.c_str()));
 
             frame_ptr = emu->get_frame_buffer();
 
-            hcle::games::GameLogic *wrapper = createGameLogic(rom_path);
-            game_logic.reset(wrapper);
-            game_logic->initialize(emu.get());
+            games::GameLogic *logic_template = hcle::get_game_logic(game_name);
+            if (logic_template)
+            {
+                game_logic.reset(logic_template->clone());
+                game_logic->initialize(emu.get());
+            }
 
             this->reset();
-        }
-
-        hcle::games::GameLogic *
-        HCLEnvironment::createGameLogic(const std::string &rom_path)
-        {
-            // Temporarily just assume the game is SMB1. Later we will
-            // probably move this logic elsewhere and check the md5 of the rom
-            // to grab the correct game logic.
-
-            static const hcle::games::GameLogic *roms[] = {
-                new hcle::games::SMB1Logic(),
-            };
-            return roms[0]->clone();
         }
 
         const std::vector<uint8_t> HCLEnvironment::getActionSet() const
@@ -84,45 +106,54 @@ namespace hcle
                 throw std::runtime_error("Environment must be loaded with a ROM before reset.");
             }
             game_logic->reset();
-            this->current_step_ = 0;
+            this->m_current_step = 0;
             game_logic->updateRAM();
         }
 
-        float HCLEnvironment::act(uint8_t controller_input)
+        double HCLEnvironment::act(uint8_t controller_input, unsigned int frames)
         {
             if (!emu || !game_logic)
             {
                 throw std::runtime_error("Environment must be loaded with a ROM before calling step.");
             }
             game_logic->updateRAM();
-            emu->step(controller_input, 1);
-            this->current_step_++;
+            if (m_display)
+            {
+                for (unsigned int k = 0; k < frames; k++)
+                {
+                    emu->step(controller_input, 1);
+                    this->updateWindow();
+                }
+            }
+            else
+            {
+                emu->step(controller_input, frames);
+            }
+            this->m_current_step++;
             game_logic->onStep();
-
-            if (this->render_mode_ == "human")
-                this->render();
 
             return game_logic->getReward();
         }
 
-        float HCLEnvironment::getReward() const
+        void HCLEnvironment::saveToState(int state_num)
+        {
+            if (!game_logic)
+            {
+                throw std::runtime_error("Environment must be loaded with a ROM before saving state.");
+            }
+            game_logic->saveToState(state_num);
+        }
+
+        void HCLEnvironment::loadFromState(int state_num)
+        {
+            game_logic->loadFromState(state_num);
+        }
+
+        double HCLEnvironment::getReward() const
         {
             if (!game_logic)
                 throw std::runtime_error("Environment must be loaded with a ROM before getting reward.");
             return game_logic->getReward();
-        }
-
-        void HCLEnvironment::render()
-        {
-            if (this->display_)
-            {
-                this->display_->update(frame_ptr);
-
-                if (this->display_->processEvents())
-                {
-                    throw hcle::common::WindowClosedException();
-                }
-            }
         }
 
         bool HCLEnvironment::isDone()

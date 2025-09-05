@@ -5,15 +5,12 @@
 #include <string>
 #include <functional>
 
+#include "hcle/common/display.hpp"
 #include "hcle/environment/async_vectorizer.hpp"
 #include "hcle/environment/preprocessed_env.hpp"
 
 namespace hcle::environment
 {
-    /**
-     * @brief The user-facing interface for creating and interacting with a
-     * collection of parallel game environments.
-     */
     class HCLEVectorEnvironment
     {
     public:
@@ -21,74 +18,78 @@ namespace hcle::environment
             const int num_envs,
             const std::string &rom_path,
             const std::string &game_name,
-
             const std::string &render_mode = "rgb_array",
             const int obs_height = 84,
             const int obs_width = 84,
             const int frame_skip = 4,
             const bool maxpool = false,
             const bool grayscale = true,
-            const int stack_num = 4)
-
+            const int stack_num = 4,
+            const bool color_index_grayscale = false)
+            : m_render_mode(render_mode),
+              m_grayscale(grayscale)
         {
-            // Create a factory function that the AsyncVectorizer can use to
-            // construct PreprocessedEnv instances with the correct settings.
-            auto env_factory = [=](int env_id)
+
+            auto env_factory = [=]([[maybe_unused]] int env_id)
             {
-                // Only the first environment should render to a window if requested.
-                std::string current_render_mode = (env_id == 0) ? render_mode : "rgb_array";
                 return std::make_unique<PreprocessedEnv>(
-                    rom_path, game_name, current_render_mode, obs_height, obs_width,
-                    frame_skip, maxpool, grayscale, stack_num);
+                    rom_path, game_name, obs_height, obs_width,
+                    frame_skip, maxpool, grayscale, stack_num, color_index_grayscale);
             };
 
             // Create and own the vectorizer engine.
-            vectorizer_ = std::make_unique<AsyncVectorizer>(num_envs, env_factory);
+            m_vectorizer = std::make_unique<AsyncVectorizer>(num_envs, env_factory);
+
+            // Only create a display window if in "human" mode.
+            if (m_render_mode == "human")
+            {
+                m_display = std::make_unique<hcle::common::Display>("HCLEnvironment", 256, 240, 3);
+                m_frame_ptr = m_vectorizer->getRawFramePointer(0);
+            }
         }
 
-        // --- Public API (Pass-through calls to the vectorizer) ---
-
-        void reset(uint8_t *obs_buffer, float *reward_buffer, uint8_t *done_buffer)
+        void reset(uint8_t *obs_buffer, double *reward_buffer, uint8_t *done_buffer)
         {
-            vectorizer_->reset(obs_buffer, reward_buffer, done_buffer);
+            m_vectorizer->reset(obs_buffer, reward_buffer, done_buffer);
         }
 
         void send(const std::vector<int> &action_ids)
         {
-            vectorizer_->send(action_ids);
+            if (m_render_mode == "human" && m_display && m_frame_ptr)
+            {
+                hcle::common::Display::update_window(m_display, m_frame_ptr, m_grayscale);
+            }
+            m_vectorizer->send(action_ids);
         }
 
-        void recv(uint8_t *obs_buffer, float *reward_buffer, uint8_t *done_buffer)
+        void recv(uint8_t *obs_buffer, double *reward_buffer, uint8_t *done_buffer)
         {
-            vectorizer_->recv(obs_buffer, reward_buffer, done_buffer);
+            m_vectorizer->recv(obs_buffer, reward_buffer, done_buffer);
         }
 
         const std::vector<uint8_t> &getActionSet() const
         {
-            return vectorizer_->getActionSet();
+            return m_vectorizer->getActionSet();
         }
 
         size_t getObservationSize() const
         {
-            return vectorizer_->getObservationSize();
+            return m_vectorizer->getObservationSize();
         }
 
-        const int getNumEnvs() const { return vectorizer_->getNumEnvs(); }
+        int getNumEnvs() const { return m_vectorizer->getNumEnvs(); }
+
+        void loadFromState(int state_num)
+        {
+            m_vectorizer->loadFromState(state_num);
+        }
 
     private:
-        std::unique_ptr<AsyncVectorizer> vectorizer_;
+        std::unique_ptr<AsyncVectorizer> m_vectorizer;
+        std::unique_ptr<hcle::common::Display> m_display;
+        std::string m_render_mode;
+        const uint8_t *m_frame_ptr = nullptr;
 
-        std::vector<uint8_t> action_set_;
-
-        const int num_envs_;
-        const std::string &rom_path_;
-        const std::string &game_name_;
-        const std::string &render_mode_;
-        const int obs_height_;
-        const int obs_width_;
-        const int frame_skip_;
-        const bool maxpool_;
-        const bool grayscale_;
-        const int stack_num_;
+        bool m_grayscale;
     };
 }

@@ -35,6 +35,11 @@ void cynes::NES::setOutputModeGrayscale()
     ppu.setOutputModeGrayscale();
 }
 
+void cynes::NES::setOutputModeColorIndex()
+{
+    ppu.setOutputModeColorIndex();
+}
+
 void cynes::NES::reset()
 {
     cpu.reset();
@@ -65,6 +70,7 @@ void cynes::NES::write(uint16_t address, uint8_t value)
     write_cpu(address, value);
 
     ppu.tick();
+
     cpu.poll();
 }
 
@@ -146,9 +152,9 @@ uint8_t cynes::NES::read(uint16_t address)
     return _open_bus;
 }
 
-const uint8_t *cynes::NES::get_ram_pointer() const
+uint8_t *cynes::NES::get_ram_pointer() const
 {
-    return reinterpret_cast<const uint8_t *>(_memory_cpu.get());
+    return reinterpret_cast<uint8_t *>(_memory_cpu.get());
 }
 
 uint8_t cynes::NES::read_cpu(uint16_t address)
@@ -219,6 +225,7 @@ bool cynes::NES::step(uint16_t controllers, unsigned int frames)
     {
         while (!ppu.is_frame_ready())
         {
+            // ppu.set_render_skip((k < frames - 1));
             cpu.tick();
 
             if (cpu.is_frozen())

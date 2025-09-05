@@ -15,46 +15,49 @@ namespace hcle::environment
     PreprocessedEnv(
         const std::string &rom_path,
         const std::string &game_name,
-        const std::string &render_mode,
         const int obs_height,
         const int obs_width,
         const int frame_skip,
         const bool maxpool,
         const bool grayscale,
-        const int stack_num);
+        const int stack_num,
+        const bool color_index_grayscale = false);
 
     void reset(uint8_t *obs_output_buffer);
 
     void step(uint8_t action_index, uint8_t *obs_output_buffer);
 
-    // --- Getters ---
-    bool isDone() const { return done_; }
-    float getReward() const { return reward_; }
-    std::vector<uint8_t> getActionSet() const { return action_set_; }
+    bool isDone() const { return m_done; }
+    double getReward() const { return m_reward; }
+    std::vector<uint8_t> getActionSet() const { return m_action_set; }
     size_t getObservationSize() const { return m_stacked_obs_size; }
+    const uint8_t *getFramePointer() const { return m_env->frame_ptr; }
+
+    void saveToState(int state_num);
+    void loadFromState(int state_num);
+
+    void createWindow(uint8_t fps_limit = 0);
+    void updateWindow();
 
   private:
-    void process_screen();
+    void processScreen();
 
-    void write_observation(uint8_t *obs_output_buffer);
+    void writeObservation(uint8_t *obs_output_buffer);
 
-    // Environment configuration
-    int obs_height_;
-    int obs_width_;
-    int frame_skip_;
-    bool maxpool_;
-    bool grayscale_;
-    int stack_num_;
+    int m_obs_height;
+    int m_obs_width;
+    int m_frame_skip;
+    bool m_maxpool;
+    bool m_grayscale;
+    int m_stack_num;
 
-    bool requires_resize_;
+    bool m_requires_resize;
 
-    // Core environment
-    std::unique_ptr<HCLEnvironment> env_;
-    std::vector<uint8_t> action_set_;
+    std::unique_ptr<HCLEnvironment> m_env;
+    std::vector<uint8_t> m_action_set;
 
-    // State variables
-    float reward_;
-    bool done_;
+    double m_reward;
+    bool m_done;
 
     // Buffers and dimensions
     const int m_raw_frame_height = 240;
@@ -64,7 +67,7 @@ namespace hcle::environment
     size_t m_obs_size; // Size of a single processed (resized, grayscale) observation frame
     size_t m_stacked_obs_size;
 
-    std::vector<uint8_t> prev_frame_;   // Previous frame for max-pooling
+    std::vector<uint8_t> m_prev_frame;  // Previous frame for max-pooling
     std::vector<uint8_t> m_frame_stack; // Circular buffer for stacked processed frames
     int m_frame_stack_idx;
   };

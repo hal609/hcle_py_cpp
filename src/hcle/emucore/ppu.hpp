@@ -30,6 +30,7 @@ namespace cynes
 
         /// Tick the PPU.
         void tick();
+        void tick_no_draw();
 
         /// Write to the PPU memory.
         /// @note This function has other side effects than simply writing to the memory, it
@@ -54,9 +55,14 @@ namespace cynes
         bool is_frame_ready();
 
         void setOutputModeGrayscale();
+        void setOutputModeColorIndex();
+
+        void set_frame_ready(bool ready);
+        void set_render_skip(bool skip);
 
     private:
         NES &_nes;
+        bool _render_skip = false;
 
     private:
         std::unique_ptr<uint8_t[]> _frame_buffer;
@@ -92,6 +98,7 @@ namespace cynes
 
         void render_pixel_rgb(size_t pixel_offset, uint8_t color_index);
         void render_pixel_gray(size_t pixel_offset, uint8_t color_index);
+        void render_color_index(size_t pixel_offset, uint8_t color_index);
 
         void update_palette_cache();
         uint8_t _palette_cache[32];

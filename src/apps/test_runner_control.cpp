@@ -1,44 +1,26 @@
 #include <iostream>
-// #include <random> // No longer needed for random actions
 #include <vector>
 #include <thread>
 #include <chrono>
 #include <fstream>
 #include <stdexcept>
 
-// [ADD THIS] - Include the main SDL header for keyboard input
 #include <SDL.h>
 
 #include "hcle/environment/hcle_vector_environment.hpp"
-
-void saveObsToRaw(std::vector<uint8_t> *obs_buffer)
-{
-    std::cout << "\n--- Saving observation at step 100 to test_output.raw ---\n";
-    std::ofstream raw_image("test_output.raw", std::ios::binary);
-    if (raw_image)
-    {
-        raw_image.write(reinterpret_cast<const char *>(obs_buffer->data()), obs_buffer->size());
-        raw_image.close();
-        std::cout << "Save complete.\n";
-    }
-    else
-    {
-        std::cerr << "Error: Could not open test_output.raw for writing.\n";
-    }
-}
+#include "nes_controller.hpp"
 
 int main(int argc, char **argv)
 {
     // --- Configuration ---
-    // Note: This code assumes num_envs = 1 for keyboard control
-    const int num_envs = 1;
+    const int num_envs = 1; // Controller works with a single environment
     const std::string rom_path = "C:\\Users\\offan\\Downloads\\hcle_py_cpp\\src\\hcle\\python\\hcle_py\\roms\\smb1.bin";
     const std::string game_name = "smb1";
     const std::string render_mode = "human";
-    const int num_steps = 1000;
+    const int num_steps = 100000;
+    const int fps_limit = 60;
 
-    // [ADD THIS] - SDL must be initialized to handle events.
-    // The environment likely does this, but it's safe to ensure it's done.
+    // Initialize SDL for video and event handling
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
     {
         std::cerr << "SDL could not initialize! SDL_Error: " << SDL_GetError() << "\n";
@@ -47,98 +29,75 @@ int main(int argc, char **argv)
 
     try
     {
-        std::cout << "Creating HCLEVectorEnvironment (num_envs=" << num_envs << ")...\n";
-        hcle::environment::HCLEVectorEnvironment env(num_envs, rom_path, game_name, render_mode, 84, 84, 4, true, false, 4);
-        printf("HCLEVectorEnvironment created.\n");
+        std::cout << "Creating HCLEVectorEnvironment...\n";
+        hcle::environment::HCLEVectorEnvironment env(num_envs, rom_path, game_name, render_mode, 84, 84, 1, true, true, 4);
 
-        // --- Pre-allocate memory buffers for results ---
+        // --- Create our controller instance ---
+        hcle::common::NESController controller;
+
+        // --- Pre-allocate memory buffers ---
         const size_t single_obs_size = env.getObservationSize();
         std::vector<uint8_t> obs_buffer(num_envs * single_obs_size);
         std::vector<float> reward_buffer(num_envs);
         std::vector<uint8_t> done_buffer(num_envs);
-
-        // --- Reset environments to get initial state ---
-        std::cout << "Resetting environments...\n";
-        env.reset(obs_buffer.data(), reward_buffer.data(), done_buffer.data());
-        std::cout << "Environments reset.\n";
-
-        // --- Setup for the main loop ---
-        const size_t action_space_size = env.getActionSet().size();
-        std::cout << "Action space size: " << action_space_size << "\n";
         std::vector<int> actions(num_envs);
+
+        // --- Reset environment ---
+        std::cout << "Resetting environment...\n";
+        env.reset(obs_buffer.data(), reward_buffer.data(), done_buffer.data());
 
         // --- Performance tracking ---
         double total_reward = 0.0;
-        using clock = std::chrono::steady_clock;
+        using clock = std::chrono::high_resolution_clock;
         auto run_start = clock::now();
+        auto frame_start_time = clock::now();
 
         std::cout << "Starting main loop for " << num_steps << " steps...\n";
-        std::cout << "Controls: [Left Arrow], [Right Arrow], [Spacebar for Jump]\n";
         for (int step = 0; step < num_steps; ++step)
         {
-            // --- [MODIFIED BLOCK] Get keyboard input instead of random actions ---
+            actions[0] = controller.getAction();
 
-            // 1. Update SDL's internal event state
-            SDL_PumpEvents();
-
-            // 2. Get a snapshot of the current keyboard state
-            const Uint8 *key_states = SDL_GetKeyboardState(NULL);
-
-            // 3. Determine the action. Default to 0 (no-op).
-            int player_action = 0;
-
-            // This mapping is based on a common action set for SMB1.
-            // You can customize the keys and actions here.
-            if (key_states[SDL_SCANCODE_RIGHT])
-            {
-                player_action = 1; // Right
-            }
-            else if (key_states[SDL_SCANCODE_LEFT])
-            {
-                player_action = 1; // Left
-            }
-            else if (key_states[SDL_SCANCODE_SPACE])
-            {
-                player_action = 1; // A (Jump)
-            }
-
-            // Since num_envs is 1, we just set the first action.
-            actions[0] = player_action;
-            // --- [END MODIFIED BLOCK] ---
-
-            // Asynchronously send actions and synchronously wait for results
             env.send(actions);
             env.recv(obs_buffer.data(), reward_buffer.data(), done_buffer.data());
 
-            // Accumulate rewards for performance metric (optional)
-            for (int i = 0; i < num_envs; ++i)
+            if (fps_limit > 0)
             {
-                total_reward += reward_buffer[i];
+                auto frame_duration = std::chrono::duration<double>(1.0 / fps_limit);
+                auto end_time = clock::now();
+                auto elapsed = end_time - frame_start_time;
+                if (elapsed < frame_duration)
+                {
+                    std::this_thread::sleep_for(frame_duration - elapsed);
+                }
             }
-            printf("Step %d: Total Reward = %.2f\n", step + 1, total_reward);
+            frame_start_time = clock::now();
 
-            if ((step + 1) % 100 == 0)
+            if (reward_buffer[0] > 0)
             {
-                std::cout << "Step " << (step + 1) << " complete.\n";
+                std::cout << "Rewards this step: "
+                          << std::fixed << std::right << std::setw(8) << std::setprecision(4)
+                          << reward_buffer[0] << "\r" << std::flush;
             }
+
+            total_reward += reward_buffer[0];
         }
 
         auto elapsed = std::chrono::duration_cast<std::chrono::duration<double>>(clock::now() - run_start).count();
-        double average_reward = total_reward / (num_steps * num_envs);
+        double average_reward = total_reward / num_steps;
 
         std::cout << "\n--- Run Summary ---\n";
-        std::cout << "Total steps: " << num_steps * num_envs << "\n";
+        std::cout << "Total steps: " << num_steps << "\n";
         std::cout << "Total time: " << elapsed << " seconds\n";
-        std::cout << "Average FPS: " << ((num_steps * num_envs) / elapsed) << "\n";
+        std::cout << "Average FPS: " << (num_steps / elapsed) << "\n";
         std::cout << "Average reward per step: " << average_reward << "\n";
     }
     catch (const std::exception &ex)
     {
         std::cerr << "Exception caught: " << ex.what() << "\n";
-        SDL_Quit(); // Clean up SDL on error
+        SDL_Quit();
         return 1;
     }
 
-    SDL_Quit(); // Clean up SDL before exiting
+    SDL_Quit();
     return 0;
 }
