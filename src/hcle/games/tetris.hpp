@@ -16,14 +16,14 @@ namespace hcle
         public:
             TetrisLogic()
             {
-                action_set.resize(256);
-                std::iota(action_set.begin(), action_set.end(), 0);
-                // action_set = {
-                //     NES_INPUT_NONE,
-                //     NES_INPUT_LEFT,
-                //     NES_INPUT_DOWN,
-                //     NES_INPUT_RIGHT,
-                //     NES_INPUT_A};
+                // action_set.resize(256);
+                // std::iota(action_set.begin(), action_set.end(), 0);
+                action_set = {
+                    NES_INPUT_DOWN,
+                    NES_INPUT_NONE,
+                    NES_INPUT_LEFT,
+                    NES_INPUT_RIGHT,
+                    NES_INPUT_A};
             }
 
             GameLogic *clone() const override { return new TetrisLogic(*this); }
@@ -37,83 +37,99 @@ namespace hcle
             static const int RNG = 0x0017;
             static const int NEXT_PIECE = 0x00BF;
 
-            bool in_game()
+            bool inGame()
             {
-                return current_ram_ptr_[GAME_PHASE] != 0;
+                return m_current_ram_ptr[GAME_PHASE] != 0;
             }
 
-            void skip_between_rounds()
+            void skipBetweenRounds()
             {
-                while (!in_game())
+                while (!inGame())
                 {
-                    shuffle_rng();
+                    shuffleRNG();
                     frameadvance(NES_INPUT_START);
                     frameadvance(NES_INPUT_NONE);
                 }
             }
 
-            uint8_t score_hex_to_int(uint8_t score)
+            uint8_t scoreHexToInt(uint8_t score)
             {
                 return ((score / 16) * 10) + (score % 16);
             }
 
-            int get_score(const uint8_t *ram)
+            int getScore(const uint8_t *ram)
             {
                 int tot_score = 0;
-                tot_score += score_hex_to_int(ram[SCORE_THIRD_BYTE]);
-                tot_score += score_hex_to_int(ram[SCORE_SECOND_BYTE]) * 100;
-                tot_score += score_hex_to_int(ram[SCORE_FIRST_BYTE]) * 10000;
+                tot_score += scoreHexToInt(ram[SCORE_THIRD_BYTE]);
+                tot_score += scoreHexToInt(ram[SCORE_SECOND_BYTE]) * 100;
+                tot_score += scoreHexToInt(ram[SCORE_FIRST_BYTE]) * 10000;
                 return tot_score;
             }
 
-            void shuffle_rng()
+            int getLineCount(const uint8_t *ram)
+            {
+                int tot_score = 0;
+                tot_score += scoreHexToInt(ram[0x0050]);
+                tot_score += scoreHexToInt(ram[0x0051]) * 100;
+                return tot_score;
+            }
+
+            void shuffleRNG()
             {
                 auto p1 = std::chrono::system_clock::now();
                 std::srand(std::chrono::duration_cast<std::chrono::nanoseconds>(p1.time_since_epoch()).count());
 
-                current_ram_ptr_[RNG] = std::rand() % 255;
-                current_ram_ptr_[RNG + 1] = std::rand() % 255;
+                m_current_ram_ptr[RNG] = std::rand() % 255;
+                m_current_ram_ptr[RNG + 1] = std::rand() % 255;
                 std::vector<uint8_t> pieces = {0x02, 0x07, 0x08, 0x0A, 0x0B, 0x0E, 0x12};
-                current_ram_ptr_[0x00BF] = pieces[std::rand() % 7];
-                current_ram_ptr_[0x0019] = std::rand() % 255;
+                m_current_ram_ptr[0x00BF] = pieces[std::rand() % 7];
+                m_current_ram_ptr[0x0019] = std::rand() % 255;
             }
 
             void onReset() override
             {
                 frameadvance(NES_INPUT_NONE);
-                frameadvance(NES_INPUT_NONE);
-                shuffle_rng();
+                shuffleRNG();
             }
 
         public:
             bool isDone() override
             {
-                return current_ram_ptr_[GAME_OVER] == 0x0A;
+                return m_current_ram_ptr[GAME_OVER] > 0x0;
             }
 
             double getReward() override
             {
-                double reward = 0.01; // Small reward for surviving
+                double reward = 0.1; // Small reward for surviving
+                if (m_current_ram_ptr[0x0041] < m_previous_ram[0x0048] && m_previous_ram[0x0041] > 0)
+                {
+                    // printf("Piece dropped at %d\n", m_current_ram_ptr[0x0041]);
+                    // printf("Adding reward %f\n", (static_cast<float>(m_current_ram_ptr[0x0041]) - 10.0f) / 200.0f);
+                    reward += -1 + ((static_cast<float>(m_previous_ram[0x0041])) / 20.0f);
+                }
 
                 // Reward based on score change
-                int current_score = get_score(current_ram_ptr_);
-                int previous_score = get_score(previous_ram_.data());
-                reward += static_cast<double>(current_score - previous_score);
+                // int current_score = getScore(m_current_ram_ptr);
+                // int previous_score = getScore(m_previous_ram.data());
+                // reward += static_cast<double>(current_score - previous_score);
+
+                int current_lines = getLineCount(m_current_ram_ptr);
+                int previous_lines = getLineCount(m_previous_ram.data());
+                reward += static_cast<double>(current_lines - previous_lines) * 100;
 
                 // Penalty for game over
                 if (isDone())
                 {
                     reward -= 20.0;
                 }
-
                 return reward / 100.0;
             }
 
             void onStep() override
             {
-                skip_between_rounds();
+                skipBetweenRounds();
 
-                if (in_game() && !has_backup_)
+                if (inGame() && !has_backup_)
                 {
                     createBackup();
                 }

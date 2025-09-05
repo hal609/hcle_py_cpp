@@ -13,27 +13,26 @@ namespace hcle
 
         HCLEnvironment::HCLEnvironment()
         {
-            // this->WelcomeMessage();
+            this->WelcomeMessage();
         }
 
         void HCLEnvironment::createWindow(uint8_t fps_limit)
         {
-            display_ = std::make_unique<hcle::common::Display>("HCLEnvironment", 256, 240, 3);
-            running_window_ = true;
-            fps_limit_ = fps_limit;
-            fps_sleep_ms_ = static_cast<milliseconds>(static_cast<int>((1.0f / static_cast<float>(fps_limit_)) * 1000));
-            last_update = steady_clock::now();
+            m_display = std::make_unique<hcle::common::Display>("HCLEnvironment", 256, 240, 3);
+            m_fps_limit = fps_limit;
+            m_fps_sleep_ms = static_cast<milliseconds>(static_cast<int>((1.0f / static_cast<float>(m_fps_limit)) * 1000));
+            m_last_update = steady_clock::now();
         }
 
         void HCLEnvironment::updateWindow()
         {
-            if (fps_limit_ > 0)
+            if (m_fps_limit > 0)
             {
-                milliseconds time_dif = duration_cast<milliseconds>(steady_clock::now() - last_update);
-                last_update = steady_clock::now();
-                std::this_thread::sleep_for(fps_sleep_ms_ - time_dif);
+                milliseconds time_dif = duration_cast<milliseconds>(steady_clock::now() - m_last_update);
+                m_last_update = steady_clock::now();
+                std::this_thread::sleep_for(m_fps_sleep_ms - time_dif);
             }
-            hcle::common::Display::update_window(display_, frame_ptr, single_channel_);
+            hcle::common::Display::update_window(m_display, frame_ptr, m_single_channel);
         }
 
         void HCLEnvironment::WelcomeMessage()
@@ -52,8 +51,8 @@ namespace hcle
                 throw std::runtime_error("Environment must be loaded with a ROM before setting output mode.");
             }
             emu->setOutputModeGrayscale();
-            frame_size_ = SINGLE_CHAN_FRAME_SIZE;
-            single_channel_ = true;
+            m_frame_size = SINGLE_CHAN_FRAME_SIZE;
+            m_single_channel = true;
         }
 
         void HCLEnvironment::setOutputMode(std::string mode)
@@ -61,23 +60,23 @@ namespace hcle
             if (mode == "grayscale")
             {
                 emu->setOutputModeGrayscale();
-                frame_size_ = SINGLE_CHAN_FRAME_SIZE;
-                single_channel_ = true;
+                m_frame_size = SINGLE_CHAN_FRAME_SIZE;
+                m_single_channel = true;
             }
             else if (mode == "index")
             {
                 emu->setOutputModeColorIndex();
-                frame_size_ = SINGLE_CHAN_FRAME_SIZE;
-                single_channel_ = true;
+                m_frame_size = SINGLE_CHAN_FRAME_SIZE;
+                m_single_channel = true;
             }
         }
 
         void HCLEnvironment::loadROM(const std::string &game_name)
         {
-            rom_path_ = hcle::get_rom_path(game_name);
-            frame_size_ = RAW_FRAME_SIZE;
+            m_rom_path = hcle::get_rom_path(game_name);
+            m_frame_size = RAW_FRAME_SIZE;
 
-            emu.reset(new cynes::NES(rom_path_.c_str()));
+            emu.reset(new cynes::NES(m_rom_path.c_str()));
 
             frame_ptr = emu->get_frame_buffer();
 
@@ -107,7 +106,7 @@ namespace hcle
                 throw std::runtime_error("Environment must be loaded with a ROM before reset.");
             }
             game_logic->reset();
-            this->current_step_ = 0;
+            this->m_current_step = 0;
             game_logic->updateRAM();
         }
 
@@ -118,7 +117,7 @@ namespace hcle
                 throw std::runtime_error("Environment must be loaded with a ROM before calling step.");
             }
             game_logic->updateRAM();
-            if (running_window_)
+            if (m_display)
             {
                 for (unsigned int k = 0; k < frames; k++)
                 {
@@ -130,7 +129,7 @@ namespace hcle
             {
                 emu->step(controller_input, frames);
             }
-            this->current_step_++;
+            this->m_current_step++;
             game_logic->onStep();
 
             return game_logic->getReward();

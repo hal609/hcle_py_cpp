@@ -46,12 +46,12 @@ namespace hcle
             static const int IN_GAME = 0x003C;
             static const int ON_CSS = 0x0035; // On Character Select Screen
 
-            bool in_game() const { return current_ram_ptr_[IN_GAME] == 1; }
-            bool is_on_overworld() const { return current_ram_ptr_[MAP_ID] == 0x00; }
+            bool inGame() const { return m_current_ram_ptr[IN_GAME] == 1; }
+            bool isOnOverworld() const { return m_current_ram_ptr[MAP_ID] == 0x00; }
 
-            void skip_menus()
+            void skipMenus()
             {
-                while (!in_game() || current_ram_ptr_[ON_CSS] == 1)
+                while (!inGame() || m_current_ram_ptr[ON_CSS] == 1)
                 {
                     frameadvance(NES_INPUT_NONE);
                     frameadvance(NES_INPUT_START);
@@ -67,16 +67,16 @@ namespace hcle
             bool isDone() override
             {
                 // Done if lives are not at the starting value (3)
-                return current_ram_ptr_[LIVES] != 3;
+                return m_current_ram_ptr[LIVES] != 3;
             }
 
             double getReward() override
             {
                 double reward = -0.01; // Time penalty
 
-                if (is_on_overworld())
+                if (isOnOverworld())
                 {
-                    std::pair<uint8_t, uint8_t> coords = {current_ram_ptr_[OVERWORLD_X], current_ram_ptr_[OVERWORLD_Y]};
+                    std::pair<uint8_t, uint8_t> coords = {m_current_ram_ptr[OVERWORLD_X], m_current_ram_ptr[OVERWORLD_Y]};
 
                     if (!visited_overworld_coords_.contains(coords))
                     {
@@ -86,12 +86,12 @@ namespace hcle
                 }
                 else
                 { // Inside a level
-                    int x_progress = static_cast<int>(current_ram_ptr_[LEVEL_X]) - static_cast<int>(previous_ram_[LEVEL_X]);
+                    int x_progress = static_cast<int>(m_current_ram_ptr[LEVEL_X]) - static_cast<int>(m_previous_ram[LEVEL_X]);
                     reward += static_cast<double>(std::max(x_progress, 0)); // Progress reward
                 }
 
                 // Boss defeat reward
-                if (previous_ram_[BOSS_HEALTH] > 0 && current_ram_ptr_[BOSS_HEALTH] == 0)
+                if (m_previous_ram[BOSS_HEALTH] > 0 && m_current_ram_ptr[BOSS_HEALTH] == 0)
                 {
                     reward += 50.0;
                 }
@@ -100,9 +100,9 @@ namespace hcle
                 for (int i = 0; i < 4; ++i)
                 {
                     int health_addr = TURTLE_HEALTH_START + i;
-                    if (current_ram_ptr_[health_addr] < previous_ram_[health_addr])
+                    if (m_current_ram_ptr[health_addr] < m_previous_ram[health_addr])
                     {
-                        reward -= (current_ram_ptr_[health_addr] == 0) ? 30.0 : 5.0;
+                        reward -= (m_current_ram_ptr[health_addr] == 0) ? 30.0 : 5.0;
                     }
                 }
 
@@ -111,8 +111,8 @@ namespace hcle
 
             void onStep() override
             {
-                skip_menus();
-                if (in_game() && !has_backup_)
+                skipMenus();
+                if (inGame() && !has_backup_)
                 {
                     createBackup();
                 }

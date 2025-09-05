@@ -37,14 +37,14 @@ namespace hcle
             static const int PAR = 0x0083;
             static const int HOLE_NUM = 0x002B;
 
-            bool in_game() const
+            bool inGame() const
             {
-                return current_ram_ptr_[GAME_STATE] != 0x63;
+                return m_current_ram_ptr[GAME_STATE] != 0x63;
             }
 
             void skip_between_rounds()
             {
-                while (!in_game())
+                while (!inGame())
                 {
                     frameadvance(NES_INPUT_NONE);
                     frameadvance(NES_INPUT_NONE);
@@ -65,30 +65,30 @@ namespace hcle
         public:
             bool isDone() override
             {
-                return current_ram_ptr_[STROKES] > current_ram_ptr_[PAR] * 2;
+                return m_current_ram_ptr[STROKES] > m_current_ram_ptr[PAR] * 2;
             }
 
             double getReward() override
             {
-                double reward = 0.01;
+                double reward = -1.0;
 
-                double dist_change = dist_to_hole(current_ram_ptr_) - dist_to_hole(previous_ram_.data());
-                int strokes_change = (current_ram_ptr_[STROKES] != previous_ram_[STROKES]) ? 1 : 0;
-                int score_change = static_cast<int>(current_ram_ptr_[SCORE]) - static_cast<int>(previous_ram_[SCORE]);
-                int hole_change = static_cast<int>(current_ram_ptr_[HOLE_NUM]) - static_cast<int>(previous_ram_[HOLE_NUM]);
+                double dist_change = dist_to_hole(m_current_ram_ptr) - dist_to_hole(m_previous_ram.data());
+                int strokes_change = (m_current_ram_ptr[STROKES] != m_previous_ram[STROKES]) ? 1 : 0;
+                int score_change = static_cast<int>(m_current_ram_ptr[SCORE]) - static_cast<int>(m_previous_ram[SCORE]);
+                int hole_change = static_cast<int>(m_current_ram_ptr[HOLE_NUM]) - static_cast<int>(m_previous_ram[HOLE_NUM]);
 
                 reward -= std::min(dist_change, 0.0);
-                reward -= strokes_change * 1000.0;
+                reward -= strokes_change * 10.0;
                 reward -= std::max(score_change, 0) * 10.0;
-                reward += hole_change * 10000.0;
+                reward += hole_change * 100.0;
 
-                return reward / 10000.0;
+                return reward / 100.0;
             }
 
             void onStep() override
             {
                 skip_between_rounds();
-                if (in_game() && !has_backup_)
+                if (inGame() && !has_backup_)
                 {
                     createBackup();
                 }

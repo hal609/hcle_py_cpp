@@ -16,12 +16,15 @@ namespace hcle
                 // std::iota(action_set.begin(), action_set.end(), 0);
                 action_set = {
                     NES_INPUT_LEFT,
-                    // NES_INPUT_DOWN,
                     NES_INPUT_RIGHT | NES_INPUT_B,
                     NES_INPUT_RIGHT | NES_INPUT_B | NES_INPUT_A};
             }
 
-            GameLogic *clone() const override { return new SMB1Logic(*this); }
+            GameLogic *
+            clone() const override
+            {
+                return new SMB1Logic(*this);
+            }
 
         private:
             static const int PLAYER_STATE = 0x000E;
@@ -43,31 +46,31 @@ namespace hcle
             inline static const std::vector<int> ENEMY_TYPE_ADDRESSES = {0x0016, 0x0017, 0x0018, 0x0019, 0x001A};
             inline static const std::vector<int> STAGE_OVER_ENEMIES = {0x2D, 0x31}; // Bowser = 0x2D, Flagpole = 0x31
 
-            bool in_game() { return current_ram_ptr_[LEVEL_LOADING] == 3 && current_ram_ptr_[GAME_MODE] != 0; }
+            bool inGame() { return m_current_ram_ptr[LEVEL_LOADING] == 3 && m_current_ram_ptr[GAME_MODE] != 0; }
 
             bool is_dead()
             {
-                return current_ram_ptr_[PLAYER_STATE] == 0x0B || // Standard death
-                       current_ram_ptr_[PLAYER_STATE] == 0x06 || // Death animation
-                       current_ram_ptr_[Y_VIEWPORT] > 0x1;       // Fell off screen
+                return m_current_ram_ptr[PLAYER_STATE] == 0x0B || // Standard death
+                       m_current_ram_ptr[PLAYER_STATE] == 0x06 || // Death animation
+                       m_current_ram_ptr[Y_VIEWPORT] > 0x1;       // Fell off screen
             }
 
             bool is_busy()
             {
-                uint8_t state = current_ram_ptr_[PLAYER_STATE];
+                uint8_t state = m_current_ram_ptr[PLAYER_STATE];
                 return (state >= 0x00 && state <= 0x05);
             }
 
-            bool is_world_over() { return current_ram_ptr_[GAME_MODE] == 0x14; }
+            bool is_world_over() { return m_current_ram_ptr[GAME_MODE] == 0x14; }
 
             int get_time()
             {
-                return current_ram_ptr_[TIME_H] * 100 +
-                       current_ram_ptr_[TIME_M] * 10 +
-                       current_ram_ptr_[TIME_L];
+                return m_current_ram_ptr[TIME_H] * 100 +
+                       m_current_ram_ptr[TIME_M] * 10 +
+                       m_current_ram_ptr[TIME_L];
             }
 
-            void runout_prelevel_timer() { current_ram_ptr_[PRE_LEVEL_TIMER] = 0; }
+            void runout_prelevel_timer() { m_current_ram_ptr[PRE_LEVEL_TIMER] = 0; }
 
             bool is_stage_over(uint8_t *ram_pointer)
             {
@@ -95,8 +98,8 @@ namespace hcle
                     reward -= 10;
 
                 // Calculate change in X position
-                int current_x = (static_cast<int>(current_ram_ptr_[CURRENT_PAGE]) << 8) | current_ram_ptr_[X_POS];
-                int previous_x = (static_cast<int>(previous_ram_[CURRENT_PAGE]) << 8) | previous_ram_[X_POS];
+                int current_x = (static_cast<int>(m_current_ram_ptr[CURRENT_PAGE]) << 8) | m_current_ram_ptr[X_POS];
+                int previous_x = (static_cast<int>(m_previous_ram[CURRENT_PAGE]) << 8) | m_previous_ram[X_POS];
 
                 double x_reward = static_cast<float>(current_x - previous_x);
                 x_reward = (x_reward < -3) ? 0 : x_reward;
@@ -106,13 +109,13 @@ namespace hcle
 
                 double time_penalty = -0.1;
 
-                reward = x_reward + (level_reward * 500.0) + (powerup_reward * 10.0) + coin_reward + time_penalty;
+                reward += x_reward + (level_reward * 500.0) + (powerup_reward * 10.0) + coin_reward + time_penalty;
                 return (reward / 500.0);
             }
 
             void onStep() override
             {
-                if (in_game())
+                if (inGame())
                 {
                     if (!has_backup_)
                         createBackup();
@@ -126,10 +129,10 @@ namespace hcle
                 {
                     runout_prelevel_timer();
                 }
-                uint8_t timer = current_ram_ptr_[CHANGE_AREA_TIMER];
+                uint8_t timer = m_current_ram_ptr[CHANGE_AREA_TIMER];
                 if (timer > 1 && timer < 255)
                 {
-                    current_ram_ptr_[CHANGE_AREA_TIMER] = 1;
+                    m_current_ram_ptr[CHANGE_AREA_TIMER] = 1;
                 }
             }
         };

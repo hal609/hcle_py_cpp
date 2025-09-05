@@ -41,14 +41,14 @@ namespace hcle
          static const int GAME_TIMER_HUN = 0x006A;
          static const int PLAYER_STATUS = 0x00F2;
 
-         bool in_game() const
+         bool inGame() const
          {
-            return current_ram_ptr_[RACING_FLAG] == 0x01;
+            return m_current_ram_ptr[RACING_FLAG] == 0x01;
          }
 
          void skip_between_rounds()
          {
-            while (!in_game())
+            while (!inGame())
             {
                frameadvance(NES_INPUT_A);
             }
@@ -76,11 +76,11 @@ namespace hcle
 
          bool isDone() override
          {
-            long long current_time = get_time(current_ram_ptr_);
+            long long current_time = get_time(m_current_ram_ptr);
 
-            if (in_game() && finish_time_ < 0)
+            if (inGame() && finish_time_ < 0)
             {
-               long long previous_time = get_time(previous_ram_.data());
+               long long previous_time = get_time(m_previous_ram.data());
                if (current_time == previous_time && current_time > 0)
                {
                   finish_time_ = current_time;
@@ -92,28 +92,28 @@ namespace hcle
 
          double getReward() override
          {
-            double reward = -0.01f;
+            double reward = -0.01;
 
-            reward += static_cast<double>(current_ram_ptr_[PLAYER_SPEED]) / 10.0f;
+            reward += static_cast<double>(m_current_ram_ptr[PLAYER_SPEED]) / 10.0;
 
-            if (current_ram_ptr_[MOTOR_TEMP] >= 32)
+            if (m_current_ram_ptr[MOTOR_TEMP] >= 32)
             {
-               reward -= 20.0f;
+               reward -= 20.0;
             }
 
-            uint8_t status = current_ram_ptr_[PLAYER_STATUS];
+            uint8_t status = m_current_ram_ptr[PLAYER_STATUS];
             if (status != 0 && status != 4)
             {
-               reward -= 5.0f;
+               reward -= 5.0;
             }
 
-            return reward / 10000.0f;
+            return reward / 10000.0;
          }
 
          void onStep() override
          {
             skip_between_rounds();
-            if (in_game() && !has_backup_)
+            if (inGame() && !has_backup_)
             {
                createBackup();
             }

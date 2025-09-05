@@ -18,6 +18,7 @@
 #include "smb3.hpp"
 #include "tmnt.hpp"
 #include "zelda1.hpp"
+#include "arkanoid.hpp"
 
 namespace fs = std::filesystem;
 
@@ -35,7 +36,8 @@ static const std::map<std::string, std::string> EXPECTED_ROM_HASHES = {
     {"smb2.bin", "71576d8339bd63198fcfc51a92016d58"},
     {"smb3.bin", "bb5c4b6d4d78c101f94bdb360af502f3"},
     {"tmnt.bin", "5e24ccd733d15e42d847274e7add0a76"},
-    {"zelda1.bin", "337bd6f1a1163df31bf2633665589ab0"}};
+    {"zelda1.bin", "337bd6f1a1163df31bf2633665589ab0"},
+    {"arkanoid.bin", "6a2bfa3c6e9b1ce1e21aabd0dfbf2779"}};
 
 namespace hcle
 {
@@ -59,6 +61,7 @@ namespace hcle
       logic_map["smb3"] = std::make_unique<games::SMB3Logic>();
       logic_map["tmnt"] = std::make_unique<games::TMNTLogic>();
       logic_map["zelda1"] = std::make_unique<games::Zelda1Logic>();
+      logic_map["arkanoid"] = std::make_unique<games::ArkanoidLogic>();
 
       return logic_map;
    }

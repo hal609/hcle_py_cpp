@@ -42,9 +42,9 @@ namespace hcle
             static const int IS_DYING = 0x00F1;
             static const int TITLE_STATE = 0x00DE;
 
-            bool in_game() const
+            bool inGame() const
             {
-                return current_ram_ptr_[IS_ON_MAP] == 0 && current_ram_ptr_[IN_LEVEL_TIMER] > 0;
+                return m_current_ram_ptr[IS_ON_MAP] == 0 && m_current_ram_ptr[IN_LEVEL_TIMER] > 0;
             }
 
             void advance_n_frames(int n, uint8_t action = 0)
@@ -52,24 +52,24 @@ namespace hcle
                 for (int i = 0; i < n; ++i)
                 {
                     frameadvance(action);
-                    if (in_game())
+                    if (inGame())
                         break;
                 }
             }
 
             void skip_between_rounds()
             {
-                while (!in_game())
+                while (!inGame())
                 {
-                    if (current_ram_ptr_[TITLE_STATE] != 0)
+                    if (m_current_ram_ptr[TITLE_STATE] != 0)
                     {
                         frameadvance(NES_INPUT_NONE);
                         frameadvance(NES_INPUT_START);
                     }
-                    else if (current_ram_ptr_[WORLD_NUM] == 0)
+                    else if (m_current_ram_ptr[WORLD_NUM] == 0)
                     {
-                        uint8_t map_x = current_ram_ptr_[MAP_SCREEN_X];
-                        uint8_t map_y = current_ram_ptr_[MAP_SCREEN_Y];
+                        uint8_t map_x = m_current_ram_ptr[MAP_SCREEN_X];
+                        uint8_t map_y = m_current_ram_ptr[MAP_SCREEN_Y];
 
                         if (map_x == 32 && map_y == 64)
                         { // Start of world
@@ -129,13 +129,13 @@ namespace hcle
         public:
             bool isDone() override
             {
-                return current_ram_ptr_[LIVES] < previous_ram_[LIVES] || current_ram_ptr_[IS_DYING] != 0;
+                return m_current_ram_ptr[LIVES] < m_previous_ram[LIVES] || m_current_ram_ptr[IS_DYING] != 0;
             }
 
             double getReward() override
             {
                 double reward = -0.1;
-                double x_pos_change = static_cast<double>(get_mario_pos(current_ram_ptr_) - get_mario_pos(previous_ram_.data()));
+                double x_pos_change = static_cast<double>(get_mario_pos(m_current_ram_ptr) - get_mario_pos(m_previous_ram.data()));
 
                 if (x_pos_change > 10.0 || x_pos_change < -10.0)
                     x_pos_change = 0;
@@ -143,9 +143,9 @@ namespace hcle
 
                 if (isDone())
                     reward -= 20.0;
-                if (current_ram_ptr_[WIN_FLAG] > 0)
+                if (m_current_ram_ptr[WIN_FLAG] > 0)
                     reward += 50.0;
-                if (current_ram_ptr_[P_METER] > previous_ram_[P_METER])
+                if (m_current_ram_ptr[P_METER] > m_previous_ram[P_METER])
                     reward += 0.5;
 
                 return reward;
@@ -154,7 +154,7 @@ namespace hcle
             void onStep() override
             {
                 skip_between_rounds();
-                if (in_game() && !has_backup_)
+                if (inGame() && !has_backup_)
                 {
                     createBackup();
                 }

@@ -14,100 +14,100 @@ namespace hcle::environment
         const bool grayscale,
         const int stack_num,
         const bool color_index_grayscale)
-        : obs_height_(obs_height),
-          obs_width_(obs_width),
-          frame_skip_(frame_skip),
-          maxpool_((frame_skip_ > 1) && maxpool),
-          grayscale_(grayscale),
-          stack_num_(stack_num),
-          reward_(0.0f),
-          done_(false)
+        : m_obs_height(obs_height),
+          m_obs_width(obs_width),
+          m_frame_skip(frame_skip),
+          m_maxpool((m_frame_skip > 1) && maxpool),
+          m_grayscale(grayscale),
+          m_stack_num(stack_num),
+          m_reward(0.0f),
+          m_done(false)
     {
-        env_ = std::make_unique<HCLEnvironment>();
-        env_->loadROM(game_name);
+        m_env = std::make_unique<HCLEnvironment>();
+        m_env->loadROM(game_name);
 
-        if (grayscale_)
-            env_->setOutputMode((color_index_grayscale) ? "index" : "grayscale");
+        if (m_grayscale)
+            m_env->setOutputMode((color_index_grayscale) ? "index" : "grayscale");
 
-        action_set_ = env_->getActionSet();
+        m_action_set = m_env->getActionSet();
 
         // The final observation size depends on the preprocessing options.
-        m_channels_per_frame = grayscale_ ? 1 : 3;
+        m_channels_per_frame = m_grayscale ? 1 : 3;
         m_raw_size = m_raw_frame_height * m_raw_frame_width * m_channels_per_frame;
-        m_obs_size = obs_height_ * obs_width_ * m_channels_per_frame;
-        m_stacked_obs_size = stack_num_ * m_obs_size;
+        m_obs_size = m_obs_height * m_obs_width * m_channels_per_frame;
+        m_stacked_obs_size = m_stack_num * m_obs_size;
 
         // Allocate buffers with the correct sizes.
-        prev_frame_.resize(m_raw_size, 0);
+        m_prev_frame.resize(m_raw_size, 0);
         m_frame_stack.resize(m_stacked_obs_size, 0);
         m_frame_stack_idx = 0;
 
-        requires_resize_ = (obs_height_ != m_raw_frame_height) || (obs_width_ != m_raw_frame_width);
+        m_requires_resize = (m_obs_height != m_raw_frame_height) || (m_obs_width != m_raw_frame_width);
     }
 
     void PreprocessedEnv::reset(uint8_t *obs_output_buffer)
     {
-        env_->reset();
-        reward_ = 0.0f;
-        done_ = false;
+        m_env->reset();
+        m_reward = 0.0f;
+        m_done = false;
 
         m_frame_stack_idx = 0;
-        process_screen();
+        processScreen();
 
-        for (int i = 1; i < stack_num_; ++i)
+        for (int i = 1; i < m_stack_num; ++i)
         {
             std::memcpy(m_frame_stack.data() + (i * m_obs_size),
                         m_frame_stack.data(),
                         m_obs_size);
         }
-        write_observation(obs_output_buffer);
+        writeObservation(obs_output_buffer);
     }
 
     void PreprocessedEnv::step(uint8_t action_index, uint8_t *obs_output_buffer)
     {
-        if (action_index >= action_set_.size())
+        if (action_index >= m_action_set.size())
         {
             throw std::out_of_range("Action index out of range.");
         }
 
-        uint8_t controller_input = action_set_[action_index];
+        uint8_t controller_input = m_action_set[action_index];
         double accumulated_reward = 0.0f;
 
-        if (maxpool_)
+        if (m_maxpool)
         {
-            accumulated_reward += env_->act(controller_input, frame_skip_ - 1);
-            std::memcpy(prev_frame_.data(), env_->frame_ptr, m_raw_size);
-            accumulated_reward += env_->act(controller_input, 1);
+            accumulated_reward += m_env->act(controller_input, m_frame_skip - 1);
+            std::memcpy(m_prev_frame.data(), m_env->frame_ptr, m_raw_size);
+            accumulated_reward += m_env->act(controller_input, 1);
         }
         else
         {
-            accumulated_reward += env_->act(controller_input, frame_skip_);
+            accumulated_reward += m_env->act(controller_input, m_frame_skip);
         }
-        done_ = env_->isDone();
-        reward_ = accumulated_reward;
+        m_done = m_env->isDone();
+        m_reward = accumulated_reward;
 
-        process_screen();
+        processScreen();
 
-        write_observation(obs_output_buffer);
+        writeObservation(obs_output_buffer);
     }
 
-    void PreprocessedEnv::process_screen()
+    void PreprocessedEnv::processScreen()
     {
-        auto cv2_format = grayscale_ ? CV_8UC1 : CV_8UC3;
-        uint8_t *frame_pointer = const_cast<uint8_t *>(env_->frame_ptr);
+        auto cv2_format = m_grayscale ? CV_8UC1 : CV_8UC3;
+        uint8_t *frame_pointer = const_cast<uint8_t *>(m_env->frame_ptr);
 
-        if (maxpool_)
+        if (m_maxpool)
         {
-            frame_pointer = std::max(frame_pointer, prev_frame_.data());
+            frame_pointer = std::max(frame_pointer, m_prev_frame.data());
         }
         cv::Mat source_mat = cv::Mat(m_raw_frame_height, m_raw_frame_width, cv2_format, frame_pointer);
 
-        // Get pointer to current position in circular frame stack
+        // Get pointer to current position in circular buffer
         uint8_t *dest_ptr = m_frame_stack.data() + (m_frame_stack_idx * m_obs_size);
 
-        if (requires_resize_)
+        if (m_requires_resize)
         {
-            cv::Mat dest_mat(obs_height_, obs_width_, cv2_format, dest_ptr);
+            cv::Mat dest_mat(m_obs_height, m_obs_width, cv2_format, dest_ptr);
             cv::resize(source_mat, dest_mat, dest_mat.size(), 0, 0, cv::INTER_AREA);
         }
         else
@@ -115,11 +115,11 @@ namespace hcle::environment
             std::memcpy(dest_ptr, source_mat.data, m_obs_size);
         }
 
-        // 4. Move to the next position in the circular buffer.
-        m_frame_stack_idx = (m_frame_stack_idx + 1) % stack_num_;
+        // Move to next position in circular buffer
+        m_frame_stack_idx = (m_frame_stack_idx + 1) % m_stack_num;
     }
 
-    void PreprocessedEnv::write_observation(uint8_t *obs_output_buffer)
+    void PreprocessedEnv::writeObservation(uint8_t *obs_output_buffer)
     {
         if (m_frame_stack_idx == 0)
         {
@@ -127,7 +127,7 @@ namespace hcle::environment
         }
         else
         {
-            size_t older_part_size = (stack_num_ - m_frame_stack_idx) * m_obs_size;
+            size_t older_part_size = (m_stack_num - m_frame_stack_idx) * m_obs_size;
             std::memcpy(obs_output_buffer,
                         m_frame_stack.data() + (m_frame_stack_idx * m_obs_size),
                         older_part_size);
@@ -141,22 +141,22 @@ namespace hcle::environment
 
     void PreprocessedEnv::saveToState(int state_num)
     {
-        env_->saveToState(state_num);
+        m_env->saveToState(state_num);
     }
 
     void PreprocessedEnv::loadFromState(int state_num)
     {
-        env_->loadFromState(state_num);
+        m_env->loadFromState(state_num);
     }
 
     void PreprocessedEnv::createWindow(uint8_t fps_limit)
     {
-        env_->createWindow(fps_limit);
+        m_env->createWindow(fps_limit);
     }
 
     void PreprocessedEnv::updateWindow()
     {
-        env_->updateWindow();
+        m_env->updateWindow();
     }
 
     // --- Getters ---

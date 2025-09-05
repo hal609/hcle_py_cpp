@@ -25,30 +25,23 @@ namespace hcle
             };
          }
 
-         // Required for polymorphic cloning
          GameLogic *clone() const override { return new Lolo1Logic(*this); }
 
       private:
-         // --- RAM Address Constants ---
          static const int LIVES_REMAINING = 0x0057;
          static const int MAGIC_SHOTS = 0x0058;
          static const int TOTAL_HEART_FRAMES = 0x0086;
          static const int COLLECTED_HEART_FRAMES = 0x0087;
 
-         /**
-          * @brief Checks if the agent is in a playable state.
-          * For Lolo, this is true as long as the agent has lives remaining.
-          * A more specific check for menus could be added if needed.
-          */
-         bool in_game() const
+         bool inGame() const
          {
-            return current_ram_ptr_[LIVES_REMAINING] > 0 && current_ram_ptr_[LIVES_REMAINING] < 32;
+            return m_current_ram_ptr[LIVES_REMAINING] > 0 && m_current_ram_ptr[LIVES_REMAINING] < 32;
          }
 
       public:
          bool isDone() override
          {
-            return current_ram_ptr_[LIVES_REMAINING] < previous_ram_[LIVES_REMAINING];
+            return m_current_ram_ptr[LIVES_REMAINING] < m_previous_ram[LIVES_REMAINING];
          }
 
          double getReward() override
@@ -60,8 +53,8 @@ namespace hcle
 
             reward += std::abs(static_cast<double>(changeIn(MAGIC_SHOTS))) * 2.0;
 
-            if (current_ram_ptr_[COLLECTED_HEART_FRAMES] == current_ram_ptr_[TOTAL_HEART_FRAMES] &&
-                previous_ram_[COLLECTED_HEART_FRAMES] < previous_ram_[TOTAL_HEART_FRAMES])
+            if (m_current_ram_ptr[COLLECTED_HEART_FRAMES] == m_current_ram_ptr[TOTAL_HEART_FRAMES] &&
+                m_previous_ram[COLLECTED_HEART_FRAMES] < m_previous_ram[TOTAL_HEART_FRAMES])
             {
                reward += 200.0;
             }
@@ -71,18 +64,18 @@ namespace hcle
                reward -= 100.0;
             }
 
-            // Scale the final reward to a reasonable range.
+            // Scale final reward
             return reward / 100.0;
          }
 
          void onStep() override
          {
-            while (!in_game())
+            while (!inGame())
             {
                frameadvance(NES_INPUT_NONE);
                frameadvance(NES_INPUT_START);
             }
-            if (in_game() && !has_backup_)
+            if (inGame() && !has_backup_)
             {
                createBackup();
             }

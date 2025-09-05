@@ -42,11 +42,11 @@ namespace hcle
             static const int CURRENT_LEVEL = 0x0531;
             static const int CURRENT_AREA = 0x04E7;
 
-            bool in_game() const { return current_ram_ptr_[GAME_STATE] != 0; }
+            bool inGame() const { return m_current_ram_ptr[GAME_STATE] != 0; }
 
             void skip_between_rounds()
             {
-                while (!in_game())
+                while (!inGame())
                 {
                     frameadvance(NES_INPUT_START);
                     frameadvance(NES_INPUT_NONE);
@@ -67,17 +67,17 @@ namespace hcle
         public:
             bool isDone() override
             {
-                return current_ram_ptr_[LEVEL_TRANSITION] == 0x02 || current_ram_ptr_[LIVES] < previous_ram_[LIVES];
+                return m_current_ram_ptr[LEVEL_TRANSITION] == 0x02 || m_current_ram_ptr[LIVES] < m_previous_ram[LIVES];
             }
 
             double getReward() override
             {
-                long long current_progress = get_progress_score(current_ram_ptr_);
-                long long previous_progress = get_progress_score(previous_ram_.data());
+                long long current_progress = get_progress_score(m_current_ram_ptr);
+                long long previous_progress = get_progress_score(m_previous_ram.data());
                 double progress_reward = static_cast<double>(current_progress - previous_progress);
 
-                double damage_penalty = (current_ram_ptr_[PLAYER_HEALTH] < previous_ram_[PLAYER_HEALTH]) ? -25.0 : 0.0;
-                double finish_bonus = (current_ram_ptr_[LEVEL_TRANSITION] == 0x03) ? 100.0 : 0.0;
+                double damage_penalty = (m_current_ram_ptr[PLAYER_HEALTH] < m_previous_ram[PLAYER_HEALTH]) ? -25.0 : 0.0;
+                double finish_bonus = (m_current_ram_ptr[LEVEL_TRANSITION] == 0x03) ? 100.0 : 0.0;
 
                 return std::max(progress_reward, 0.0) + damage_penalty + finish_bonus;
             }
@@ -85,7 +85,7 @@ namespace hcle
             void onStep() override
             {
                 skip_between_rounds();
-                if (in_game() && !has_backup_)
+                if (inGame() && !has_backup_)
                 {
                     createBackup();
                 }

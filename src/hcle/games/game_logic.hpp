@@ -38,7 +38,7 @@ namespace hcle
             virtual inline void initialize(cynes::NES *nes)
             {
                 nes_ = nes;
-                current_ram_ptr_ = nes_->get_ram_pointer();
+                m_current_ram_ptr = nes_->get_ram_pointer();
                 std::unique_lock lock(g_savestate_mutex);
                 state0.resize(nes_->size());
                 state1.resize(nes_->size());
@@ -59,7 +59,7 @@ namespace hcle
             {
                 if (!nes_)
                     return;
-                std::memcpy(previous_ram_.data(), current_ram_ptr_, RAM_SIZE);
+                std::memcpy(m_previous_ram.data(), m_current_ram_ptr, RAM_SIZE);
             }
 
             void reset()
@@ -139,8 +139,8 @@ namespace hcle
 
         protected:
             cynes::NES *nes_ = nullptr;
-            uint8_t *current_ram_ptr_ = nullptr;
-            std::array<uint8_t, 2048> previous_ram_;
+            uint8_t *m_current_ram_ptr = nullptr;
+            std::array<uint8_t, 2048> m_previous_ram;
 
             std::vector<uint8_t> action_set = std::vector<uint8_t>{0};
 
@@ -167,7 +167,7 @@ namespace hcle
 
             int changeIn(int address)
             {
-                return static_cast<int>(current_ram_ptr_[address]) - static_cast<int>(previous_ram_[address]);
+                return static_cast<int>(m_current_ram_ptr[address]) - static_cast<int>(m_previous_ram[address]);
             }
         };
     } // namespace games

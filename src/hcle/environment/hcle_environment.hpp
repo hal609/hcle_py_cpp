@@ -60,24 +60,25 @@ namespace hcle
       std::unique_ptr<cynes::NES> emu;
       std::unique_ptr<hcle::games::GameLogic> game_logic;
 
+      bool running_window = false;
+
     private:
       static bool was_welcomed;
 
-      std::string rom_path_;
-      std::string game_name_;
+      std::string m_rom_path;
+      std::string m_game_name;
 
-      std::unique_ptr<hcle::games::GameLogic> game_logic_;
+      std::unique_ptr<hcle::games::GameLogic> m_game_logic;
 
-      size_t frame_size_;
+      size_t m_frame_size;
 
-      uint64_t current_step_;
+      uint64_t m_current_step;
 
-      std::unique_ptr<hcle::common::Display> display_;
-      bool single_channel_ = false;
-      bool running_window_ = false;
-      uint8_t fps_limit_ = 0;
-      milliseconds fps_sleep_ms_;
-      tp last_update;
+      std::unique_ptr<hcle::common::Display> m_display;
+      bool m_single_channel = false;
+      uint8_t m_fps_limit = 0;
+      milliseconds m_fps_sleep_ms;
+      tp m_last_update;
     };
 
   } // namespace environment

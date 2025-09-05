@@ -22,9 +22,9 @@ namespace hcle
             GameLogic *clone() const override { return new KungFuLogic(*this); }
 
         private:
-            bool in_game() { return current_ram_ptr_[MENU] != 0x00; }
-            bool is_dead() { return current_ram_ptr_[DEAD] != 0x00; }
-            bool in_attract_mode() { return current_ram_ptr_[ATTRACT] == 1; }
+            bool inGame() { return m_current_ram_ptr[MENU] != 0x00; }
+            bool is_dead() { return m_current_ram_ptr[DEAD] != 0x00; }
+            bool in_attract_mode() { return m_current_ram_ptr[ATTRACT] == 1; }
 
             static const int GAME_STATE = 0x0006;
             static const int ATTRACT = 0x06B;
@@ -52,12 +52,12 @@ namespace hcle
 
             float score_change() const
             {
-                return static_cast<float>(score(current_ram_ptr_) - score(previous_ram_.data()));
+                return static_cast<float>(score(m_current_ram_ptr) - score(m_previous_ram.data()));
             }
 
             float x_change() const
             {
-                int64_t change = static_cast<int64_t>(current_ram_ptr_[X_FINE]) - static_cast<int64_t>(previous_ram_[X_FINE]);
+                int64_t change = static_cast<int64_t>(m_current_ram_ptr[X_FINE]) - static_cast<int64_t>(m_previous_ram[X_FINE]);
                 if (std::abs(change) == 255)
                 {
                     return -static_cast<float>(change) / 255.0f;
@@ -71,8 +71,8 @@ namespace hcle
 
             float hp_change() const
             {
-                int64_t change = static_cast<int64_t>(current_ram_ptr_[HP]) - static_cast<int64_t>(previous_ram_[HP]);
-                if (change > 0 || current_ram_ptr_[HP] == 0)
+                int64_t change = static_cast<int64_t>(m_current_ram_ptr[HP]) - static_cast<int64_t>(m_previous_ram[HP]);
+                if (change > 0 || m_current_ram_ptr[HP] == 0)
                 {
                     return 0.0;
                 }
@@ -92,7 +92,7 @@ namespace hcle
                 double reward = -0.01; // Time penalty
 
                 float x_reward = x_change();
-                if (current_ram_ptr_[FLOOR] % 2 == 0)
+                if (m_current_ram_ptr[FLOOR] % 2 == 0)
                 {
                     reward -= x_reward;
                 }
@@ -113,7 +113,7 @@ namespace hcle
             }
             void onStep() override
             {
-                if (in_game())
+                if (inGame())
                 {
                     if (!has_backup_)
                         createBackup();

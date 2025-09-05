@@ -225,7 +225,7 @@ bool cynes::NES::step(uint16_t controllers, unsigned int frames)
     {
         while (!ppu.is_frame_ready())
         {
-            ppu.set_render_skip((k < frames - 1));
+            // ppu.set_render_skip((k < frames - 1));
             cpu.tick();
 
             if (cpu.is_frozen())
