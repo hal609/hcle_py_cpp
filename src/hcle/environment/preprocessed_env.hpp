@@ -21,6 +21,7 @@ namespace hcle::environment
         const bool maxpool,
         const bool grayscale,
         const int stack_num,
+        const int max_episode_steps = -1,
         const bool color_index_grayscale = false);
 
     void reset(uint8_t *obs_output_buffer);
@@ -50,6 +51,9 @@ namespace hcle::environment
     bool m_maxpool;
     bool m_grayscale;
     int m_stack_num;
+
+    int m_max_episode_steps = -1;
+    int m_step_count = 0;
 
     bool m_requires_resize;
 

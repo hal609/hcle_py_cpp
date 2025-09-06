@@ -13,6 +13,7 @@ namespace hcle::environment
         const bool maxpool,
         const bool grayscale,
         const int stack_num,
+        const int max_episode_steps,
         const bool color_index_grayscale)
         : m_obs_height(obs_height),
           m_obs_width(obs_width),
@@ -20,6 +21,7 @@ namespace hcle::environment
           m_maxpool((m_frame_skip > 1) && maxpool),
           m_grayscale(grayscale),
           m_stack_num(stack_num),
+          m_max_episode_steps(max_episode_steps),
           m_reward(0.0f),
           m_done(false)
     {
@@ -50,6 +52,7 @@ namespace hcle::environment
         m_env->reset();
         m_reward = 0.0f;
         m_done = false;
+        m_step_count = 0;
 
         m_frame_stack_idx = 0;
         processScreen();
@@ -69,6 +72,7 @@ namespace hcle::environment
         {
             throw std::out_of_range("Action index out of range.");
         }
+        m_step_count++;
 
         uint8_t controller_input = m_action_set[action_index];
         double accumulated_reward = 0.0f;
@@ -84,6 +88,10 @@ namespace hcle::environment
             accumulated_reward += m_env->act(controller_input, m_frame_skip);
         }
         m_done = m_env->isDone();
+        if (m_max_episode_steps > 0 && m_step_count > m_max_episode_steps)
+        {
+            m_done = true;
+        }
         m_reward = accumulated_reward;
 
         processScreen();
