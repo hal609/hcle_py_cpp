@@ -18,16 +18,18 @@ namespace hcle
       public:
          Zelda1Logic()
          {
-            action_set = {
-                NES_INPUT_NONE,
-                NES_INPUT_UP,
-                NES_INPUT_DOWN,
-                NES_INPUT_LEFT,
-                NES_INPUT_RIGHT,
-                NES_INPUT_A,
-                NES_INPUT_B,
-                NES_INPUT_START,
-            };
+            action_set.resize(256);
+            std::iota(action_set.begin(), action_set.end(), 0);
+            // action_set = {
+            //     NES_INPUT_NONE,
+            //     NES_INPUT_UP,
+            //     NES_INPUT_DOWN,
+            //     NES_INPUT_LEFT,
+            //     NES_INPUT_RIGHT,
+            //     NES_INPUT_A,
+            //     NES_INPUT_B,
+            //     //  NES_INPUT_START,
+            // };
          }
 
          GameLogic *clone() const override { return new Zelda1Logic(*this); }
@@ -101,7 +103,13 @@ namespace hcle
             // Iterate over the block of memory containing major items
             for (int addr = ITEM_BLOCK_START; addr <= ITEM_BLOCK_END; ++addr)
             {
-               if ((addr) == 0x670) // This address is hp per heart so is not a new item
+               // Skip addresses which are not new major items
+               if ((addr) == PARTIAL_HEART || addr == RUPEES || addr == KEYS)
+                  continue;
+
+               // If number of heart containers is set to 0x22 then this is just the defaul
+               // so no reward should be returned
+               if (addr == HEART_CONTAINERS && m_current_ram_ptr[addr] != 0x22)
                   continue;
 
                // Reward for a change from lower value (not possessed) to higer value (possessed/upgraded)
@@ -131,7 +139,7 @@ namespace hcle
 
          double getReward() override
          {
-            double reward = -0.01;
+            double reward = 0; //-0.001;
 
             // --- Penalties ---
             double health_change = getHealth(m_current_ram_ptr) - getHealth(m_previous_ram.data());
@@ -146,7 +154,7 @@ namespace hcle
             double major_item_reward = static_cast<double>(checkNewItems()) * 100.0; // Big reward for major items
 
             // Combine all reward components
-            reward += damage_penalty +
+            reward += damage_penalty / 100 +
                       rupee_reward +
                       key_reward +
                       bomb_reward +
@@ -159,7 +167,7 @@ namespace hcle
                reward -= 20.0;
             }
             // Return scaled value
-            return reward / 100.0;
+            return reward / 1000.0;
          }
 
          void onStep() override
