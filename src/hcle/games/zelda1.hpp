@@ -6,6 +6,7 @@
 #include <cmath>
 #include <algorithm>
 #include <cstdint>
+#include <set>
 
 namespace hcle
 {
@@ -46,10 +47,17 @@ namespace hcle
          static const int ITEM_BLOCK_START = 0x0657; // Current Sword
          static const int ITEM_BLOCK_END = 0x0676;   // Magic Shield
 
+         std::set<int> m_visited_locations;
+
          bool inGame() const
          {
             // return true;
             return m_current_ram_ptr[GAME_MODE] > 1 && m_current_ram_ptr[GAME_MODE] < 14;
+         }
+
+         void onReset()
+         {
+            m_visited_locations.clear();
          }
 
          void skipMenusAndTransitions()
@@ -93,13 +101,26 @@ namespace hcle
             // Iterate over the block of memory containing major items
             for (int addr = ITEM_BLOCK_START; addr <= ITEM_BLOCK_END; ++addr)
             {
-               // Reward for a change from 0 (not possessed) to non-zero (possessed)
-               if (m_previous_ram[addr] == 0 && m_current_ram_ptr[addr] > 0)
+               if ((addr) == 0x670) // This address is hp per heart so is not a new item
+                  continue;
+
+               // Reward for a change from lower value (not possessed) to higer value (possessed/upgraded)
+               if (m_previous_ram[addr] < m_current_ram_ptr[addr])
                {
                   new_items++;
                }
             }
             return new_items;
+         }
+
+         int newMapLocationFound()
+         {
+            if (m_visited_locations.find(m_current_ram_ptr[MAP_LOCATION]) == m_visited_locations.end())
+            {
+               m_visited_locations.insert(m_current_ram_ptr[MAP_LOCATION]);
+               return 1;
+            }
+            return 0;
          }
 
       public:
@@ -110,6 +131,8 @@ namespace hcle
 
          double getReward() override
          {
+            double reward = -0.01;
+
             // --- Penalties ---
             double health_change = getHealth(m_current_ram_ptr) - getHealth(m_previous_ram.data());
             double damage_penalty = std::min(health_change, 0.0); // Negative reward for taking damage
@@ -118,21 +141,25 @@ namespace hcle
             double rupee_reward = static_cast<double>(changeIn(RUPEES));
             double key_reward = static_cast<double>(changeIn(KEYS)) * 5.0;   // Keys are valuable
             double bomb_reward = static_cast<double>(changeIn(BOMBS)) * 0.5; // Bombs are less valuable
-            double combat_reward = static_cast<double>(changeIn(KILLED_ENEMY_COUNT)) * 2.0;
-            double exploration_reward = (m_current_ram_ptr[MAP_LOCATION] != m_previous_ram[MAP_LOCATION]) ? 10.0 : 0.0;
-            double major_item_reward = static_cast<double>(checkNewItems()) * 50.0; // Big reward for major items
+            // double combat_reward = static_cast<double>(changeIn(KILLED_ENEMY_COUNT)) * 2.0;
+            double exploration_reward = newMapLocationFound() * 5.0;
+            double major_item_reward = static_cast<double>(checkNewItems()) * 100.0; // Big reward for major items
 
             // Combine all reward components
-            double total_reward = damage_penalty +
-                                  rupee_reward +
-                                  key_reward +
-                                  bomb_reward +
-                                  combat_reward +
-                                  exploration_reward +
-                                  major_item_reward;
+            reward += damage_penalty +
+                      rupee_reward +
+                      key_reward +
+                      bomb_reward +
+                      //  combat_reward +
+                      exploration_reward +
+                      major_item_reward;
 
-            // Return a scaled value
-            return total_reward / 10.0;
+            if (isDone())
+            {
+               reward -= 20.0;
+            }
+            // Return scaled value
+            return reward / 100.0;
          }
 
          void onStep() override
