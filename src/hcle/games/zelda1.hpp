@@ -18,18 +18,18 @@ namespace hcle
       public:
          Zelda1Logic()
          {
-            action_set.resize(256);
-            std::iota(action_set.begin(), action_set.end(), 0);
-            // action_set = {
-            //     NES_INPUT_NONE,
-            //     NES_INPUT_UP,
-            //     NES_INPUT_DOWN,
-            //     NES_INPUT_LEFT,
-            //     NES_INPUT_RIGHT,
-            //     NES_INPUT_A,
-            //     NES_INPUT_B,
-            //     //  NES_INPUT_START,
-            // };
+            // action_set.resize(256);
+            // std::iota(action_set.begin(), action_set.end(), 0);
+            action_set = {
+                NES_INPUT_NONE,
+                NES_INPUT_UP,
+                NES_INPUT_DOWN,
+                NES_INPUT_LEFT,
+                NES_INPUT_RIGHT,
+                NES_INPUT_A,
+                NES_INPUT_B,
+                NES_INPUT_START,
+            };
          }
 
          GameLogic *clone() const override { return new Zelda1Logic(*this); }
