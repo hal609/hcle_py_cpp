@@ -144,6 +144,8 @@ namespace hcle::environment
 
         // Internal buffers for thread-safe data transfer.
         std::vector<std::vector<uint8_t>> m_internal_obs_buffers;
+        std::vector<std::vector<uint8_t>> m_internal_obs_front_buffer;
+        std::vector<std::vector<uint8_t>> m_internal_obs_back_buffer;
         std::vector<double> m_internal_reward_buffers;
         std::vector<bool> m_internal_done_buffers;
 
@@ -161,6 +163,10 @@ namespace hcle::environment
 
                 uint8_t *current_obs_buffer = m_internal_obs_buffers[work.env_id].data();
 
+                // Store results in internal buffers
+                m_internal_reward_buffers[work.env_id] = env->getReward();
+                m_internal_done_buffers[work.env_id] = env->isDone();
+
                 if (work.force_reset || env->isDone())
                 {
                     env->reset(current_obs_buffer);
@@ -169,10 +175,6 @@ namespace hcle::environment
                 {
                     env->step(work.action_value, current_obs_buffer);
                 }
-
-                // Store results in internal buffers
-                m_internal_reward_buffers[work.env_id] = env->getReward();
-                m_internal_done_buffers[work.env_id] = env->isDone();
 
                 m_result_queue.push(work.env_id);
             }
@@ -192,7 +194,7 @@ namespace hcle::environment
                     reward_buffer[completed_env_id] = m_internal_reward_buffers[completed_env_id];
                     done_buffer[completed_env_id] = m_internal_done_buffers[completed_env_id];
 
-                    // Copy observation data from internal buffer to the pthon buffer
+                    // Copy observation data from internal buffer to the python buffer
                     std::memcpy(obs_buffer + (completed_env_id * single_obs_size),
                                 m_internal_obs_buffers[completed_env_id].data(),
                                 single_obs_size);

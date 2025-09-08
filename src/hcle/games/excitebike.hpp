@@ -15,23 +15,22 @@ namespace hcle
          {
             action_set = {
                 NES_INPUT_NONE,
-                NES_INPUT_LEFT,
-                NES_INPUT_RIGHT,
                 NES_INPUT_A, // Accelerate (Normal)
                 NES_INPUT_B, // Accelerate (Turbo)
+                NES_INPUT_A | NES_INPUT_DOWN,
+                NES_INPUT_A | NES_INPUT_UP,
                 NES_INPUT_A | NES_INPUT_LEFT,
                 NES_INPUT_A | NES_INPUT_RIGHT,
                 NES_INPUT_B | NES_INPUT_LEFT,
                 NES_INPUT_B | NES_INPUT_RIGHT,
             };
-            finish_time_ = -1; // Use -1 to indicate not finished
+            // action_set.resize(256);
+            // std::iota(action_set.begin(), action_set.end(), 0);
          }
 
          GameLogic *clone() const override { return new ExcitebikeLogic(*this); }
 
       private:
-         long long finish_time_;
-
          // RAM addresses
          static const int RACING_FLAG = 0x004F;
          static const int PLAYER_SPEED = 0x00F3;
@@ -40,6 +39,7 @@ namespace hcle
          static const int GAME_TIMER_SEC = 0x0069;
          static const int GAME_TIMER_HUN = 0x006A;
          static const int PLAYER_STATUS = 0x00F2;
+         static const int FINISH_POSITION = 0x00D; // if finish pos is greater than 3 then you cannot continue
 
          bool inGame() const
          {
@@ -48,7 +48,7 @@ namespace hcle
 
          void skip_between_rounds()
          {
-            while (!inGame())
+            if (!inGame())
             {
                frameadvance(NES_INPUT_A);
             }
@@ -62,7 +62,6 @@ namespace hcle
       public:
          void onReset() override
          {
-            finish_time_ = -1;
             if (!has_backup_)
             {
                for (int i = 0; i < 30; i++)
@@ -71,23 +70,11 @@ namespace hcle
                   frameadvance(NES_INPUT_START);
                }
             }
-            // You may want to add the startup frameadvance logic from the Python _did_reset here
          }
 
          bool isDone() override
          {
-            long long current_time = get_time(m_current_ram_ptr);
-
-            if (inGame() && finish_time_ < 0)
-            {
-               long long previous_time = get_time(m_previous_ram.data());
-               if (current_time == previous_time && current_time > 0)
-               {
-                  finish_time_ = current_time;
-                  return true;
-               }
-            }
-            return false;
+            return m_current_ram_ptr[FINISH_POSITION] >= 0x3;
          }
 
          double getReward() override
@@ -105,6 +92,11 @@ namespace hcle
             if (status != 0 && status != 4)
             {
                reward -= 5.0;
+            }
+
+            if (isDone())
+            {
+               reward -= 20.0;
             }
 
             return reward / 10000.0;

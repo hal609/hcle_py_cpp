@@ -28,7 +28,7 @@ namespace hcle
                 NES_INPUT_RIGHT,
                 NES_INPUT_A,
                 NES_INPUT_B,
-                NES_INPUT_START,
+                //  NES_INPUT_START,
             };
          }
 
@@ -105,15 +105,17 @@ namespace hcle
             {
                // Skip addresses which are not new major items
                if ((addr) == PARTIAL_HEART || addr == RUPEES || addr == KEYS)
+               {
                   continue;
-
+               }
                // If number of heart containers is set to 0x22 then this is just the defaul
                // so no reward should be returned
-               if (addr == HEART_CONTAINERS && m_current_ram_ptr[addr] != 0x22)
+               else if (addr == HEART_CONTAINERS && m_current_ram_ptr[addr] != 0x22)
+               {
                   continue;
-
+               }
                // Reward for a change from lower value (not possessed) to higer value (possessed/upgraded)
-               if (m_previous_ram[addr] < m_current_ram_ptr[addr])
+               else if (m_previous_ram[addr] < m_current_ram_ptr[addr])
                {
                   new_items++;
                }
@@ -139,7 +141,7 @@ namespace hcle
 
          double getReward() override
          {
-            double reward = 0; //-0.001;
+            double reward = -0.001;
 
             // --- Penalties ---
             double health_change = getHealth(m_current_ram_ptr) - getHealth(m_previous_ram.data());
@@ -164,7 +166,7 @@ namespace hcle
 
             if (isDone())
             {
-               reward -= 20.0;
+               reward -= 10.0;
             }
             // Return scaled value
             return reward / 1000.0;

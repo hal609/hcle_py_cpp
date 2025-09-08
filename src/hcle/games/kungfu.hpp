@@ -10,21 +10,26 @@ namespace hcle
         class KungFuLogic : public GameLogic
         {
         public:
-            KungFuLogic() { action_set = {
-                                NES_INPUT_UP,
-                                NES_INPUT_DOWN,
-                                NES_INPUT_LEFT,
-                                NES_INPUT_RIGHT,
-                                NES_INPUT_B,
-                                NES_INPUT_A,
-                            }; }
+            KungFuLogic()
+            {
+                action_set = {
+                    NES_INPUT_UP,
+                    NES_INPUT_DOWN,
+                    NES_INPUT_LEFT,
+                    NES_INPUT_RIGHT,
+                    NES_INPUT_B,
+                    NES_INPUT_A,
+                };
+                // action_set.resize(256);
+                // std::iota(action_set.begin(), action_set.end(), 0);
+            }
 
             GameLogic *clone() const override { return new KungFuLogic(*this); }
 
         private:
             bool inGame() { return m_current_ram_ptr[MENU] != 0x00; }
-            bool is_dead() { return m_current_ram_ptr[DEAD] != 0x00; }
-            bool in_attract_mode() { return m_current_ram_ptr[ATTRACT] == 1; }
+            bool isDead() { return m_current_ram_ptr[DEAD] != 0x00; }
+            bool inAttractMode() { return m_current_ram_ptr[ATTRACT] == 1; }
 
             static const int GAME_STATE = 0x0006;
             static const int ATTRACT = 0x06B;
@@ -50,12 +55,12 @@ namespace hcle
                 return total_score;
             }
 
-            float score_change() const
+            float scoreChange() const
             {
                 return static_cast<float>(score(m_current_ram_ptr) - score(m_previous_ram.data()));
             }
 
-            float x_change() const
+            float xChange() const
             {
                 int64_t change = static_cast<int64_t>(m_current_ram_ptr[X_FINE]) - static_cast<int64_t>(m_previous_ram[X_FINE]);
                 if (std::abs(change) == 255)
@@ -69,7 +74,7 @@ namespace hcle
                 return static_cast<float>(change);
             }
 
-            float hp_change() const
+            float hpChange() const
             {
                 int64_t change = static_cast<int64_t>(m_current_ram_ptr[HP]) - static_cast<int64_t>(m_previous_ram[HP]);
                 if (change > 0 || m_current_ram_ptr[HP] == 0)
@@ -80,18 +85,18 @@ namespace hcle
             }
 
         public:
-            bool isDone() override { return is_dead(); }
+            bool isDone() override { return isDead(); }
 
             double getReward() override
             {
-                if (in_attract_mode())
+                if (inAttractMode())
                 {
                     return 0.0;
                 }
 
                 double reward = -0.01; // Time penalty
 
-                float x_reward = x_change();
+                float x_reward = xChange();
                 if (m_current_ram_ptr[FLOOR] % 2 == 0)
                 {
                     reward -= x_reward;
@@ -101,15 +106,15 @@ namespace hcle
                     reward += x_reward;
                 }
 
-                reward += score_change() / 100.0;
-                reward += hp_change();
+                reward += scoreChange() / 100.0;
+                reward += hpChange();
 
-                if (is_dead())
+                if (isDead())
                 {
                     reward -= 100.0;
                 }
 
-                return reward;
+                return reward / 1000.0;
             }
             void onStep() override
             {

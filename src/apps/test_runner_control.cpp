@@ -14,8 +14,8 @@ int main(int argc, char **argv)
 {
     // --- Configuration ---
     const int num_envs = 1; // Controller works with a single environment
-    const std::string rom_path = "C:\\Users\\offan\\Downloads\\hcle_py_cpp\\src\\hcle\\python\\hcle_py\\roms\\smb1.bin";
-    const std::string game_name = "smb1";
+    const std::string rom_path = "";
+    const std::string game_name = "golf";
     const std::string render_mode = "human";
     const int num_steps = 100000;
     const int fps_limit = 60;
@@ -30,7 +30,7 @@ int main(int argc, char **argv)
     try
     {
         std::cout << "Creating HCLEVectorEnvironment...\n";
-        hcle::environment::HCLEVectorEnvironment env(num_envs, rom_path, game_name, render_mode, 84, 84, 1, true, true, 4);
+        hcle::environment::HCLEVectorEnvironment env(num_envs, rom_path, game_name, render_mode, 84, 84, 1, true, false, 4);
 
         // --- Create our controller instance ---
         hcle::common::NESController controller;
@@ -38,7 +38,7 @@ int main(int argc, char **argv)
         // --- Pre-allocate memory buffers ---
         const size_t single_obs_size = env.getObservationSize();
         std::vector<uint8_t> obs_buffer(num_envs * single_obs_size);
-        std::vector<float> reward_buffer(num_envs);
+        std::vector<double> reward_buffer(num_envs);
         std::vector<uint8_t> done_buffer(num_envs);
         std::vector<int> actions(num_envs);
 
@@ -60,7 +60,7 @@ int main(int argc, char **argv)
             env.send(actions);
             env.recv(obs_buffer.data(), reward_buffer.data(), done_buffer.data());
 
-            if (fps_limit > 0)
+            if constexpr (fps_limit > 0)
             {
                 auto frame_duration = std::chrono::duration<double>(1.0 / fps_limit);
                 auto end_time = clock::now();
@@ -72,14 +72,16 @@ int main(int argc, char **argv)
             }
             frame_start_time = clock::now();
 
-            if (reward_buffer[0] > 0)
+            total_reward += reward_buffer[0];
+            if (reward_buffer[0] != 0)
             {
                 std::cout << "Rewards this step: "
                           << std::fixed << std::right << std::setw(8) << std::setprecision(4)
-                          << reward_buffer[0] << "\r" << std::flush;
+                          << reward_buffer[0] << " Total reward " << total_reward << "\r" << std::endl; // std::flush;
             }
 
-            total_reward += reward_buffer[0];
+            if (done_buffer[0] == 1)
+                break;
         }
 
         auto elapsed = std::chrono::duration_cast<std::chrono::duration<double>>(clock::now() - run_start).count();
@@ -90,6 +92,7 @@ int main(int argc, char **argv)
         std::cout << "Total time: " << elapsed << " seconds\n";
         std::cout << "Average FPS: " << (num_steps / elapsed) << "\n";
         std::cout << "Average reward per step: " << average_reward << "\n";
+        std::cout << "Total reward: " << total_reward << "\n";
     }
     catch (const std::exception &ex)
     {

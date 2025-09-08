@@ -24,9 +24,10 @@ namespace hcle
                 NES_INPUT_B,
                 NES_INPUT_A,
             };
+            // action_set.resize(256);
+            // std::iota(action_set.begin(), action_set.end(), 0);
          }
 
-         // Required for polymorphic cloning
          GameLogic *clone() const override { return new BaseballLogic(*this); }
 
       private:
@@ -55,6 +56,14 @@ namespace hcle
          int getBases() const
          {
             uint8_t value = m_current_ram_ptr[BASES_ADDR];
+            uint8_t last_four_bits = value & 0x0F; // Get the last 4 bits
+            int result = static_cast<int>(last_four_bits) - 10;
+            return std::max(result / 2, 0);
+         }
+
+         int getPreviousBases() const
+         {
+            uint8_t value = m_previous_ram[BASES_ADDR];
             uint8_t last_four_bits = value & 0x0F; // Get the last 4 bits
             int result = static_cast<int>(last_four_bits) - 10;
             return std::max(result / 2, 0);
@@ -98,30 +107,30 @@ namespace hcle
 
             if (isBatting())
             {
-               reward += getBases() * 100.0;
+               reward += std::abs(getBases() - getPreviousBases()) * 100.0;
                reward -= balls_change;
-               reward -= outs_change_from_strikes * 10.0;
-               reward -= strikes_change_from_outs * 100.0;
+               reward -= strikes_change_from_outs * 10.0;
+               reward -= outs_change_from_strikes * 100.0;
             }
             else // Pitching
             {
                reward += balls_change;
-               reward += outs_change_from_strikes * 10.0;
-               reward += strikes_change_from_outs * 100.0;
+               reward += strikes_change_from_outs * 10.0;
+               reward += outs_change_from_strikes * 100.0;
             }
 
-            return reward / 100.0;
+            return reward / 10000.0;
          }
 
          void onStep() override
          {
             // Skip through title screen and team select menu
-            while (inMenu())
+            if (inMenu())
             {
-               frameadvance(NES_INPUT_NONE);
                frameadvance(NES_INPUT_START);
+               frameadvance(NES_INPUT_NONE);
             }
-            while (m_current_ram_ptr[GAME_STATE] == 0x80)
+            if (m_current_ram_ptr[GAME_STATE] == 0x80)
             {
                frameadvance(NES_INPUT_NONE);
                frameadvance(NES_INPUT_A);

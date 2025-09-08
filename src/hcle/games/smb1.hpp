@@ -12,12 +12,12 @@ namespace hcle
         public:
             SMB1Logic()
             {
-                // action_set.resize(256);
-                // std::iota(action_set.begin(), action_set.end(), 0);
                 action_set = {
                     NES_INPUT_LEFT,
                     NES_INPUT_RIGHT | NES_INPUT_B,
                     NES_INPUT_RIGHT | NES_INPUT_B | NES_INPUT_A};
+                // action_set.resize(256);
+                // std::iota(action_set.begin(), action_set.end(), 0);
             }
 
             GameLogic *
@@ -29,11 +29,13 @@ namespace hcle
         private:
             static const int PLAYER_STATE = 0x000E;
             static const int Y_VIEWPORT = 0x00B5;
+            static const int FLAGPOLE_SCORE = 0x010F;
             static const int GAME_MODE = 0x0770;
             static const int CURRENT_PAGE = 0x006D;
             static const int X_POS = 0x0086;
             static const int LEVEL_LOADING = 0x0772;
-            static const int LEVEL_NUM = 0x0760;
+            static const int STAR_FLAG_TASK_CONTROL = 0x0746;
+            static const int AREA_NUM = 0x0760;
             static const int WORLD_NUM = 0x075F;
             static const int COINS = 0x075E;
             static const int POWERUP_STATE = 0x0756;
@@ -46,55 +48,56 @@ namespace hcle
             inline static const std::vector<int> ENEMY_TYPE_ADDRESSES = {0x0016, 0x0017, 0x0018, 0x0019, 0x001A};
             inline static const std::vector<int> STAGE_OVER_ENEMIES = {0x2D, 0x31}; // Bowser = 0x2D, Flagpole = 0x31
 
-            bool inGame() { return m_current_ram_ptr[LEVEL_LOADING] == 3 && m_current_ram_ptr[GAME_MODE] != 0; }
+            bool inGame()
+            {
+                return m_current_ram_ptr[LEVEL_LOADING] == 3 && m_current_ram_ptr[GAME_MODE] != 0;
+            }
 
-            bool is_dead()
+            bool isDead()
             {
                 return m_current_ram_ptr[PLAYER_STATE] == 0x0B || // Standard death
                        m_current_ram_ptr[PLAYER_STATE] == 0x06 || // Death animation
                        m_current_ram_ptr[Y_VIEWPORT] > 0x1;       // Fell off screen
             }
 
-            bool is_busy()
+            bool isBusy()
             {
                 uint8_t state = m_current_ram_ptr[PLAYER_STATE];
                 return (state >= 0x00 && state <= 0x05);
             }
 
-            bool is_world_over() { return m_current_ram_ptr[GAME_MODE] == 0x14; }
+            bool isWorldOver()
+            {
+                return m_current_ram_ptr[GAME_MODE] == 0x14;
+            }
 
-            int get_time()
+            int getTime()
             {
                 return m_current_ram_ptr[TIME_H] * 100 +
                        m_current_ram_ptr[TIME_M] * 10 +
                        m_current_ram_ptr[TIME_L];
             }
 
-            void runout_prelevel_timer() { m_current_ram_ptr[PRE_LEVEL_TIMER] = 0; }
+            void zeroLevelLoadWaitTimer() { m_current_ram_ptr[PRE_LEVEL_TIMER] = 0; }
 
-            bool is_stage_over(uint8_t *ram_pointer)
+            bool isFlagTouched()
             {
-                for (const int &address : ENEMY_TYPE_ADDRESSES)
-                {
-                    if (count(STAGE_OVER_ENEMIES.begin(), STAGE_OVER_ENEMIES.end(), ram_pointer[address]) > 0)
-                    {
-                        return ram_pointer[0x001D] == 3;
-                    }
-                }
-                return false;
+                // Flagpole score increases when the flagpole is touched (i.e. stage end reached)
+                return m_current_ram_ptr[FLAGPOLE_SCORE] != 0;
             }
 
         public:
             bool isDone() override
             {
-                return is_dead();
+                return false;
+                return isDead();
             }
 
             double getReward() override
             {
                 double reward = 0.0;
 
-                if (is_dead())
+                if (isDead())
                     reward -= 10;
 
                 // Calculate change in X position
@@ -103,7 +106,7 @@ namespace hcle
 
                 double x_reward = static_cast<float>(current_x - previous_x);
                 x_reward = (x_reward < -3) ? 0 : x_reward;
-                double level_reward = std::abs(changeIn(LEVEL_NUM));
+                double level_reward = std::abs(changeIn(AREA_NUM));
                 double powerup_reward = std::abs(changeIn(POWERUP_STATE));
                 double coin_reward = std::abs(changeIn(COINS));
 
@@ -125,9 +128,20 @@ namespace hcle
                     this->frameadvance(NES_INPUT_START);
                     this->frameadvance(NES_INPUT_NONE);
                 }
-                if (is_busy() || is_world_over())
+                if (isBusy() || isWorldOver())
                 {
-                    runout_prelevel_timer();
+                    zeroLevelLoadWaitTimer();
+                }
+                if (isFlagTouched())
+                {
+                    // Hack timer to instantly progress to next level
+                    m_current_ram_ptr[STAR_FLAG_TASK_CONTROL] = 0x05;
+
+                    if (m_current_ram_ptr[WORLD_NUM] != 2 && m_current_ram_ptr[AREA_NUM] == 0)
+                    {
+                        // Skip slow walk to underground area
+                        m_current_ram_ptr[AREA_NUM] = 1;
+                    }
                 }
                 uint8_t timer = m_current_ram_ptr[CHANGE_AREA_TIMER];
                 if (timer > 1 && timer < 255)
