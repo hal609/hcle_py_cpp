@@ -32,7 +32,7 @@ class NESVectorEnv(VectorEnv):
         stack_num: int = 4,
         color_index_grayscale: bool = False,
     ):
-        # Initialize the C++ vectorized environment
+
         self.vec_hcle = _hcle_py.HCLEVectorEnvironment(
             num_envs=num_envs,
             rom_path=roms.get_rom_path(game),
@@ -47,16 +47,13 @@ class NESVectorEnv(VectorEnv):
             color_index_grayscale=color_index_grayscale,
         )
 
-        # --- Define observation and action spaces based on C++ env properties ---
         channels = 1 if grayscale else 3
 
-        # The shape of a single environment's observation
         single_obs_shape = (
             (stack_num, img_height, img_width)
             if grayscale
             else (stack_num, img_height, img_width, channels)
         )
-        # single_obs_shape = (img_height, img_width, stack_num) if grayscale else (img_height, img_width, stack_num, channels)
 
         self.single_observation_space = Box(
             low=0, high=255, shape=single_obs_shape, dtype=np.uint8
@@ -74,13 +71,13 @@ class NESVectorEnv(VectorEnv):
             self.single_action_space, self.batch_size
         )
 
-        # --- Pre-allocate shared memory buffers ---
-        # These NumPy arrays will be passed to C++ to be filled directly.
+        # These arrays are passed to C++ and filled directly
         self.obs_buffer = np.zeros(
             self.observation_space.shape, dtype=self.observation_space.dtype
         )
+
         self.rewards_buffer = np.zeros(self.num_envs, dtype=np.double)
-        # Use uint8 for dones to match C++ bool size and avoid vector<bool> issues
+
         self.dones_buffer = np.zeros(self.num_envs, dtype=np.uint8)
 
     def reset(
@@ -90,9 +87,7 @@ class NESVectorEnv(VectorEnv):
 
         self.vec_hcle.reset(self.obs_buffer)
 
-        # Return a copy of the observation buffer to prevent users from
-        # accidentally modifying the internal state.
-        return np.copy(self.obs_buffer), {}
+        return self.obs_buffer, {}
 
     def step_async(self, actions: np.ndarray):
         """
@@ -114,7 +109,7 @@ class NESVectorEnv(VectorEnv):
         infos = {}
 
         return (
-            np.copy(self.obs_buffer),
+            self.obs_buffer,
             self.rewards_buffer,
             dones_bool,
             truncateds,
