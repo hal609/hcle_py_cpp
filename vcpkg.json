@@ -1,0 +1,9 @@
+{
+    "name": "hcle-py",
+    "version-string": "0.1.0",
+    "dependencies": [
+        "sdl2",
+        "opencv4",
+        "zlib"
+    ]
+}

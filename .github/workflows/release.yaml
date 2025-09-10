@@ -9,6 +9,9 @@ on:
   # Allows you to run this workflow manually from the Actions tab for testing.
   workflow_dispatch:
 
+env:
+  VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+
 jobs:
   build_and_publish:
     name: Build and publish Python distributions to PyPI
@@ -18,7 +21,12 @@ jobs:
       - name: Check out the repository
         uses: actions/checkout@v4
 
-      # Used to build ARM64 wheels on x86_64 runners
+      - name: Install C++ dependencies with vcpkg
+        uses: microsoft/run-vcpkg@v11
+        with:
+          vcpkgDirectory: ${{ env.VCPKG_ROOT }}
+          runInstall: true
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         with:
@@ -27,15 +35,12 @@ jobs:
       - name: Build wheels for all platforms
         uses: pypa/cibuildwheel@v2.17.0
         env:
-          # This tells cibuildwheel to build for ARM64 on Linux in addition to x86_64
+          CIBW_CMAKE_ARGS: -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake
           CIBW_ARCHS_LINUX: auto aarch64
-          # Skip 32-bit builds, which are less common now
-          CIBW_SKIP: "*-win32* *-manylinux_i686*"
+          CIBW_SKIP: "*-win32* *-manylinux_i686*
 
       - name: Publish package to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          # The username is a special value for token authentication
           user: __token__
-          # The password is the PyPI API token stored in your repository secrets
           password: ${{ secrets.PYPI_API_TOKEN }}
