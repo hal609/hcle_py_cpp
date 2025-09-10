@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install C++ dependencies with vcpkg
-        uses: microsoft/run-vcpkg@v11
+        uses: run-vcpkg/run-vcpkg@v11
         with:
           vcpkgDirectory: ${{ env.VCPKG_ROOT }}
           runInstall: true
