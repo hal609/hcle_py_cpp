@@ -55,9 +55,10 @@ docstring-code-line-length = "dynamic"
 
 [project]
 name = "hcle_py"
-version = "0.1.12"
+version = "0.1.2"
 description = "A High-performance C++ Learning Environment"
 authors = [{ name = "Hal Kolb", email = "hal@kolb.com" }]
+requires-python = ">=3.10"
 dependencies = ["numpy", "gymnasium"]
 
 [tool.scikit-build.wheel]
