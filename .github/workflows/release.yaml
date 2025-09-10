@@ -16,7 +16,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
       - name: Check out the repository and submodules
@@ -42,9 +42,10 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.17.0
         env:
+          CIBW_BUILD: "cp310-* cp311-* cp312-*"
           CIBW_CMAKE_ARGS: -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake
           CIBW_ARCHS_LINUX: auto aarch64
-          CIBW_SKIP: "*-win32* *-manylinux_i686*"
+          CIBW_ARCHS_WINDOWS: auto ARM64
 
       - name: Store wheels as artifact
         uses: actions/upload-artifact@v4
