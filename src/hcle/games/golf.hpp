@@ -64,7 +64,7 @@ namespace hcle
                 }
             }
 
-            float dist_to_hole(const uint8_t *ram) const
+            float getDistToHole(const uint8_t *ram) const
             {
                 if (ram[ON_GREEN] == 1)
                 {
@@ -83,7 +83,7 @@ namespace hcle
             {
                 double reward = -1.0;
 
-                double dist_change = dist_to_hole(m_current_ram_ptr) - dist_to_hole(m_previous_ram.data());
+                double dist_change = getDistToHole(m_current_ram_ptr) - getDistToHole(m_previous_ram.data());
                 int strokes_change = (m_current_ram_ptr[STROKES] != m_previous_ram[STROKES]) ? 1 : 0;
                 int score_change = static_cast<int>(m_current_ram_ptr[SCORE]) - static_cast<int>(m_previous_ram[SCORE]);
                 int hole_change = static_cast<int>(m_current_ram_ptr[HOLE_NUM]) - static_cast<int>(m_previous_ram[HOLE_NUM]);

@@ -89,7 +89,6 @@ namespace hcle
         public:
             bool isDone() override
             {
-                return false;
                 return isDead();
             }
 

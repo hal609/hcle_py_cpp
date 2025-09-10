@@ -57,12 +57,8 @@ namespace cynes
         void setOutputModeGrayscale();
         void setOutputModeColorIndex();
 
-        void set_frame_ready(bool ready);
-        void set_render_skip(bool skip);
-
     private:
         NES &_nes;
-        bool _render_skip = false;
 
     private:
         std::unique_ptr<uint8_t[]> _frame_buffer;

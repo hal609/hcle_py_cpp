@@ -1,12 +1,15 @@
 #pragma once
 
+#include <stdexcept>
+#include <iostream>
 #include <string>
 #include <vector>
 #include <memory>
+#include <thread>
+#include <chrono>
 
 #include "hcle/emucore/nes.hpp"
 #include "hcle/games/game_logic.hpp"
-#include "hcle/common/exceptions.hpp"
 #include "hcle/common/display.hpp"
 #include "hcle/games/smb1.hpp"
 #include "hcle/games/kungfu.hpp"
@@ -41,7 +44,7 @@ namespace hcle
 
       static void WelcomeMessage();
 
-      void loadROM(const std::string &game_name);
+      void loadROM(const std::string &game_name, const std::string &data_root_dir);
       void setOutputModeGrayscale();
       void setOutputMode(std::string mode);
       double act(uint8_t controller_input, unsigned int frames);
@@ -66,6 +69,7 @@ namespace hcle
       static bool was_welcomed;
 
       std::string m_rom_path;
+      std::string m_data_root_dir;
       std::string m_game_name;
 
       std::unique_ptr<hcle::games::GameLogic> m_game_logic;

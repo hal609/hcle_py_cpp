@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <set>
+#include <bit>
 
 namespace hcle
 {
@@ -44,12 +45,16 @@ namespace hcle
          static const int RUPEES = 0x066D;
          static const int KEYS = 0x066E;
          static const int BOMBS = 0x0658;
+         static const int TRIFORCE_COUNT = 0x0671;
+         static const int CURRENT_DUNGEON = 0x06BB1;
 
          static const int KILLED_ENEMY_COUNT = 0x0627;
          static const int ITEM_BLOCK_START = 0x0657; // Current Sword
          static const int ITEM_BLOCK_END = 0x0676;   // Magic Shield
 
          std::set<int> m_visited_locations;
+         std::set<int> m_visited_dungeons;
+         std::set<int> m_visited_dungeon_rooms;
 
          bool inGame() const
          {
@@ -60,6 +65,8 @@ namespace hcle
          void onReset()
          {
             m_visited_locations.clear();
+            m_visited_dungeons.clear();
+            m_visited_dungeon_rooms.clear();
          }
 
          void skipMenusAndTransitions()
@@ -133,6 +140,32 @@ namespace hcle
             return 0;
          }
 
+         int newDungeonFound()
+         {
+            if (m_visited_dungeons.find(m_current_ram_ptr[CURRENT_DUNGEON]) == m_visited_dungeons.end())
+            {
+               m_visited_dungeons.insert(m_current_ram_ptr[CURRENT_DUNGEON]);
+               return 1;
+            }
+            return 0;
+         }
+
+         int newDungeonRoomFound()
+         {
+            int composite_num = (m_current_ram_ptr[CURRENT_DUNGEON] << 8) | m_current_ram_ptr[MAP_LOCATION];
+            if (m_visited_dungeon_rooms.find(composite_num) == m_visited_dungeon_rooms.end())
+            {
+               m_visited_dungeon_rooms.insert(composite_num);
+               return 1;
+            }
+            return 0;
+         }
+
+         int triforceCount(uint8_t *ram_ptr)
+         {
+            return std::popcount(ram_ptr[TRIFORCE_COUNT]);
+         }
+
       public:
          bool isDone() override
          {
@@ -152,8 +185,10 @@ namespace hcle
             double key_reward = static_cast<double>(changeIn(KEYS)) * 5.0;   // Keys are valuable
             double bomb_reward = static_cast<double>(changeIn(BOMBS)) * 0.5; // Bombs are less valuable
             // double combat_reward = static_cast<double>(changeIn(KILLED_ENEMY_COUNT)) * 2.0;
-            double exploration_reward = newMapLocationFound() * 5.0;
+            double exploration_reward = (newMapLocationFound() || newDungeonRoomFound()) * 5.0;
+            double dungeon_find_reward = newDungeonFound() * 30.0;
             double major_item_reward = static_cast<double>(checkNewItems()) * 100.0; // Big reward for major items
+            double triforce_reward = static_cast<double>(triforceCount(m_current_ram_ptr) - triforceCount(m_previous_ram.data())) * 100;
 
             // Combine all reward components
             reward += damage_penalty / 100 +

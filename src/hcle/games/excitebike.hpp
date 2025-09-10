@@ -46,7 +46,7 @@ namespace hcle
             return m_current_ram_ptr[RACING_FLAG] == 0x01;
          }
 
-         void skip_between_rounds()
+         void skipBetweenRounds()
          {
             if (!inGame())
             {
@@ -54,7 +54,7 @@ namespace hcle
             }
          }
 
-         long long get_time(const uint8_t *ram) const
+         long long getTime(const uint8_t *ram) const
          {
             return ram[GAME_TIMER_HUN] | (ram[GAME_TIMER_SEC] << 8) | (ram[GAME_TIMER_MIN] << 16);
          }
@@ -104,7 +104,7 @@ namespace hcle
 
          void onStep() override
          {
-            skip_between_rounds();
+            skipBetweenRounds();
             if (inGame() && !has_backup_)
             {
                createBackup();

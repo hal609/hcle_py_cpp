@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <execution>
+#include <future>
 
 #include "hcle/common/thread_safe_queue.hpp"
 #include "hcle/environment/preprocessed_env.hpp"
@@ -85,16 +86,16 @@ namespace hcle::environment
             collectResults(obs_buffer, reward_buffer, done_buffer);
         }
 
-        void send(const std::vector<int> &action_ids)
+        void send(const std::vector<uint8_t> &action_ids)
         {
-            if (static_cast<int>(action_ids.size()) != m_num_envs)
+            if (action_ids.size() != m_num_envs)
             {
                 throw std::runtime_error("Number of actions must equal number of environments.");
             }
             // Queue a step command for every environment.
             for (int i = 0; i < m_num_envs; ++i)
             {
-                m_action_queue.push({i, static_cast<uint8_t>(action_ids[i]), false});
+                m_action_queue.push({i, action_ids[i], false});
             }
         }
 
@@ -115,14 +116,24 @@ namespace hcle::environment
 
         void loadFromState(int state_num)
         {
-            std::for_each(
-                std::execution::par,
-                m_envs.begin(),
-                m_envs.end(),
-                [](auto &env)
-                {
-                    env->loadFromState(0);
-                });
+            std::vector<std::future<void>> futures;
+            for (auto &env : m_envs)
+            {
+                futures.push_back(std::async(std::launch::async, &PreprocessedEnv::loadFromState, env.get(), state_num));
+            }
+
+            for (auto &f : futures)
+            {
+                f.get();
+            }
+            // std::for_each(
+            //     std::execution::par,
+            //     m_envs.begin(),
+            //     m_envs.end(),
+            //     [](auto &env)
+            //     {
+            //         env->loadFromState(0);
+            //     });
         }
 
     private:
@@ -144,8 +155,6 @@ namespace hcle::environment
 
         // Internal buffers for thread-safe data transfer.
         std::vector<std::vector<uint8_t>> m_internal_obs_buffers;
-        std::vector<std::vector<uint8_t>> m_internal_obs_front_buffer;
-        std::vector<std::vector<uint8_t>> m_internal_obs_back_buffer;
         std::vector<double> m_internal_reward_buffers;
         std::vector<bool> m_internal_done_buffers;
 

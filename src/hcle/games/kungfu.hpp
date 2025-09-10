@@ -28,10 +28,12 @@ namespace hcle
 
         private:
             bool inGame() { return m_current_ram_ptr[MENU] != 0x00; }
+            bool isActionable() { return m_current_ram_ptr[ACTION_STATE] == 0x02; }
             bool isDead() { return m_current_ram_ptr[DEAD] != 0x00; }
             bool inAttractMode() { return m_current_ram_ptr[ATTRACT] == 1; }
 
             static const int GAME_STATE = 0x0006;
+            static const int ACTION_STATE = 0x51; // 2 when actionable, 1 when waitin in cutscene, 0 in menu
             static const int ATTRACT = 0x06B;
             static const int IN_PLAY = 0x0390;
             static const int HP = 0x04A6;
@@ -96,7 +98,7 @@ namespace hcle
 
                 double reward = -0.01; // Time penalty
 
-                float x_reward = xChange();
+                float x_reward = xChange() * 10;
                 if (m_current_ram_ptr[FLOOR] % 2 == 0)
                 {
                     reward -= x_reward;
@@ -106,24 +108,29 @@ namespace hcle
                     reward += x_reward;
                 }
 
-                reward += scoreChange() / 100.0;
+                reward += scoreChange() / 10.0;
                 reward += hpChange();
 
                 if (isDead())
                 {
-                    reward -= 100.0;
+                    reward -= 10.0;
                 }
 
                 return reward / 1000.0;
             }
             void onStep() override
             {
-                if (inGame())
+                if (!has_backup_ && inGame() && isActionable())
                 {
-                    if (!has_backup_)
-                        createBackup();
+                    createBackup();
                 }
-                else
+
+                if (!isActionable())
+                {
+                    this->frameadvance(NES_INPUT_NONE);
+                }
+
+                if (!inGame())
                 {
                     this->frameadvance(NES_INPUT_NONE);
                     this->frameadvance(NES_INPUT_START);

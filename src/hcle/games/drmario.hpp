@@ -36,10 +36,7 @@ namespace hcle
          static const int GAME_STATE = 0x0090;
          const std::vector<int> SCORE_BYTES = {0x072E, 0x072D, 0x072C, 0x072B, 0x072A, 0x0729, 0x0728};
 
-         /**
-          * @brief Checks if the game is currently in a menu.
-          */
-         bool in_menu() const
+         bool inMenu() const
          {
             return m_current_ram_ptr[IN_MENU] == 0x01;
          }
@@ -53,17 +50,17 @@ namespace hcle
             return m_current_ram_ptr[MODE] == 0x04;
          }
 
-         bool game_over() const
+         bool gameOver() const
          {
             return m_current_ram_ptr[MODE] == 0x07;
          }
 
-         int get_virus_count(const uint8_t *ram) const
+         int getVirusCount(const uint8_t *ram) const
          {
             return ram[VIRUS_COUNT];
          }
 
-         int get_current_score()
+         int getCurrentScore()
          {
             std::string score_str;
             score_str.reserve(SCORE_BYTES.size()); // Pre-allocate memory for efficiency.
@@ -83,7 +80,7 @@ namespace hcle
             return score_str.empty() ? 0 : std::stoll(score_str);
          }
 
-         int get_previous_score()
+         int getPreviousScore()
          {
             std::string score_str;
             score_str.reserve(SCORE_BYTES.size()); // Pre-allocate memory for efficiency.
@@ -103,15 +100,15 @@ namespace hcle
             return score_str.empty() ? 0 : std::stoll(score_str);
          }
 
-         int get_score_change()
+         int getScoreChange()
          {
-            return get_current_score() - get_previous_score();
+            return getCurrentScore() - getPreviousScore();
          }
 
       public:
          bool isDone() override
          {
-            return game_over();
+            return gameOver();
          }
 
          double getReward() override
@@ -119,10 +116,10 @@ namespace hcle
             double reward = -0.01;
 
             // Reward for clearing viruses
-            // int virus_change = get_virus_count(m_previous_ram.data()) - get_virus_count(m_current_ram_ptr);
-            reward += get_score_change();
+            // int virus_change = getVirusCount(m_previous_ram.data()) - getVirusCount(m_current_ram_ptr);
+            reward += getScoreChange();
 
-            if (game_over())
+            if (gameOver())
             {
                reward -= 500.0;
             }
@@ -130,9 +127,6 @@ namespace hcle
             return reward / 500.0;
          }
 
-         /**
-          * @brief Logic to execute after each step, including skipping menus.
-          */
          void onStep() override
          {
             // Skip through the title screen and level select menus

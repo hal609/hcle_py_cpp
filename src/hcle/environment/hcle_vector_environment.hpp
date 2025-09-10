@@ -16,7 +16,7 @@ namespace hcle::environment
     public:
         HCLEVectorEnvironment(
             const int num_envs,
-            const std::string &rom_path,
+            const std::string &data_root_dir,
             const std::string &game_name,
             const std::string &render_mode = "rgb_array",
             const int obs_height = 84,
@@ -29,11 +29,10 @@ namespace hcle::environment
             : m_render_mode(render_mode),
               m_grayscale(grayscale)
         {
-
             auto env_factory = [=]([[maybe_unused]] int env_id)
             {
                 return std::make_unique<PreprocessedEnv>(
-                    rom_path, game_name, obs_height, obs_width,
+                    data_root_dir, game_name, obs_height, obs_width,
                     frame_skip, maxpool, grayscale, stack_num, color_index_grayscale);
             };
 
@@ -53,7 +52,7 @@ namespace hcle::environment
             m_vectorizer->reset(obs_buffer, reward_buffer, done_buffer);
         }
 
-        void send(const std::vector<int> &action_ids)
+        void send(const std::vector<uint8_t> &action_ids)
         {
             if (m_render_mode == "human" && m_display && m_frame_ptr)
             {

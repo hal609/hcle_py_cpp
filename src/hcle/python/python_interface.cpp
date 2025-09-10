@@ -4,7 +4,6 @@
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
 #include "hcle/environment/preprocessed_env.hpp"
-#include "hcle/common/exceptions.hpp"
 
 namespace py = pybind11;
 
@@ -29,7 +28,7 @@ PYBIND11_MODULE(_hcle_py, m)
     py::class_<hcle::environment::PreprocessedEnv>(m, "PreprocessedEnv")
 
         .def(py::init<std::string, std::string, int, int, int, bool, bool, int>(),
-             py::arg("rom_path"),
+             py::arg("data_root_dir"),
              py::arg("game_name"),
              py::arg("obs_height"),
              py::arg("obs_width"),
@@ -58,5 +57,4 @@ PYBIND11_MODULE(_hcle_py, m)
              { return env.getActionSet(); });
 
     init_vector_bindings(m);
-    py::register_exception<hcle::common::WindowClosedException>(m, "WindowClosedException");
 }

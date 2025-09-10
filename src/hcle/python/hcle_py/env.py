@@ -1,7 +1,9 @@
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
-from . import _hcle_py  # Import the C++ module built by pybind11
+import os
+
+from . import _hcle_py
 
 
 class HCLEnv(gym.Env):
@@ -10,7 +12,7 @@ class HCLEnv(gym.Env):
     def __init__(
         self,
         game: str,
-        rom_path: str,
+        data_root_dir: str = os.path.join(os.path.dirname(__file__), "data"),
         render_mode: str = "rgb_array",
         img_height=240,
         img_width=256,
@@ -21,7 +23,7 @@ class HCLEnv(gym.Env):
         render_fps_limit=0,
     ):
         self.hcle = _hcle_py.PreprocessedEnv(
-            rom_path,
+            data_root_dir,
             game,
             img_height,
             img_width,
@@ -42,7 +44,6 @@ class HCLEnv(gym.Env):
         self.observation_space = spaces.Box(
             low=0, high=255, shape=single_obs_shape, dtype=np.uint8
         )
-        # self.observation_space = spaces.Box(low=0, high=255, shape=(img_height, img_width, (1 if grayscale else 3)), dtype=np.uint8)
 
         self.obs_buffer = np.zeros(
             self.observation_space.shape, dtype=self.observation_space.dtype
@@ -64,15 +65,11 @@ class HCLEnv(gym.Env):
         return self.obs_buffer, reward, done, truncated, info
 
     def reset(self, *, seed=None, options=None):
-        super().reset(seed=seed)  # Important for seeding in Gym
+        super().reset(seed=seed)  # Needed for seeding in Gym
 
         self.hcle.reset(self.obs_buffer)
         info = {}
         return self.obs_buffer, info
-
-    def close(self):
-        # Add any C++ cleanup here if necessary
-        pass
 
     def save_to_state(self, state_num: int):
         self.hcle.save_to_state(state_num)

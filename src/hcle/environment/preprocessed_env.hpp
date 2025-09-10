@@ -4,6 +4,7 @@
 #include <vector>
 #include <memory>
 #include <cstdint>
+#include <opencv2/opencv.hpp>
 
 #include "hcle/environment/hcle_environment.hpp"
 
@@ -71,7 +72,8 @@ namespace hcle::environment
     size_t m_obs_size; // Size of a single processed (resized, grayscale) observation frame
     size_t m_stacked_obs_size;
 
-    std::vector<uint8_t> m_prev_frame;  // Previous frame for max-pooling
+    std::vector<uint8_t> m_prev_frame; // Previous frame for max-pooling
+    cv::Mat m_pooled_frame;
     std::vector<uint8_t> m_frame_stack; // Circular buffer for stacked processed frames
     int m_frame_stack_idx;
   };
