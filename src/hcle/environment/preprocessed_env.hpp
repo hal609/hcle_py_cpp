@@ -4,6 +4,7 @@
 #include <vector>
 #include <memory>
 #include <cstdint>
+#include <opencv2/opencv.hpp>
 
 #include "hcle/environment/hcle_environment.hpp"
 
@@ -21,6 +22,7 @@ namespace hcle::environment
         const bool maxpool,
         const bool grayscale,
         const int stack_num,
+        const int max_episode_steps = -1,
         const bool color_index_grayscale = false);
 
     void reset(uint8_t *obs_output_buffer);
@@ -51,6 +53,9 @@ namespace hcle::environment
     bool m_grayscale;
     int m_stack_num;
 
+    int m_max_episode_steps = -1;
+    int m_step_count = 0;
+
     bool m_requires_resize;
 
     std::unique_ptr<HCLEnvironment> m_env;
@@ -67,7 +72,8 @@ namespace hcle::environment
     size_t m_obs_size; // Size of a single processed (resized, grayscale) observation frame
     size_t m_stacked_obs_size;
 
-    std::vector<uint8_t> m_prev_frame;  // Previous frame for max-pooling
+    std::vector<uint8_t> m_prev_frame; // Previous frame for max-pooling
+    cv::Mat m_pooled_frame;
     std::vector<uint8_t> m_frame_stack; // Circular buffer for stacked processed frames
     int m_frame_stack_idx;
   };

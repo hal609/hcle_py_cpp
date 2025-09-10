@@ -18,6 +18,7 @@
 #include "smb3.hpp"
 #include "tmnt.hpp"
 #include "zelda1.hpp"
+#include "bubblebobble.hpp"
 #include "arkanoid.hpp"
 
 namespace fs = std::filesystem;
@@ -31,12 +32,13 @@ static const std::map<std::string, std::string> EXPECTED_ROM_HASHES = {
     {"excitebike.bin", "d7fe15cf2bc7b6582c07d12b3cf3bede"},
     {"golf.bin", "a8ef965eabfb57c59a9a6754a5581d77"},
     {"lolo1.bin", "38516649d5d9c0b51a9a578c8178ee5b"},
-    {"mariobro.bin", "d85e4dbfb52687c83915ac3e4cc08bbb"},
+    {"mariobros.bin", "d85e4dbfb52687c83915ac3e4cc08bbb"},
     {"mtpo.bin", "b9a66b2760daa7d5639cbad903de8a18"},
     {"smb2.bin", "71576d8339bd63198fcfc51a92016d58"},
     {"smb3.bin", "bb5c4b6d4d78c101f94bdb360af502f3"},
     {"tmnt.bin", "5e24ccd733d15e42d847274e7add0a76"},
     {"zelda1.bin", "337bd6f1a1163df31bf2633665589ab0"},
+    {"bubblebobble.bin", "e6cb4e0faf2e944b2a0c8d78a399ac7f"},
     {"arkanoid.bin", "6a2bfa3c6e9b1ce1e21aabd0dfbf2779"}};
 
 namespace hcle
@@ -61,6 +63,7 @@ namespace hcle
       logic_map["smb3"] = std::make_unique<games::SMB3Logic>();
       logic_map["tmnt"] = std::make_unique<games::TMNTLogic>();
       logic_map["zelda1"] = std::make_unique<games::Zelda1Logic>();
+      logic_map["bubblebobble"] = std::make_unique<games::BubbleBobbleLogic>();
       logic_map["arkanoid"] = std::make_unique<games::ArkanoidLogic>();
 
       return logic_map;
@@ -79,7 +82,7 @@ namespace hcle
          return nullptr;
       }
    }
-   inline std::string get_rom_path(const std::string &game_name)
+   inline std::string get_rom_path(const std::string &game_name, const std::string &data_root_dir)
    {
       fs::path data_dir;
 
@@ -95,7 +98,8 @@ namespace hcle
          // !!! TEMP -> CHANGE BEFORE RELEASE !!!
          // Fallback: Hardcoded path to ROMs
          // !!! TEMP -> CHANGE BEFORE RELEASE !!!
-         data_dir = "C:\\Users\\offan\\Documents\\hcle_py_cpp\\src\\hcle\\python\\hcle_py\\roms";
+         // data_dir = "C:\\Users\\offan\\Documents\\hcle_py_cpp\\src\\hcle\\python\\hcle_py\\roms";
+         data_dir = data_root_dir;
       }
 
       // Check dir exists

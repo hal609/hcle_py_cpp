@@ -55,7 +55,7 @@ docstring-code-line-length = "dynamic"
 
 [project]
 name = "hcle_py"
-version = "0.1.0"
+version = "0.1.12"
 description = "A High-performance C++ Learning Environment"
 authors = [{ name = "Hal Kolb", email = "hal@kolb.com" }]
 dependencies = ["numpy", "gymnasium"]

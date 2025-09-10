@@ -16,12 +16,10 @@ namespace hcle
         public:
             ArkanoidLogic()
             {
-                action_set.resize(256);
-                std::iota(action_set.begin(), action_set.end(), 0);
-                // action_set = {
-                //     NES_INPUT_LEFT,
-                //     NES_INPUT_RIGHT,
-                //     NES_INPUT_A};
+                action_set = {
+                    NES_INPUT_LEFT,
+                    NES_INPUT_RIGHT,
+                    NES_INPUT_A};
             }
 
             GameLogic *clone() const override { return new ArkanoidLogic(*this); }
@@ -100,7 +98,7 @@ namespace hcle
 
             double getReward() override
             {
-                double reward = -0.1; // Small penalty to encorage speed
+                double reward = -0.1; // Small penalty each frame to encorage speed
 
                 reward += static_cast<double>(getScore() - getPreScore()) / 10;
 

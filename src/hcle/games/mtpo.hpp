@@ -14,21 +14,25 @@ namespace hcle
         public:
             MTPO_Logic()
             {
+                action_set = {
+                    NES_INPUT_NONE,
+                    NES_INPUT_LEFT,
+                    NES_INPUT_B,
+                    NES_INPUT_UP | NES_INPUT_B};
                 action_set.resize(256);
                 std::iota(action_set.begin(), action_set.end(), 0);
-                // action_set = {
-                //     NES_INPUT_NONE,
-                //     NES_INPUT_LEFT,
-                //     NES_INPUT_B,
-                //     NES_INPUT_UP | NES_INPUT_B};
             }
 
             GameLogic *clone() const override { return new MTPO_Logic(*this); }
 
         private:
+            static const int CURRENT_ROUND = 0x006;
+            static const int GAME_STATE = 0x044; // set to 0 between games, 0x1A when fight won and 0x8C/0x8D in fights
             static const int MAC_HP = 0x0391;
             static const int OPP_HP = 0x0398;
-            static const int TIMER_DIGIT = 0x0305;
+            static const int TIMER_MINS = 0x0302;
+            static const int TIMER_TENTHS = 0x0304;
+            static const int TIMER_SECONDS = 0x0305;
             static const int inFight_FLAG = 0x0004; // Seems to be FF when in a fight
 
             bool inFight() const
@@ -72,15 +76,34 @@ namespace hcle
                 return mac_hp_change < -3;
             }
 
+            int getTime()
+            {
+                int round = m_current_ram_ptr[CURRENT_ROUND];
+                int mins = m_current_ram_ptr[TIMER_MINS];
+                int tenths = m_current_ram_ptr[TIMER_TENTHS];
+                int seconds = m_current_ram_ptr[TIMER_SECONDS];
+                int total_time = round * 180 + mins * 60 + tenths * 10 + seconds;
+
+                return total_time;
+            }
+
             double getReward() override
             {
+                double reward = 0.0;
+
+                if (m_current_ram_ptr[GAME_STATE] == 0x1A && m_previous_ram[GAME_STATE] != 0x1A) // When fight won
+                {
+                    // Give reward based on how quickly fight was completed
+                    reward += static_cast<double>((540.0 - getTime()) * 10.0);
+                }
                 int opp_hp_change = static_cast<int>(m_current_ram_ptr[OPP_HP]) - static_cast<int>(m_previous_ram[OPP_HP]);
                 int mac_hp_change = static_cast<int>(m_current_ram_ptr[MAC_HP]) - static_cast<int>(m_previous_ram[MAC_HP]);
 
                 double hit_reward = static_cast<double>(std::max(-opp_hp_change, 0));
                 double health_penalty = static_cast<double>(std::max(-mac_hp_change, 0));
 
-                return (hit_reward - health_penalty) / 100.0;
+                reward += hit_reward - health_penalty;
+                return reward / 1000.0;
             }
 
             void onStep() override
@@ -103,7 +126,7 @@ namespace hcle
                 //     m_current_ram_ptr[0x093] = 0x083;
                 // }
 
-                if (inFight() && m_current_ram_ptr[TIMER_DIGIT] != 0 && !has_backup_)
+                if (inFight() && m_current_ram_ptr[TIMER_SECONDS] != 0 && !has_backup_)
                 {
                     createBackup();
                 }

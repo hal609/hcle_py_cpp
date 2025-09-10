@@ -299,15 +299,15 @@ void cynes::PPU::tick_no_draw()
     _nes.get_mapper().tick();
 }
 
-void cynes::PPU::set_render_skip(bool skip)
-{
-    _render_skip = skip;
-}
+// void cynes::PPU::set_render_skip(bool skip)
+// {
+//     _render_skip = skip;
+// }
 
 void cynes::PPU::tick()
 {
-    if (_render_skip)
-        return tick_no_draw();
+    // if (_render_skip)
+    //     return tick_no_draw();
 
     if (_current_y == 0 && _current_x == 0 && _rendering_enabled)
     {

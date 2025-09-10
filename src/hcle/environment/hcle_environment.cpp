@@ -1,7 +1,3 @@
-#include <stdexcept>
-#include <iostream>
-#include <chrono>
-
 #include "hcle/environment/hcle_environment.hpp"
 #include "hcle/games/roms.hpp"
 
@@ -71,9 +67,9 @@ namespace hcle
             }
         }
 
-        void HCLEnvironment::loadROM(const std::string &game_name)
+        void HCLEnvironment::loadROM(const std::string &game_name, const std::string &data_root_dir)
         {
-            m_rom_path = hcle::get_rom_path(game_name);
+            m_rom_path = hcle::get_rom_path(game_name, data_root_dir);
             m_frame_size = RAW_FRAME_SIZE;
 
             emu.reset(new cynes::NES(m_rom_path.c_str()));

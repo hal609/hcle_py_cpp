@@ -5,8 +5,7 @@
 #include <cstdint>
 #include <vector>
 #include <memory>
-
-#include "exceptions.hpp"
+#include <stdexcept>
 
 namespace hcle
 {
@@ -26,7 +25,7 @@ namespace hcle
                 display->update(frame_ptr, grayscale);
                 if (display->processEvents())
                 {
-                    throw WindowClosedException::WindowClosedException();
+                    throw std::runtime_error("User closed the display window.");
                 }
             }
 

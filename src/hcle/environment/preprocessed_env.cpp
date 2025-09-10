@@ -5,7 +5,7 @@
 namespace hcle::environment
 {
     PreprocessedEnv::PreprocessedEnv(
-        const std::string &rom_path,
+        const std::string &data_root_dir,
         const std::string &game_name,
         const int obs_height,
         const int obs_width,
@@ -13,6 +13,7 @@ namespace hcle::environment
         const bool maxpool,
         const bool grayscale,
         const int stack_num,
+        const int max_episode_steps,
         const bool color_index_grayscale)
         : m_obs_height(obs_height),
           m_obs_width(obs_width),
@@ -20,11 +21,12 @@ namespace hcle::environment
           m_maxpool((m_frame_skip > 1) && maxpool),
           m_grayscale(grayscale),
           m_stack_num(stack_num),
+          m_max_episode_steps(max_episode_steps),
           m_reward(0.0f),
           m_done(false)
     {
         m_env = std::make_unique<HCLEnvironment>();
-        m_env->loadROM(game_name);
+        m_env->loadROM(game_name, data_root_dir);
 
         if (m_grayscale)
             m_env->setOutputMode((color_index_grayscale) ? "index" : "grayscale");
@@ -50,6 +52,7 @@ namespace hcle::environment
         m_env->reset();
         m_reward = 0.0f;
         m_done = false;
+        m_step_count = 0;
 
         m_frame_stack_idx = 0;
         processScreen();
@@ -69,6 +72,7 @@ namespace hcle::environment
         {
             throw std::out_of_range("Action index out of range.");
         }
+        m_step_count++;
 
         uint8_t controller_input = m_action_set[action_index];
         double accumulated_reward = 0.0f;
@@ -84,6 +88,10 @@ namespace hcle::environment
             accumulated_reward += m_env->act(controller_input, m_frame_skip);
         }
         m_done = m_env->isDone();
+        if (m_max_episode_steps > 0 && m_step_count > m_max_episode_steps)
+        {
+            m_done = true;
+        }
         m_reward = accumulated_reward;
 
         processScreen();
@@ -96,11 +104,19 @@ namespace hcle::environment
         auto cv2_format = m_grayscale ? CV_8UC1 : CV_8UC3;
         uint8_t *frame_pointer = const_cast<uint8_t *>(m_env->frame_ptr);
 
+        cv::Mat source_mat;
         if (m_maxpool)
         {
-            frame_pointer = std::max(frame_pointer, m_prev_frame.data());
+            for (int i = 0; i < m_raw_size; ++i)
+            {
+                frame_pointer[i] = std::max(frame_pointer[i], m_prev_frame[i]);
+            }
+            // frame_pointer = std::max(frame_pointer, m_prev_frame.data());
         }
-        cv::Mat source_mat = cv::Mat(m_raw_frame_height, m_raw_frame_width, cv2_format, frame_pointer);
+        else
+        {
+            source_mat = cv::Mat(m_raw_frame_height, m_raw_frame_width, cv2_format, frame_pointer);
+        }
 
         // Get pointer to current position in circular buffer
         uint8_t *dest_ptr = m_frame_stack.data() + (m_frame_stack_idx * m_obs_size);

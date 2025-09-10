@@ -37,12 +37,12 @@ namespace hcle
         public:
             virtual inline void initialize(cynes::NES *nes)
             {
-                nes_ = nes;
-                m_current_ram_ptr = nes_->get_ram_pointer();
+                m_nes = nes;
+                m_current_ram_ptr = m_nes->get_ram_pointer();
                 std::unique_lock lock(g_savestate_mutex);
-                state0.resize(nes_->size());
-                state1.resize(nes_->size());
-                state2.resize(nes_->size());
+                state0.resize(m_nes->size());
+                state1.resize(m_nes->size());
+                state2.resize(m_nes->size());
                 updateRAM();
             }
 
@@ -53,11 +53,11 @@ namespace hcle
             virtual void onStep() {}
             virtual void onReset() {}
             virtual const std::vector<uint8_t> getActionSet() { return action_set; }
-            void frameadvance(uint8_t controller_value, int n = 1) { nes_->step(controller_value, n); }
+            void frameadvance(uint8_t controller_value, int n = 1) { m_nes->step(controller_value, n); }
 
             void updateRAM()
             {
-                if (!nes_)
+                if (!m_nes)
                     return;
                 std::memcpy(m_previous_ram.data(), m_current_ram_ptr, RAM_SIZE);
             }
@@ -67,12 +67,12 @@ namespace hcle
                 if (has_backup_)
                 {
                     std::shared_lock lock(g_savestate_mutex);
-                    nes_->load(backup_state_.data());
+                    m_nes->load(backup_state_.data());
                 }
                 else
                 {
-                    nes_->reset();
-                    nes_->step(NES_INPUT_NONE, 1);
+                    m_nes->reset();
+                    m_nes->step(NES_INPUT_NONE, 1);
                 }
                 onReset();
             }
@@ -83,17 +83,17 @@ namespace hcle
                 std::unique_lock lock(g_savestate_mutex);
                 if (state_num == 0)
                 {
-                    nes_->save(state0.data());
+                    m_nes->save(state0.data());
                     state0_full = true;
                 }
                 else if (state_num == 1)
                 {
-                    nes_->save(state1.data());
+                    m_nes->save(state1.data());
                     state1_full = true;
                 }
                 else if (state_num == 2)
                 {
-                    nes_->save(state2.data());
+                    m_nes->save(state2.data());
                     state2_full = true;
                 }
                 else
@@ -113,7 +113,7 @@ namespace hcle
                     {
                         throw std::runtime_error("No savestate in slot 0.");
                     }
-                    nes_->load(state0.data());
+                    m_nes->load(state0.data());
                 }
                 else if (state_num == 1)
                 {
@@ -121,7 +121,7 @@ namespace hcle
                     {
                         throw std::runtime_error("No savestate in slot 1.");
                     }
-                    nes_->load(state1.data());
+                    m_nes->load(state1.data());
                 }
                 else if (state_num == 2)
                 {
@@ -129,7 +129,7 @@ namespace hcle
                     {
                         throw std::runtime_error("No savestate in slot 2.");
                     }
-                    nes_->load(state2.data());
+                    m_nes->load(state2.data());
                 }
                 else
                 {
@@ -138,7 +138,7 @@ namespace hcle
             }
 
         protected:
-            cynes::NES *nes_ = nullptr;
+            cynes::NES *m_nes = nullptr;
             uint8_t *m_current_ram_ptr = nullptr;
             std::array<uint8_t, 2048> m_previous_ram;
 
@@ -160,8 +160,8 @@ namespace hcle
             void createBackup()
             {
                 std::unique_lock lock_backup(backup_mutex_);
-                backup_state_.resize(nes_->size());
-                nes_->save(backup_state_.data());
+                backup_state_.resize(m_nes->size());
+                m_nes->save(backup_state_.data());
                 has_backup_ = true;
             }
 

@@ -6,6 +6,8 @@
 #include <cmath>
 #include <algorithm>
 #include <cstdint>
+#include <set>
+#include <bit>
 
 namespace hcle
 {
@@ -17,6 +19,8 @@ namespace hcle
       public:
          Zelda1Logic()
          {
+            // action_set.resize(256);
+            // std::iota(action_set.begin(), action_set.end(), 0);
             action_set = {
                 NES_INPUT_NONE,
                 NES_INPUT_UP,
@@ -25,7 +29,7 @@ namespace hcle
                 NES_INPUT_RIGHT,
                 NES_INPUT_A,
                 NES_INPUT_B,
-                NES_INPUT_START,
+                //  NES_INPUT_START,
             };
          }
 
@@ -41,15 +45,28 @@ namespace hcle
          static const int RUPEES = 0x066D;
          static const int KEYS = 0x066E;
          static const int BOMBS = 0x0658;
+         static const int TRIFORCE_COUNT = 0x0671;
+         static const int CURRENT_DUNGEON = 0x06BB1;
 
          static const int KILLED_ENEMY_COUNT = 0x0627;
          static const int ITEM_BLOCK_START = 0x0657; // Current Sword
          static const int ITEM_BLOCK_END = 0x0676;   // Magic Shield
 
+         std::set<int> m_visited_locations;
+         std::set<int> m_visited_dungeons;
+         std::set<int> m_visited_dungeon_rooms;
+
          bool inGame() const
          {
             // return true;
             return m_current_ram_ptr[GAME_MODE] > 1 && m_current_ram_ptr[GAME_MODE] < 14;
+         }
+
+         void onReset()
+         {
+            m_visited_locations.clear();
+            m_visited_dungeons.clear();
+            m_visited_dungeon_rooms.clear();
          }
 
          void skipMenusAndTransitions()
@@ -93,13 +110,60 @@ namespace hcle
             // Iterate over the block of memory containing major items
             for (int addr = ITEM_BLOCK_START; addr <= ITEM_BLOCK_END; ++addr)
             {
-               // Reward for a change from 0 (not possessed) to non-zero (possessed)
-               if (m_previous_ram[addr] == 0 && m_current_ram_ptr[addr] > 0)
+               // Skip addresses which are not new major items
+               if ((addr) == PARTIAL_HEART || addr == RUPEES || addr == KEYS)
+               {
+                  continue;
+               }
+               // If number of heart containers is set to 0x22 then this is just the defaul
+               // so no reward should be returned
+               else if (addr == HEART_CONTAINERS && m_current_ram_ptr[addr] != 0x22)
+               {
+                  continue;
+               }
+               // Reward for a change from lower value (not possessed) to higer value (possessed/upgraded)
+               else if (m_previous_ram[addr] < m_current_ram_ptr[addr])
                {
                   new_items++;
                }
             }
             return new_items;
+         }
+
+         int newMapLocationFound()
+         {
+            if (m_visited_locations.find(m_current_ram_ptr[MAP_LOCATION]) == m_visited_locations.end())
+            {
+               m_visited_locations.insert(m_current_ram_ptr[MAP_LOCATION]);
+               return 1;
+            }
+            return 0;
+         }
+
+         int newDungeonFound()
+         {
+            if (m_visited_dungeons.find(m_current_ram_ptr[CURRENT_DUNGEON]) == m_visited_dungeons.end())
+            {
+               m_visited_dungeons.insert(m_current_ram_ptr[CURRENT_DUNGEON]);
+               return 1;
+            }
+            return 0;
+         }
+
+         int newDungeonRoomFound()
+         {
+            int composite_num = (m_current_ram_ptr[CURRENT_DUNGEON] << 8) | m_current_ram_ptr[MAP_LOCATION];
+            if (m_visited_dungeon_rooms.find(composite_num) == m_visited_dungeon_rooms.end())
+            {
+               m_visited_dungeon_rooms.insert(composite_num);
+               return 1;
+            }
+            return 0;
+         }
+
+         int triforceCount(uint8_t *ram_ptr)
+         {
+            return std::popcount(ram_ptr[TRIFORCE_COUNT]);
          }
 
       public:
@@ -110,6 +174,8 @@ namespace hcle
 
          double getReward() override
          {
+            double reward = -0.001;
+
             // --- Penalties ---
             double health_change = getHealth(m_current_ram_ptr) - getHealth(m_previous_ram.data());
             double damage_penalty = std::min(health_change, 0.0); // Negative reward for taking damage
@@ -118,21 +184,27 @@ namespace hcle
             double rupee_reward = static_cast<double>(changeIn(RUPEES));
             double key_reward = static_cast<double>(changeIn(KEYS)) * 5.0;   // Keys are valuable
             double bomb_reward = static_cast<double>(changeIn(BOMBS)) * 0.5; // Bombs are less valuable
-            double combat_reward = static_cast<double>(changeIn(KILLED_ENEMY_COUNT)) * 2.0;
-            double exploration_reward = (m_current_ram_ptr[MAP_LOCATION] != m_previous_ram[MAP_LOCATION]) ? 10.0 : 0.0;
-            double major_item_reward = static_cast<double>(checkNewItems()) * 50.0; // Big reward for major items
+            // double combat_reward = static_cast<double>(changeIn(KILLED_ENEMY_COUNT)) * 2.0;
+            double exploration_reward = (newMapLocationFound() || newDungeonRoomFound()) * 5.0;
+            double dungeon_find_reward = newDungeonFound() * 30.0;
+            double major_item_reward = static_cast<double>(checkNewItems()) * 100.0; // Big reward for major items
+            double triforce_reward = static_cast<double>(triforceCount(m_current_ram_ptr) - triforceCount(m_previous_ram.data())) * 100;
 
             // Combine all reward components
-            double total_reward = damage_penalty +
-                                  rupee_reward +
-                                  key_reward +
-                                  bomb_reward +
-                                  combat_reward +
-                                  exploration_reward +
-                                  major_item_reward;
+            reward += damage_penalty / 100 +
+                      rupee_reward +
+                      key_reward +
+                      bomb_reward +
+                      //  combat_reward +
+                      exploration_reward +
+                      major_item_reward;
 
-            // Return a scaled value
-            return total_reward / 10.0;
+            if (isDone())
+            {
+               reward -= 10.0;
+            }
+            // Return scaled value
+            return reward / 1000.0;
          }
 
          void onStep() override

@@ -18,12 +18,12 @@ int main(int argc, char **argv)
     // =========================================================================
     //  1. CONFIGURATION
     // =========================================================================
-    constexpr int SEARCH_DEPTH = 15;
-    constexpr int ACTION_SPACE_SIZE = 5;
-    constexpr int NUM_ENVS = 60;               // Number of parallel environments for simulation
+    constexpr int SEARCH_DEPTH = 10;
+    constexpr int ACTION_SPACE_SIZE = 3;
+    constexpr int NUM_ENVS = 72;               // Number of parallel environments for simulation
     constexpr int NUM_SAMPLES_PER_ACTION = 24; // Number of random futures to sample for each action
-    constexpr int frame_skip = 6;
-    constexpr float gamma = 0.99;
+    constexpr int frame_skip = 4;
+    constexpr float gamma = 1.0; // 0.99;
 
     const std::string rom_path = ""; // Add your ROM path here
     const std::string game_name = "golf";

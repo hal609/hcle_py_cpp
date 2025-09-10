@@ -3,8 +3,7 @@ import gymnasium as gym
 from gymnasium.vector import VectorEnv
 from gymnasium.spaces import Box, Discrete
 import numpy as np
-import math
-from hcle_py import roms
+import os
 from . import _hcle_py
 
 ObsType = TypeVar("ObsType")
@@ -27,15 +26,15 @@ class NESVectorEnv(VectorEnv):
         img_height: int = 84,
         img_width: int = 84,
         frame_skip: int = 4,
-        maxpool: bool = True,
+        maxpool: bool = False,
         grayscale: bool = True,
         stack_num: int = 4,
         color_index_grayscale: bool = False,
     ):
-        # Initialize the C++ vectorized environment
+
         self.vec_hcle = _hcle_py.HCLEVectorEnvironment(
             num_envs=num_envs,
-            rom_path=roms.get_rom_path(game),
+            data_root_dir=os.path.join(os.path.dirname(__file__), "data"),
             game_name=game,
             render_mode=render_mode,
             obs_height=img_height,
@@ -47,16 +46,13 @@ class NESVectorEnv(VectorEnv):
             color_index_grayscale=color_index_grayscale,
         )
 
-        # --- Define observation and action spaces based on C++ env properties ---
         channels = 1 if grayscale else 3
 
-        # The shape of a single environment's observation
         single_obs_shape = (
             (stack_num, img_height, img_width)
             if grayscale
             else (stack_num, img_height, img_width, channels)
         )
-        # single_obs_shape = (img_height, img_width, stack_num) if grayscale else (img_height, img_width, stack_num, channels)
 
         self.single_observation_space = Box(
             low=0, high=255, shape=single_obs_shape, dtype=np.uint8
@@ -74,13 +70,13 @@ class NESVectorEnv(VectorEnv):
             self.single_action_space, self.batch_size
         )
 
-        # --- Pre-allocate shared memory buffers ---
-        # These NumPy arrays will be passed to C++ to be filled directly.
+        # These arrays are passed to C++ and filled directly
         self.obs_buffer = np.zeros(
             self.observation_space.shape, dtype=self.observation_space.dtype
         )
+
         self.rewards_buffer = np.zeros(self.num_envs, dtype=np.double)
-        # Use uint8 for dones to match C++ bool size and avoid vector<bool> issues
+
         self.dones_buffer = np.zeros(self.num_envs, dtype=np.uint8)
 
     def reset(
@@ -88,20 +84,18 @@ class NESVectorEnv(VectorEnv):
     ) -> tuple[ObsType, dict[str, Any]]:
         """Resets all environments and returns the initial observations."""
 
-        self.vec_hcle.reset(self.obs_buffer)
+        self.vec_hcle.reset(self.obs_buffer, self.rewards_buffer, self.dones_buffer)
 
-        # Return a copy of the observation buffer to prevent users from
-        # accidentally modifying the internal state.
         return np.copy(self.obs_buffer), {}
 
-    def step_async(self, actions: np.ndarray):
+    def send(self, actions: np.ndarray):
         """
         Sends actions to the environments without waiting for the results.
         """
         actions = np.asarray(actions, dtype=np.uint8)
         self.vec_hcle.send(actions)
 
-    def step_wait(
+    def recv(
         self,
     ) -> tuple[ObsType, np.ndarray, np.ndarray, np.ndarray, dict[str, Any]]:
         """
@@ -125,13 +119,13 @@ class NESVectorEnv(VectorEnv):
         self, actions: np.ndarray
     ) -> tuple[ObsType, np.ndarray, np.ndarray, np.ndarray, dict[str, Any]]:
         """
-        Convenience method that performs a full synchronous step.
+        Method to perform a full synchronous step
         """
-        self.step_async(actions)
-        return self.step_wait()
+        self.send(actions)
+        return self.recv()
 
     def close(self, **kwargs):
-        """Cleans up the C++ environment."""
+        """Clean up on close"""
+
         if hasattr(self, "vec_hcle"):
-            # The C++ destructor will handle shutting down threads.
             del self.vec_hcle
