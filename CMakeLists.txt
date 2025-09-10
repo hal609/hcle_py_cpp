@@ -1,14 +1,27 @@
 cmake_minimum_required(VERSION 3.15)
-if(WIN32)
-    set(CMAKE_TOOLCHAIN_FILE C:/dev/vcpkg/scripts/buildsystems/vcpkg.cmake)
-else()
-    set(CMAKE_CXX_COMPILER /usr/bin/g++)
-endif()
 
 project(hcle CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+if (USE_AUTO_VCPKG)
+	include(cmake/automate-vcpkg.cmake)
+
+if ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "Win32")
+    set(VCPKG_TRIPLET x86-windows-static)
+    set(VCPKG_TARGET_TRIPLET x86-windows-static)
+elseif ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
+    set(VCPKG_TRIPLET x64-windows-static)
+    set(VCPKG_TARGET_TRIPLET x64-windows-static)
+elseif ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "arm64")
+    set(VCPKG_TRIPLET arm64-windows-static)
+    set(VCPKG_TARGET_TRIPLET arm64-windows-static)
+endif()
+
+	vcpkg_bootstrap()
+	vcpkg_install_packages(zlib bzip2 sdl2 glew libzip nlohmann-json tinyxml2 spdlog)    
+endif()
 
 if(WIN32)
     set(CMAKE_CXX_FLAGS_RELEASE "/O2 /Oi /Ot /Ob2 /fp:fast /arch:AVX2 /W4")
@@ -63,5 +76,5 @@ install(TARGETS _hcle_py
 install(FILES $<TARGET_RUNTIME_DLLS:_hcle_py> DESTINATION hcle_py)
         
 # TEST CPP RUNNER
-add_executable(hcle_test src/apps/test_runner.cpp)
-target_link_libraries(hcle_test PRIVATE hcle_core)
+# add_executable(hcle_test src/apps/test_runner.cpp)
+# target_link_libraries(hcle_test PRIVATE hcle_core)
