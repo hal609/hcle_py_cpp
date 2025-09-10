@@ -37,7 +37,7 @@ jobs:
         env:
           CIBW_CMAKE_ARGS: -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake
           CIBW_ARCHS_LINUX: auto aarch64
-          CIBW_SKIP: "*-win32* *-manylinux_i686*
+          CIBW_SKIP: "*-win32* *-manylinux_i686*"
 
       - name: Publish package to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
