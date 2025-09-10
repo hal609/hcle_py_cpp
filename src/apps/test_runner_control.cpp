@@ -15,7 +15,7 @@ int main(int argc, char **argv)
     // --- Configuration ---
     const int num_envs = 1; // Controller works with a single environment
     const std::string rom_path = "";
-    const std::string game_name = "golf";
+    const std::string game_name = "bubblebobble";
     const std::string render_mode = "human";
     const int num_steps = 100000;
     const int fps_limit = 60;

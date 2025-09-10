@@ -19,14 +19,14 @@ int main(int argc, char **argv)
     //  1. CONFIGURATION
     // =========================================================================
     constexpr int SEARCH_DEPTH = 10;
-    constexpr int ACTION_SPACE_SIZE = 3;
-    constexpr int NUM_ENVS = 72;               // Number of parallel environments for simulation
-    constexpr int NUM_SAMPLES_PER_ACTION = 24; // Number of random futures to sample for each action
-    constexpr int frame_skip = 4;
-    constexpr float gamma = 1.0; // 0.99;
+    constexpr int ACTION_SPACE_SIZE = 7;
+    constexpr int NUM_ENVS = 70;               // Number of parallel environments for simulation
+    constexpr int NUM_SAMPLES_PER_ACTION = 10; // Number of random futures to sample for each action
+    constexpr int frame_skip = 12;
+    constexpr float gamma = 0.99;
 
-    const std::string rom_path = ""; // Add your ROM path here
-    const std::string game_name = "golf";
+    const std::string rom_path = "C:\\Users\\offan\\Documents\\hcle_py_cpp\\src\\hcle\\python\\hcle_py\\data"; // Add your ROM path here
+    const std::string game_name = "zelda1";
     constexpr int num_steps = 10000;
 
     // --- Calculate search space and batching requirements for sampling ---
@@ -58,7 +58,7 @@ int main(int argc, char **argv)
     std::vector<double> reward_buffer(NUM_ENVS);
     std::vector<double> total_reward_buffer(NUM_ENVS);
     std::vector<uint8_t> done_buffer(NUM_ENVS);
-    std::vector<int> actions_this_step(NUM_ENVS);
+    std::vector<uint8_t> actions_this_step(NUM_ENVS);
 
     // Buffer to store the sum of rewards for each initial action
     std::vector<double> sum_of_rewards_for_action(ACTION_SPACE_SIZE);
