@@ -10,8 +10,8 @@
 int main(int argc, char **argv)
 {
     int num_envs = 1;
-    std::string rom_path = "C:\\Users\\offan\\Downloads\\hcle_py_cpp\\src\\hcle\\python\\hcle_py\\roms\\smb1.bin";
-    std::string game_name = "mtpo";
+    std::string rom_path = "C:\\Users\\offan\\Documents\\hcle_py_cpp\\src\\hcle\\python\\hcle_py\\data";
+    std::string game_name = "bubblebobble";
     std::string render_mode = "human";
     int num_steps = 1000;
     const int H = 240, W = 256, C = 3;
@@ -24,7 +24,7 @@ int main(int argc, char **argv)
     try
     {
         std::cout << "Creating HCLEEnvironment (num_envs=" << num_envs << ")...\n";
-        hcle::environment::PreprocessedEnv env(rom_path, game_name, 240, 256, 4, false, false, 1, 2500);
+        hcle::environment::PreprocessedEnv env(rom_path, game_name, 84, 84, 4, false, false, 1, 2500);
         env.createWindow();
         env.reset(obs.data());
         std::cout << "Initial environment reset complete.\n";

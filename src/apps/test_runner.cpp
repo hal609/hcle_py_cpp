@@ -1,218 +1,107 @@
 #include <iostream>
 #include <vector>
-#include <stdexcept>
-#include <numeric>
-#include <algorithm>
-#include <cmath>
-#include <fstream>
-#include <random>
+#include <thread>
 #include <chrono>
-#include <limits> // For std::numeric_limits
+#include <fstream>
+#include <stdexcept>
+#include <random>
 
-#include "hcle/environment/preprocessed_env.hpp"
+#include <SDL.h>
+
 #include "hcle/environment/hcle_vector_environment.hpp"
-#include "hcle/common/display.hpp"
 
 int main(int argc, char **argv)
 {
-    // =========================================================================
-    //  1. CONFIGURATION
-    // =========================================================================
-    constexpr int SEARCH_DEPTH = 15;
-    constexpr int ACTION_SPACE_SIZE = 5;
-    constexpr int NUM_ENVS = 60;               // Number of parallel environments for simulation
-    constexpr int NUM_SAMPLES_PER_ACTION = 24; // Number of random futures to sample for each action
-    constexpr int frame_skip = 6;
-    constexpr float gamma = 0.99;
+    // --- Configuration ---
+    const int num_envs = 1; // Controller works with a single environment
+    const std::string rom_path = "C:\\Users\\offan\\Documents\\hcle_py_cpp\\src\\hcle\\python\\hcle_py\\data";
+    const std::string game_name = "arkanoid";
+    const std::string render_mode = "human";
+    const int num_steps = 100000;
+    const int fps_limit = 60;
 
-    const std::string rom_path = ""; // Add your ROM path here
-    const std::string game_name = "golf";
-    constexpr int num_steps = 10000;
-
-    // --- Calculate search space and batching requirements for sampling ---
-    const long long total_simulations = static_cast<long long>(ACTION_SPACE_SIZE) * NUM_SAMPLES_PER_ACTION;
-    const int num_batches = (total_simulations + NUM_ENVS - 1) / NUM_ENVS; // Ceiling division
-
-    std::cout << "Search Configuration:" << std::endl;
-    std::cout << "  - Search Depth: " << SEARCH_DEPTH << std::endl;
-    std::cout << "  - Action Space: " << ACTION_SPACE_SIZE << std::endl;
-    std::cout << "  - Samples per Action: " << NUM_SAMPLES_PER_ACTION << std::endl;
-    std::cout << "  - Total Simulations per Step: " << total_simulations << std::endl;
-    std::cout << "  - Parallel Environments: " << NUM_ENVS << std::endl;
-    std::cout << "  - Batches per Step: " << num_batches << std::endl;
-
-    // =========================================================================
-    //  2. SETUP
-    // =========================================================================
-    hcle::environment::HCLEVectorEnvironment vec_env(NUM_ENVS, rom_path, game_name, "rgb_array", 256, 240, frame_skip, false, false, 1);
-    hcle::environment::PreprocessedEnv env(rom_path, game_name, 256, 240, frame_skip, false, false, 1);
-    env.createWindow();
-
-    // Set up a single random number generator for the entire program
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<> action_distrib(0, ACTION_SPACE_SIZE - 1);
-
-    const size_t single_obs_size = env.getObservationSize();
-    std::vector<uint8_t> obs_buffer(NUM_ENVS * single_obs_size);
-    std::vector<double> reward_buffer(NUM_ENVS);
-    std::vector<double> total_reward_buffer(NUM_ENVS);
-    std::vector<uint8_t> done_buffer(NUM_ENVS);
-    std::vector<int> actions_this_step(NUM_ENVS);
-
-    // Buffer to store the sum of rewards for each initial action
-    std::vector<double> sum_of_rewards_for_action(ACTION_SPACE_SIZE);
-
-    env.reset(obs_buffer.data());
-
-    // Initial steps to get into a meaningful game state
-    for (int i = 0; i < 1; ++i)
+    // Initialize SDL for video and event handling
+    if (SDL_Init(SDL_INIT_VIDEO) < 0)
     {
-        env.step(0, obs_buffer.data());
+        std::cerr << "SDL could not initialize! SDL_Error: " << SDL_GetError() << "\n";
+        return 1;
     }
 
-    env.saveToState(0);
-    double total_reward = 0.0;
-
-    // =========================================================================
-    //  3. MAIN SIMULATION LOOP
-    // =========================================================================
-    for (int step = 0; step < num_steps; ++step)
+    try
     {
-        // Reset rewards for this planning step
-        std::fill(sum_of_rewards_for_action.begin(), sum_of_rewards_for_action.end(), 0.0);
+        std::cout << "Creating HCLEVectorEnvironment...\n";
+        hcle::environment::HCLEVectorEnvironment env(num_envs, rom_path, game_name, render_mode, 84, 84, 1, true, false, 4);
 
-        // --- BEGIN MONTE CARLO SAMPLING ---
-        for (int batch = 0; batch < num_batches; ++batch)
+        // --- Pre-allocate memory buffers ---
+        const size_t single_obs_size = env.getObservationSize();
+        std::vector<uint8_t> obs_buffer(num_envs * single_obs_size);
+        std::vector<double> reward_buffer(num_envs);
+        std::vector<uint8_t> done_buffer(num_envs);
+        std::vector<uint8_t> actions(num_envs);
+
+        size_t action_space = env.getActionSet().size();
+        printf("Action space size: %zu\n", action_space);
+
+        std::mt19937 rng(std::random_device{}());
+        std::uniform_int_distribution<int> action_dist(0, action_space - 1);
+
+        // --- Reset environment ---
+        std::cout << "Resetting environment...\n";
+        env.reset(obs_buffer.data(), reward_buffer.data(), done_buffer.data());
+
+        // --- Performance tracking ---
+        double total_reward = 0.0;
+        using clock = std::chrono::high_resolution_clock;
+        auto run_start = clock::now();
+        auto frame_start_time = clock::now();
+
+        std::cout << "Starting main loop for " << num_steps << " steps...\n";
+        for (int step = 0; step < num_steps; ++step)
         {
-            // using clock = std::chrono::steady_clock;
-            // auto load_start = clock::now();
-            vec_env.loadFromState(0);
-            // auto elapsed = std::chrono::duration_cast<std::chrono::duration<double>>(clock::now() - load_start).count();
-            // std::cout << "Loading states took " << elapsed << " seconds" << std::endl;
-            std::fill(total_reward_buffer.begin(), total_reward_buffer.end(), 0.0f);
+            for (int i = 0; i < num_envs; ++i)
+                actions[i] = static_cast<uint8_t>(action_dist(rng));
 
-            // Determine the fixed initial action for each simulation in this batch.
-            std::vector<int> initial_actions_for_batch(NUM_ENVS);
-            for (int i = 0; i < NUM_ENVS; ++i)
+            env.send(actions);
+            env.recv(obs_buffer.data(), reward_buffer.data(), done_buffer.data());
+
+            if constexpr (fps_limit > 0)
             {
-                int sim_index = batch * NUM_ENVS + i;
-                if (sim_index < total_simulations)
+                auto frame_duration = std::chrono::duration<double>(1.0 / fps_limit);
+                auto end_time = clock::now();
+                auto elapsed = end_time - frame_start_time;
+                if (elapsed < frame_duration)
                 {
-                    initial_actions_for_batch[i] = sim_index / NUM_SAMPLES_PER_ACTION;
+                    std::this_thread::sleep_for(frame_duration - elapsed);
                 }
             }
+            frame_start_time = clock::now();
 
-            // --- Simulate rollouts to the specified depth ---
-            for (int depth = 0; depth < SEARCH_DEPTH; ++depth)
+            if (reward_buffer[0] != 0)
             {
-                for (int i = 0; i < NUM_ENVS; ++i)
-                {
-                    int sim_index = batch * NUM_ENVS + i;
-                    if (sim_index < total_simulations)
-                    {
-                        if (depth == 0)
-                        {
-                            actions_this_step[i] = initial_actions_for_batch[i];
-                        }
-                        else
-                        {
-                            actions_this_step[i] = action_distrib(gen);
-                        }
-                    }
-                    else
-                    {
-                        actions_this_step[i] = 0; // Padding for the last batch
-                    }
-                }
-
-                vec_env.send(actions_this_step);
-                vec_env.recv(obs_buffer.data(), reward_buffer.data(), done_buffer.data());
-                for (int i = 0; i < NUM_ENVS; ++i)
-                {
-                    total_reward_buffer[i] += std::pow(gamma, depth) * reward_buffer[i];
-                }
+                std::cout << "Rewards this step: "
+                          << std::fixed << std::right << std::setw(8) << std::setprecision(4)
+                          << reward_buffer[0] << "\r" << std::endl; // std::flush;
             }
 
-            // --- Accumulate the rewards for the corresponding initial actions ---
-            for (size_t i = 0; i < NUM_ENVS; ++i)
-            {
-                int sim_index = batch * NUM_ENVS + i;
-                if (sim_index < total_simulations)
-                {
-                    int initial_action = initial_actions_for_batch[i];
-                    sum_of_rewards_for_action[initial_action] += total_reward_buffer[i];
-                }
-            }
-        }
-        // --- END OF SAMPLING ---
-
-        // =========================================================================
-        //  4. TAKE BEST ACTION BASED ON MEAN REWARD
-        // =========================================================================
-
-        // --- Calculate mean reward for each action ---
-        std::vector<double> mean_rewards(ACTION_SPACE_SIZE);
-        for (int i = 0; i < ACTION_SPACE_SIZE; ++i)
-        {
-            if (NUM_SAMPLES_PER_ACTION > 0)
-            {
-                // std::cout << "action " << i << " has mean reward " << sum_of_rewards_for_action[i] / NUM_SAMPLES_PER_ACTION << std::endl;
-                mean_rewards[i] = sum_of_rewards_for_action[i] / NUM_SAMPLES_PER_ACTION;
-            }
-            else
-            {
-                mean_rewards[i] = 0.0;
-            }
+            total_reward += reward_buffer[0];
         }
 
-        // --- Find the highest mean reward ---
-        auto max_it = std::max_element(mean_rewards.begin(), mean_rewards.end());
-        double max_mean_reward = (max_it != mean_rewards.end()) ? *max_it : -std::numeric_limits<double>::infinity();
+        auto elapsed = std::chrono::duration_cast<std::chrono::duration<double>>(clock::now() - run_start).count();
+        double average_reward = total_reward / num_steps;
 
-        // --- Find all actions that give this best mean reward (to handle ties) ---
-        std::vector<int> best_actions;
-        for (int i = 0; i < ACTION_SPACE_SIZE; ++i)
-        {
-            if (std::abs(mean_rewards[i] - max_mean_reward) < 1e-9)
-            {
-                best_actions.push_back(i);
-            }
-        }
-
-        // --- Select the best action, breaking ties randomly ---
-        int best_first_action = 0; // Default fallback action
-        if (!best_actions.empty())
-        {
-            if (best_actions.size() > 1)
-            {
-                std::uniform_int_distribution<> tie_distrib(0, best_actions.size() - 1);
-                best_first_action = best_actions[tie_distrib(gen)];
-            }
-            else
-            {
-                best_first_action = best_actions[0];
-            }
-        }
-
-        // --- Apply the chosen action to the main environment ---
-        env.step(best_first_action, obs_buffer.data());
-        double single_step_reward = env.getReward();
-        total_reward += single_step_reward;
-        std::cout << "Step: " << step << " | Action: " << best_first_action << " | Step Reward: " << single_step_reward << " | Total Reward: " << total_reward << std::endl;
-
-        env.saveToState(0);
-
-        if (env.isDone())
-        {
-            std::cout << "Episode finished after " << step + 1 << " steps. Final Score: " << total_reward << std::endl;
-            // Optionally reset the environment here to start a new episode
-            // total_reward = 0.0;
-            // env.reset(obs_buffer.data());
-            // env.saveToState(0);
-            return 0; // Or break the loop
-        }
+        std::cout << "\n--- Run Summary ---\n";
+        std::cout << "Total steps: " << num_steps << "\n";
+        std::cout << "Total time: " << elapsed << " seconds\n";
+        std::cout << "Average FPS: " << (num_steps / elapsed) << "\n";
+        std::cout << "Average reward per step: " << average_reward << "\n";
+    }
+    catch (const std::exception &ex)
+    {
+        std::cerr << "Exception caught: " << ex.what() << "\n";
+        SDL_Quit();
+        return 1;
     }
 
+    SDL_Quit();
     return 0;
 }
