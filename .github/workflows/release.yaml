@@ -16,7 +16,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [macos-latest, windows-latest]
 
     steps:
       - name: Check out the repository and submodules
@@ -26,7 +26,7 @@ jobs:
 
       - name: Install X11 development libraries (Linux)
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
+        run: sudo apt-get update && sudo apt-get install -y libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libltdl-dev
 
       - name: run-vcpkg
         uses: lukka/run-vcpkg@v11.5
