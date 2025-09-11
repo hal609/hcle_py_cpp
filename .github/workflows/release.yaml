@@ -38,6 +38,7 @@ jobs:
           CIBW_BUILD: "cp310-* cp311-* cp312-*"
           # Explicitly build only for arm64 on macOS
           CIBW_ARCHS_MACOS: arm64
+        run: python -m build -v -sw
 
       - name: Store wheels as artifact
         uses: actions/upload-artifact@v4
