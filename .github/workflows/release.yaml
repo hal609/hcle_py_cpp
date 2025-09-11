@@ -32,22 +32,10 @@ jobs:
           echo "VCPKG_ROOT is: ${{ env.VCPKG_ROOT }}"
           ls "${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake"
 
-      - name: Verify SDL2 installation
-        run: |
-          echo "Looking for SDL2 CMake files..."
-          ls -R "${{ env.VCPKG_ROOT }}/installed/arm64-osx" | grep -i "sdl2"
-
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.17.0
+        uses: pypa/cibuildwheel@v2.19.2
         env:
-          # # Set the VCPKG triplet for the arm64 architecture
-          # CIBW_ENVIRONMENT: 'VCPKG_TARGET_TRIPLET=arm64-osx'
-          # Pass the vcpkg toolchain file to CMake
           CIBW_CMAKE_ARGS: "-DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake"
-          # # Specify Python versions to build for
-          # CIBW_BUILD: "cp310-* cp311-* cp312-*"
-          # # Explicitly build only for arm64 on macOS
-          # CIBW_ARCHS_MACOS: arm64
 
       - name: Store wheels as artifact
         uses: actions/upload-artifact@v4
