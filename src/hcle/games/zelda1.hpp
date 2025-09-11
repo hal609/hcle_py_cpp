@@ -29,7 +29,7 @@ namespace hcle
                 NES_INPUT_RIGHT,
                 NES_INPUT_A,
                 NES_INPUT_B,
-                //  NES_INPUT_START,
+                NES_INPUT_START,
             };
          }
 
