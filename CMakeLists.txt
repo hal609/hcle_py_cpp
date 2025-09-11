@@ -5,24 +5,6 @@ project(hcle CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if (USE_AUTO_VCPKG)
-	include(cmake/automate-vcpkg.cmake)
-
-if ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "Win32")
-    set(VCPKG_TRIPLET x86-windows-static)
-    set(VCPKG_TARGET_TRIPLET x86-windows-static)
-elseif ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
-    set(VCPKG_TRIPLET x64-windows-static)
-    set(VCPKG_TARGET_TRIPLET x64-windows-static)
-elseif ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "arm64")
-    set(VCPKG_TRIPLET arm64-windows-static)
-    set(VCPKG_TARGET_TRIPLET arm64-windows-static)
-endif()
-
-	vcpkg_bootstrap()
-	vcpkg_install_packages(zlib bzip2 sdl2 glew libzip nlohmann-json tinyxml2 spdlog)    
-endif()
-
 if(WIN32)
     set(CMAKE_CXX_FLAGS_RELEASE "/O2 /Oi /Ot /Ob2 /fp:fast /arch:AVX2 /W4")
     set(CMAKE_CXX_FLAGS_DEBUG "/W4 /diagnostics:caret")
@@ -57,11 +39,13 @@ set(HCLE_CORE_SOURCES
 # CORE FILES
 add_library(hcle_core STATIC ${HCLE_CORE_SOURCES})
 target_include_directories(hcle_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
-if (MSVC)
-    target_link_libraries(hcle_core PUBLIC SDL2::SDL2 SDL2::SDL2main ${OpenCV_LIBS})
-else()
-    target_link_libraries(hcle_core PUBLIC SDL2::SDL2 ${OpenCV_LIBS})
-endif()
+
+target_link_libraries(hcle_core
+    PUBLIC
+    $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
+    $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
+    ${OpenCV_LIBS}
+)
 
 # PYTHON MODULE
 pybind11_add_module(_hcle_py
@@ -74,7 +58,3 @@ install(TARGETS _hcle_py
         LIBRARY DESTINATION hcle_py)
 
 install(FILES $<TARGET_RUNTIME_DLLS:_hcle_py> DESTINATION hcle_py)
-        
-# TEST CPP RUNNER
-# add_executable(hcle_test src/apps/test_runner.cpp)
-# target_link_libraries(hcle_test PRIVATE hcle_core)
