@@ -29,7 +29,7 @@ def register_hcle_envs():
         gym.register(
             id=f"HCLE/{game_name}-v0",
             # The entry point for a single environment instance
-            entry_point="hcle_py.env:HCLEnv",
+            entry_point="hcle_py.env:HCLEEnv",
             # The entry point for a vectorized environment instance
             vector_entry_point="hcle_py.vector_env:NESVectorEnv",
             # Kwargs are passed to BOTH entry points

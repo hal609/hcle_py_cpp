@@ -126,14 +126,6 @@ namespace hcle::environment
             {
                 f.get();
             }
-            // std::for_each(
-            //     std::execution::par,
-            //     m_envs.begin(),
-            //     m_envs.end(),
-            //     [](auto &env)
-            //     {
-            //         env->loadFromState(0);
-            //     });
         }
 
     private:
@@ -153,7 +145,7 @@ namespace hcle::environment
         std::atomic<bool> m_stop;
         std::vector<std::unique_ptr<PreprocessedEnv>> m_envs;
 
-        // Internal buffers for thread-safe data transfer.
+        // Internal buffers
         std::vector<std::vector<uint8_t>> m_internal_obs_buffers;
         std::vector<double> m_internal_reward_buffers;
         std::vector<bool> m_internal_done_buffers;

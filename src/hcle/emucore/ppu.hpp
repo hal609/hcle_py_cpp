@@ -1,3 +1,13 @@
+/*
+This file is derived from the cynes project.
+Original source: https://github.com/Youlixx/cynes
+Copyright (C) 2021 - 2024 Combey Theo
+Licensed under the GNU General Public License 3.0.
+
+Modifications to this file are licensed under the Home Console Learning Environment project.
+Copyright (C) 2025 HCLE
+*/
+
 #ifndef __CYNES_PPU__
 #define __CYNES_PPU__
 

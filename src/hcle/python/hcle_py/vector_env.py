@@ -83,10 +83,9 @@ class NESVectorEnv(VectorEnv):
         self, *, seed: int | None = None, options: dict[str, Any] | None = None
     ) -> tuple[ObsType, dict[str, Any]]:
         """Resets all environments and returns the initial observations."""
-
         self.vec_hcle.reset(self.obs_buffer, self.rewards_buffer, self.dones_buffer)
 
-        return np.copy(self.obs_buffer), {}
+        return self.obs_buffer, {}
 
     def send(self, actions: np.ndarray):
         """
@@ -108,7 +107,7 @@ class NESVectorEnv(VectorEnv):
         infos = {}
 
         return (
-            np.copy(self.obs_buffer),
+            self.obs_buffer,
             self.rewards_buffer,
             dones_bool,
             truncateds,

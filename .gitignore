@@ -18,6 +18,7 @@ src/apps
 
 test*
 
+pgo_instrument_build.bat
 build_clean_debug.bat
 build_clean.bat
 build_pgo.bat
@@ -28,3 +29,5 @@ performance_test.py
 
 hcle_py.egg-info
 preprocessed_env_cv2.cpp
+
+CMakeLists.txt

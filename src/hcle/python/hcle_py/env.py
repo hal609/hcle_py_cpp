@@ -6,7 +6,7 @@ import os
 from . import _hcle_py
 
 
-class HCLEnv(gym.Env):
+class HCLEEnv(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 60}
 
     def __init__(
