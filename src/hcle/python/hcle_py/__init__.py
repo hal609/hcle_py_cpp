@@ -7,11 +7,10 @@ import warnings
 import gymnasium as gym
 from gymnasium.error import Error as GymError
 
-from .env import HCLEnv
+from .env import HCLEEnv
 from .vector_env import NESVectorEnv
 
-# __all__ = ["CNesInterface", "NesEnv"]
-__all__ = ["HCLEnv", "NESVectorEnv"]
+__all__ = ["HCLEEnv", "NESVectorEnv"]
 _original_make = gym.make
 
 try:
