@@ -4,6 +4,7 @@
     "dependencies": [
         "sdl2",
         "opencv4",
-        "zlib"
+        "zlib",
+        "pybind11"
     ]
 }
