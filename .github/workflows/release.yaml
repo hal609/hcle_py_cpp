@@ -1,6 +1,6 @@
 # .github/workflows/release.yml
 
-name: Build and Publish to PyPI
+name: Build and Publish arm64 macOS Wheels to PyPI
 
 on:
   release:
@@ -11,12 +11,9 @@ env:
   VCPKG_ROOT: ${{ github.workspace }}/vcpkg
 
 jobs:
-  build_wheels:
-    name: Build wheels on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [macos-latest, windows-latest]
+  build_macos_wheels:
+    name: Build arm64 wheels on macOS
+    runs-on: macos-latest
 
     steps:
       - name: Check out the repository and submodules
@@ -24,41 +21,33 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: Install X11 development libraries (Linux)
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libltdl-dev
-
-      - name: run-vcpkg
+      - name: Install C++ dependencies with vcpkg
         uses: lukka/run-vcpkg@v11.5
         with:
           vcpkgDirectory: ${{ env.VCPKG_ROOT }}
           runVcpkgInstall: true
 
-      - name: Set up QEMU (for Linux ARM64 builds)
-        if: runner.os == 'Linux'
-        uses: docker/setup-qemu-action@v3
-
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.17.0
         env:
+          # Set the VCPKG triplet for the arm64 architecture
+          CIBW_ENVIRONMENT: 'VCPKG_TARGET_TRIPLET=arm64-osx'
+          # Pass the vcpkg toolchain file to CMake
           CIBW_CMAKE_ARGS: -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake
-
-          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "delvewheel-patch --add-path {VCPKG_ROOT}/installed/{VCPKG_TARGET_TRIPLET}/bin -w {wheel_path}"
-
+          # Specify Python versions to build for
           CIBW_BUILD: "cp310-* cp311-* cp312-*"
-          CIBW_ARCHS_LINUX: auto aarch64
-          CIBW_ARCHS_WINDOWS: auto ARM64
-          CIBW_ARCHS_MACOS: auto arm64
+          # Explicitly build only for arm64 on macOS
+          CIBW_ARCHS_MACOS: arm64
 
       - name: Store wheels as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: python-wheels-${{ matrix.os }}
+          name: python-wheels-macos-arm64
           path: ./wheelhouse/*.whl
 
   publish_wheels:
     name: Publish wheels to PyPI
-    needs: [build_wheels]
+    needs: [build_macos_wheels]
     runs-on: ubuntu-latest
     if: github.event_name == 'release' && github.event.action == 'created'
     steps:

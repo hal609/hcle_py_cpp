@@ -29,5 +29,3 @@ performance_test.py
 
 hcle_py.egg-info
 preprocessed_env_cv2.cpp
-
-CMakeLists.txt
