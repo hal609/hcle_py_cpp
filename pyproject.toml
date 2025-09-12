@@ -69,9 +69,9 @@ wheel.cmake = true
 wheel.packages = ["src/hcle/python/hcle_py"]
 sdist.reproducible = true
 cmake.build-type = "Release"
-cmake.args = [
-    "-DPython_EXECUTABLE:FILEPATH={python_executable}",
-    "-DCMAKE_BUILD_TYPE=Release",
-    "-DCMAKE_TOOLCHAIN_FILE={cmake_source_dir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
-    "--log-level=VERBOSE",
-]
+# cmake.args = [
+#     "-DPython_EXECUTABLE:FILEPATH={python_executable}",
+#     "-DCMAKE_BUILD_TYPE=Release",
+#     "-DCMAKE_TOOLCHAIN_FILE={cmake_source_dir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
+#     "--log-level=VERBOSE",
+# ]
