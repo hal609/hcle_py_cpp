@@ -9,8 +9,8 @@ on:
   workflow_dispatch:
 
 env:
-  VCPKG_ROOT: ${{ github.workspace }}/vcpkg
-  
+  VCPKG_ROOT: ${{ github.workspace }}\vcpkg
+
 jobs:
   build:
     runs-on: windows-latest
