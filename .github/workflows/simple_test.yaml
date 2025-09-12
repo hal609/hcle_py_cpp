@@ -40,7 +40,7 @@ jobs:
           # macOS 12
           - macos_version: "12"
             runner: "macos-12"
-            arch: "aarch64"
+            arch: "arm64"
           - macos_version: "12"
             runner: "macos-12"
             arch: "x86_64"
@@ -48,7 +48,7 @@ jobs:
           # macOS 13
           - macos_version: "13"
             runner: "macos-13"
-            arch: "aarch64"
+            arch: "arm64"
           - macos_version: "13"
             runner: "macos-13"
             arch: "x86_64"
@@ -56,9 +56,17 @@ jobs:
           # macOS 14
           - macos_version: "14"
             runner: "macos-14"
-            arch: "aarch64"
+            arch: "arm64"
           - macos_version: "14"
             runner: "macos-14"
+            arch: "x86_64"
+
+          # macOS 15
+          - macos_version: "15"
+            runner: "macos-15"
+            arch: "arm64"
+          - macos_version: "15"
+            runner: "macos-15"
             arch: "x86_64"
 
     steps:
