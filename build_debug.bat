@@ -1,5 +1,5 @@
 @echo off
-cmake -S . -B build -A x64 -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=C:/dev/vcpkg/scripts/buildsystems/vcpkg.cmake
+cmake -S . -B build -A x64 -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake
 
 if %errorlevel% neq 0 (
     echo CMake configuration failed.

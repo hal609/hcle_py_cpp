@@ -1,13 +1,13 @@
 name: Build aarch64 macOS Wheels with caching
 
-# on:
-#   release:
-#     types: [created]
-#   push:
-#     branches: [ "main" ]
-#   pull_request:
-#     branches: [ "main" ]
-#   workflow_dispatch:
+on:
+  release:
+    types: [created]
+  # push:
+  #   branches: [ "main" ]
+  # pull_request:
+  #   branches: [ "main" ]
+  workflow_dispatch:
 
 env:
   # Define VCPKG_ROOT with the correct path syntax for all runners.
