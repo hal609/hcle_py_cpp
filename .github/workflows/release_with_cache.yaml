@@ -3,10 +3,10 @@ name: Build aarch64 macOS Wheels with caching
 on:
   release:
     types: [created]
-  # push:
-  #   branches: [ "main" ]
-  # pull_request:
-  #   branches: [ "main" ]
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
   workflow_dispatch:
 
 env:
@@ -33,6 +33,10 @@ jobs:
           key: ${{ runner.os }}-vcpkg-${{ hashFiles('**/vcpkg.json') }}
           restore-keys: |
             ${{ runner.os }}-vcpkg-
+
+      # FIX: Add this step to install required build tools
+      - name: Install build dependencies
+        run: brew install autoconf automake autoconf-archive
 
       # This step reads the commit hash from your checked-out vcpkg submodule.
       - name: Get vcpkg submodule commit hash
