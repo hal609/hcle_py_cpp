@@ -1,9 +1,11 @@
 {
     "name": "hcle-py",
-    "version-string": "0.1.0",
+    "version-string": "0.1.6",
     "dependencies": [
         "sdl2",
         "opencv4",
-        "zlib"
-    ]
+        "zlib",
+        "pybind11"
+    ],
+    "builtin-baseline": "7e19f3c64cb636ee21f41bfe8558a6dfaae6236f"
 }
