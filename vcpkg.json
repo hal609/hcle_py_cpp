@@ -6,6 +6,5 @@
         "opencv4",
         "zlib",
         "pybind11"
-    ],
-    "builtin-baseline": "7e19f3c64cb636ee21f41bfe8558a6dfaae6236f"
+    ]
 }

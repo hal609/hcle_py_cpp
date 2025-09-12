@@ -3,20 +3,20 @@
 
 name: Build Python Package
 
-# on:
-#   # Triggers the workflow on push or pull request events for the "main" branch
-#   push:
-#     branches: [ "main" ]
-#   pull_request:
-#     branches: [ "main" ]
+on:
+  # Triggers the workflow on push or pull request events for the "main" branch
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
-#   # Allows you to run this workflow manually from the Actions tab
-#   workflow_dispatch:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
 
 jobs:
   build:
     # The type of runner that the job will run on
-    runs-on: windows-latest
+    runs-on: macos-latest
 
     steps:
       # Step 1: Check out your repository code so the workflow can access it
@@ -28,23 +28,13 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          architecture: 'x64' # Corresponds to amd64
+          architecture: 'arm64'
 
-      # Step 3: Clone vcpkg repository
-      # Your pyproject.toml expects the vcpkg toolchain file inside the source directory.
-      - name: Clone vcpkg
-        run: git clone https://github.com/microsoft/vcpkg.git
-
-      # Step 4: Bootstrap vcpkg
-      - name: Bootstrap vcpkg
-        run: .\vcpkg\bootstrap-vcpkg.bat
-        shell: cmd
-
-      # Step 5: Install C++ dependencies
-      # These are the libraries required by your CMakeLists.txt
-      - name: Install dependencies with vcpkg
-        run: .\vcpkg\vcpkg.exe install --triplet x64-windows
-        shell: cmd
+      - uses: tecolicom/actions-install-and-cache@v1
+        with:
+          run:  brew install sdl2 opencv pybind11
+          path: /usr/local
+          verbose: true
 
       # Step 6: Install the 'build' package itself, which is required to run the build command
       - name: Install build tool

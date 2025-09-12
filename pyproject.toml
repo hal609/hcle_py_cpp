@@ -63,7 +63,6 @@ dependencies = ["numpy", "gymnasium"]
 
 
 [tool.scikit-build]
-search.site-packages = true
 build.verbose = true
 wheel.cmake = true
 wheel.packages = ["src/hcle/python/hcle_py"]
