@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.19)
 project(hcle CXX)
 
+set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake)
+
 cmake_policy(SET CMP0148 NEW)
 
 set(CMAKE_CXX_STANDARD 20)
