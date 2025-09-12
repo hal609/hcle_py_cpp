@@ -1,0 +1,73 @@
+name: Build and Publish arm64 macOS Wheels to PyPI
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+
+env:
+  # Corrected path syntax for macOS runner
+  VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+
+jobs:
+  build_macos_wheels:
+    name: Build arm64 wheels on macOS
+    runs-on: macos-latest
+
+    steps:
+      - name: Check out the repository and submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      # This new step caches the vcpkg directory to speed up subsequent runs
+      - name: Cache vcpkg dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.VCPKG_ROOT }}
+          # The cache key includes a hash of the vcpkg.json file.
+          # If you change your dependencies, the key changes, and the cache is rebuilt.
+          key: ${{ runner.os }}-vcpkg-${{ hashFiles('**/vcpkg.json') }}
+          restore-keys: |
+            ${{ runner.os }}-vcpkg-
+
+      - name: Install C++ dependencies with vcpkg
+        uses: lukka/run-vcpkg@v11.5
+        with:
+          vcpkgDirectory: ${{ env.VCPKG_ROOT }}
+          runVcpkgInstall: true
+
+      - name: Check vcpkg installation
+        run: |
+          echo "VCPKG_ROOT is: ${{ env.VCPKG_ROOT }}"
+          ls "${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake"
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.19.2
+        env:
+          CIBW_CMAKE_ARGS: "-DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake --log-level=VERBOSE"
+
+      - name: Store wheels as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-wheels-macos-arm64
+          path: ./wheelhouse/*.whl
+
+  publish_wheels:
+    name: Publish wheels to PyPI
+    needs: [build_macos_wheels]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' && github.event.action == 'created'
+    steps:
+      - name: Download all wheels
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: python-wheels-*
+          merge-multiple: true
+
+      - name: Publish package to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
