@@ -72,6 +72,7 @@ namespace hcle
 
             double getReward() override
             {
+                double reward = -1.0;
                 long long current_progress = get_progress_score(m_current_ram_ptr);
                 long long previous_progress = get_progress_score(m_previous_ram.data());
                 double progress_reward = static_cast<double>(current_progress - previous_progress);
@@ -79,7 +80,8 @@ namespace hcle
                 double damage_penalty = (m_current_ram_ptr[PLAYER_HEALTH] < m_previous_ram[PLAYER_HEALTH]) ? -25.0 : 0.0;
                 double finish_bonus = (m_current_ram_ptr[LEVEL_TRANSITION] == 0x03) ? 100.0 : 0.0;
 
-                return std::max(progress_reward, 0.0) + damage_penalty + finish_bonus;
+                reward += std::max(progress_reward, 0.0) + damage_penalty + finish_bonus;
+                return reward / 1000.0;
             }
 
             void onStep() override

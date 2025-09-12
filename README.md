@@ -49,22 +49,33 @@ You simply need to install the `hcle-py` package distributed via PyPI:
 ```shell
 pip install hcle-py
 ```
-You can now import HCLE in your Python projects exactly as you would with ALE
-<!-- ```python
-from hcle_py import HCLEEnv, roms
+You can now import HCLE in your Python projects as you would with ALE
+```python
+from hcle_py.env import HCLEEnv
 
-env = HCLEEnv()
-env.loadROM(roms.get_rom_path("breakout"))
-env.reset_game()
+env = HCLEEnv("smb1",
+	render_mode="human",
+	img_height=240,
+	img_width=256,
+	frame_skip=4,
+	maxpool=False,
+	grayscale=False,
+	stack_num=1,
+	render_fps_limit=0
+)
 
-reward = env.act(0)
-screen_obs = env.getScreenRGB()
-``` -->
+obs, info = env.reset()
+
+for i in range(1000):
+	action = env.action_space.sample()
+	obs, reward, terminated, truncated, info = env.step(action)
+
+env.close()
+```
 
 A vectorized environment with preprocessing, written in C++, is also available and can be used like so:
 
 ```py
-import gymnasium as gym
 from hcle_py import NESVectorEnv
 
 # Create a vector environment with 4 parallel instances of Super Mario Bros. 1
@@ -93,7 +104,7 @@ import hcle_py
 
 gym.register_envs(hcle_py)  # unnecessary but helpful for IDEs
 
-env = gym.make('ALE/TheLegendOfZelda-v0', render_mode="human")  # remove render_mode in training
+env = gym.make('HCLE/TheLegendOfZelda-v0', render_mode="human")  # remove render_mode in training
 obs, info = env.reset()
 episode_over = False
 while not episode_over:

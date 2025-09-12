@@ -1,3 +1,10 @@
+/*
+This file is from the cynes project.
+Original source: https://github.com/Youlixx/cynes
+Copyright (C) 2021 - 2024 Combey Theo
+Licensed under the GNU General Public License 3.0.
+*/
+
 #ifndef __CYNES_CPU__
 #define __CYNES_CPU__
 

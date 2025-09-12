@@ -106,7 +106,7 @@ namespace hcle
                     }
                 }
 
-                return reward / 100.0;
+                return reward / 100000.0;
             }
 
             void onStep() override
