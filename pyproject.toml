@@ -72,5 +72,6 @@ cmake.build-type = "Release"
 cmake.args = [
     "-DPython_EXECUTABLE:FILEPATH={python_executable}",
     "-DCMAKE_BUILD_TYPE=Release",
-    # "-DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake",
+    "-DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake",
+    "--log-level=VERBOSE",
 ]
