@@ -86,7 +86,8 @@ jobs:
           CIBW_ARCHS_MACOS: "${{ matrix.arch }}"
           # CIBW_BEFORE_BUILD: "brew install sdl2 opencv pybind11"
           CIBW_BEFORE_BUILD: >
-                      brew reinstall --build-from-source sdl2 opencv pybind11
+                      brew install pybind11 &&
+                      brew reinstall --build-from-source sdl2 opencv
 
       - name: Store wheels as artifact
         uses: actions/upload-artifact@v4
