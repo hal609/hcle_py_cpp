@@ -3,6 +3,10 @@ name: Build aarch64 macOS Wheels with caching
 on:
   release:
     types: [created]
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
   workflow_dispatch:
 
 env:
@@ -19,6 +23,16 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: 'recursive'
+
+      - name: Cache vcpkg dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.VCPKG_ROOT }}
+          # The cache key includes a hash of the vcpkg.json file.
+          # If you deps, the key changes, and the cache is rebuilt.
+          key: ${{ runner.os }}-vcpkg-${{ hashFiles('**/vcpkg.json') }}
+          restore-keys: |
+            ${{ runner.os }}-vcpkg-
 
       # This step reads the commit hash from your checked-out vcpkg submodule.
       - name: Get vcpkg submodule commit hash
