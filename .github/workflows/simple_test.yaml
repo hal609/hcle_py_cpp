@@ -25,6 +25,12 @@ jobs:
         with:
           python-version: '3.11'
           architecture: 'x64'
+          
+      - name: Install C++ dependencies with vcpkg
+        uses: lukka/run-vcpkg@v11.5
+        with:
+          vcpkgDirectory: ${{ env.VCPKG_ROOT }}
+          runVcpkgInstall: true
 
       - name: Install build tool
         run: python -m pip install --upgrade build
