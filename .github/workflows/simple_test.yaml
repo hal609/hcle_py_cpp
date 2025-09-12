@@ -1,46 +1,56 @@
-# A simple workflow to build a Python sdist and wheel on Windows.
-# This file should be placed in the .github/workflows/ directory of your repository.
-
-name: Build Python Package
+name: Build and Publish macOS Wheels
 
 on:
-  # Triggers the workflow on push or pull request events for the "main" branch
+  release:
+    types: [created]
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 jobs:
-  build:
-    # The type of runner that the job will run on
+  build_wheels:
+    name: Build wheels for macOS (arm64)
     runs-on: macos-latest
 
     steps:
-      # Step 1: Check out your repository code so the workflow can access it
       - name: Checkout code
         uses: actions/checkout@v4
-
-      # Step 2: Set up a Python environment
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          architecture: 'arm64'
+          # Required for cibuildwheel to get a clean version number.
+          fetch-depth: 0
 
-      - uses: tecolicom/actions-install-and-cache@v1
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.19.2
+        env:
+          # Python versions to build for.
+          CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-*"
+          CIBW_ARCHS_MACOS: arm64
+          CIBW_BEFORE_BUILD: "brew install sdl2 opencv pybind11"
+
+      - name: Store wheels as artifact
+        uses: actions/upload-artifact@v4
         with:
-          run:  brew install sdl2 opencv pybind11
-          path: /usr/local
-          verbose: true
+          name: macos-wheels
+          path: ./wheelhouse/*.whl
 
-      # Step 6: Install the 'build' package itself, which is required to run the build command
-      - name: Install build tool
-        run: python -m pip install --upgrade build
+  publish_to_pypi:
+    name: Publish wheels to PyPI
+    needs: build_wheels
+    runs-on: ubuntu-latest
+    # if: github.event_name == 'release' && github.event.action == 'created'
 
-      # Step 7: Run the build command as requested
-      - name: Build sdist and wheel
-        run: python -m build -v -sw
+    steps:
+      - name: Download wheels from artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-wheels
+          path: dist
+
+      - name: Publish package to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
 
