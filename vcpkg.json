@@ -1,6 +1,6 @@
 {
     "name": "hcle-py",
-    "version-string": "0.1.7",
+    "version-string": "0.1.8",
     "dependencies": [
         "sdl2",
         "opencv4",

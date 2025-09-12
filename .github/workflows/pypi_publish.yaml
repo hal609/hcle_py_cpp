@@ -1,0 +1,119 @@
+name: Build and Publish macOS Wheels
+
+on:
+  release:
+    types: [created]
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build_linux_wheels:
+    name: Build wheels for Linux (x86_64 & aarch64)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # Required for cibuildwheel to get a clean version number.
+          fetch-depth: 0
+
+      - name: Set up QEMU for ARM builds
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.19.2
+        env:
+          CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-*"
+          # Instruct cibuildwheel to build for x86_64 (auto) and aarch64
+          CIBW_ARCHS_LINUX: "auto aarch64"
+          CIBW_BEFORE_BUILD_LINUX: "apt-get update && apt-get install -y libsdl2-dev libopencv-dev pybind11-dev"
+
+      - name: Store wheels as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-wheels
+          path: ./wheelhouse/*.whl
+
+          
+  build_macos_wheels:
+    name: Build wheels for macOS ${{ matrix.macos_version }} (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # macOS 14
+          - macos_version: "14"
+            runner: "macos-14"
+            arch: "arm64"
+          - macos_version: "14"
+            runner: "macos-14"
+            arch: "x86_64"
+
+          # macOS 15
+          - macos_version: "15"
+            runner: "macos-15"
+            arch: "arm64"
+          - macos_version: "15"
+            runner: "macos-15"
+            arch: "x86_64"
+
+          - macos_version: "26"
+            runner: "macos-26"
+            arch: "arm64"
+          - macos_version: "26"
+            runner: "macos-26"
+            arch: "x86_64"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # Required for cibuildwheel to get a clean version number.
+          fetch-depth: 0
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.19.2
+        env:
+          MACOSX_DEPLOYMENT_TARGET: "${{ matrix.macos_version }}.0"
+          # MACOSX_DEPLOYMENT_TARGET: "15.0"
+          CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-*"
+          # CIBW_ARCHS_MACOS: arm64
+          CIBW_ARCHS_MACOS: "${{ matrix.arch }}"
+          # CIBW_BEFORE_BUILD: "brew install sdl2 opencv pybind11"
+          CIBW_BEFORE_BUILD: >
+                      brew install pybind11 opencv &&
+                      brew reinstall --build-from-source sdl2
+
+      - name: Store wheels as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-wheels-${{ matrix.runner }}-${{ matrix.arch }}
+          # name: macos-wheels-${{ matrix.runner }}
+          # name: macos-wheels
+          path: ./wheelhouse/*.whl
+          
+  publish_to_pypi:
+    name: Publish wheels to PyPI
+    needs: [build_macos_wheels, build_linux_wheels]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' && github.event.action == 'created'
+
+    steps:
+      - name: Download all wheels from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: "*-wheels"
+          path: dist
+          merge-multiple: true
+
+      - name: Publish package to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
