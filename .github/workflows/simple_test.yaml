@@ -43,7 +43,7 @@ jobs:
       # Step 5: Install C++ dependencies
       # These are the libraries required by your CMakeLists.txt
       - name: Install dependencies with vcpkg
-        run: .\vcpkg\vcpkg.exe install pybind11 sdl2 opencv zlib --triplet x64-windows
+        run: .\vcpkg\vcpkg.exe install --triplet x64-windows
         shell: cmd
 
       # Step 6: Install the 'build' package itself, which is required to run the build command
