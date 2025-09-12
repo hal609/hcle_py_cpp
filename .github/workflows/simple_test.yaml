@@ -1,21 +1,25 @@
+# A simple workflow to build a Python sdist and wheel on Windows.
+# This file should be placed in the .github/workflows/ directory of your repository.
+
 name: Build Python Package
 
 on:
+  # Triggers the workflow on push or pull request events for the "main" branch
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
+  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
-
-env:
-  VCPKG_ROOT: ${{ github.workspace }}\vcpkg
 
 jobs:
   build:
+    # The type of runner that the job will run on
     runs-on: windows-latest
 
     steps:
+      # Step 1: Check out your repository code so the workflow can access it
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -24,16 +28,29 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          architecture: 'x64'
-          
-      - name: Install C++ dependencies with vcpkg
-        uses: lukka/run-vcpkg@v11.5
-        with:
-          vcpkgDirectory: ${{ env.VCPKG_ROOT }}
-          runVcpkgInstall: true
+          architecture: 'x64' # Corresponds to amd64
 
+      # Step 3: Clone vcpkg repository
+      # Your pyproject.toml expects the vcpkg toolchain file inside the source directory.
+      - name: Clone vcpkg
+        run: git clone https://github.com/microsoft/vcpkg.git
+
+      # Step 4: Bootstrap vcpkg
+      - name: Bootstrap vcpkg
+        run: .\vcpkg\bootstrap-vcpkg.bat
+        shell: cmd
+
+      # Step 5: Install C++ dependencies
+      # These are the libraries required by your CMakeLists.txt
+      - name: Install dependencies with vcpkg
+        run: .\vcpkg\vcpkg.exe install pybind11 sdl2 opencv zlib --triplet x64-windows
+        shell: cmd
+
+      # Step 6: Install the 'build' package itself, which is required to run the build command
       - name: Install build tool
         run: python -m pip install --upgrade build
 
+      # Step 7: Run the build command as requested
       - name: Build sdist and wheel
         run: python -m build -v -sw
+
