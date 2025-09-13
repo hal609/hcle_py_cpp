@@ -99,40 +99,31 @@ jobs:
   #         # name: macos-wheels
   #         path: ./wheelhouse/*.whl
           
-  build_windows_wheels:
+build_windows_wheels:
     name: Build wheels for Windows
     runs-on: windows-latest
 
     steps:
-      - uses: lukka/get-cmake@latest
-
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          submodules: 'recursive'
+          # Checkout vcpkg submodule if you have it
+          submodules: 'recursive' 
 
-      - name: Setup anew (or from cache) vcpkg (and does not build any package)
+      - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
         with:
-          # This is the default location of the directory containing vcpkg sources.
-          # Change it to the right location if needed.
+          # This path is important. It sets the VCPKG_ROOT env var.
           vcpkgDirectory: '${{ github.workspace }}/vcpkg'
 
-      - name: Run CMake consuming CMakePreset.json and run vcpkg to build packages
-        uses: lukka/run-cmake@v10
-        with:
-          configurePreset: 'windows-release'
-          buildPreset: 'build-release-all'
-
-      - name: Build wheels
+      - name: Build wheels with cibuildwheel
         uses: pypa/cibuildwheel@v2.19.2
         env:
-          # Define the Python versions to build for
-          # CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-*"
           CIBW_BUILD: "cp312-*"
-          CIBW_PRERELEASE_PYTHONS: "True" 
-          # Set the architectures for Windows. 'auto' targets the runner's native arch (AMD64).
-          # CIBW_ARCHS_WINDOWS: "auto" # ARM64"
+          CIBW_BEFORE_BUILD_WINDOWS: >
+            vcpkg install sdl2 opencv pybind11 zlib
+          CIBW_ENVIRONMENT: >
+            CMAKE_TOOLCHAIN_FILE="{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
 
       - name: Store wheels as artifact
         uses: actions/upload-artifact@v4
