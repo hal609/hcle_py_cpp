@@ -115,10 +115,12 @@ jobs:
           # Define the Python versions to build for
           # CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-*"
           CIBW_BUILD: "cp312-*"
+          CIBW_PRERELEASE_PYTHONS: "True" 
           # Set the architectures for Windows. 'auto' targets the runner's native arch (AMD64).
           # CIBW_ARCHS_WINDOWS: "auto" # ARM64"
           # Use choco to install dependencies before the build
-          CIBW_BEFORE_BUILD_WINDOWS: "choco install sdl2 opencv pybind11 -y"
+          CIBW_BEFORE_BUILD_WINDOWS: "choco install opencv pybind11 -y; vcpkg install SDL2"
+          
 
       - name: Store wheels as artifact
         uses: actions/upload-artifact@v4
