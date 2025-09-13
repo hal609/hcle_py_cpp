@@ -106,24 +106,25 @@ jobs:
     steps:
       - uses: lukka/get-cmake@latest
 
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+        with:
+          submodules: 'recursive'
+
       - name: Setup anew (or from cache) vcpkg (and does not build any package)
         uses: lukka/run-vcpkg@v11
         with:
           # This is the default location of the directory containing vcpkg sources.
           # Change it to the right location if needed.
           vcpkgDirectory: '${{ github.workspace }}/vcpkg'
-          
+
       - name: Run CMake consuming CMakePreset.json and run vcpkg to build packages
         uses: lukka/run-cmake@v10
         with:
           configurePreset: 'ninja-multi-vcpkg'
           buildPreset: 'ninja-multi-vcpkg'
           testPreset: 'ninja-multi-vcpkg'
-
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.19.2
