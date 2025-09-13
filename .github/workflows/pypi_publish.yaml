@@ -10,37 +10,36 @@ on:
   workflow_dispatch:
 
 jobs:
-  build_linux_wheels:
-    name: Build wheels for Linux (x86_64 & aarch64)
-    runs-on: ubuntu-latest
+  # build_linux_wheels:
+  #   name: Build wheels for Linux (x86_64 & aarch64)
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          # Required for cibuildwheel to get a clean version number.
-          fetch-depth: 0
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+  #       with:
+  #         # Required for cibuildwheel to get a clean version number.
+  #         fetch-depth: 0
 
-      - name: Set up QEMU for ARM builds
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64
+  #     - name: Set up QEMU for ARM builds
+  #       uses: docker/setup-qemu-action@v3
+  #       with:
+  #         platforms: arm64
 
-      - name: Build wheels
-        uses: pypa/cibuildwheel@v2.19.2
-        env:
-          CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-*"
-          # Instruct cibuildwheel to build for x86_64 (auto) and aarch64
-          CIBW_ARCHS_LINUX: "auto aarch64"
-          CIBW_BEFORE_BUILD_LINUX: "dnf install SDL2-devel opencv-devel python; pip install pybind11"
-          # CIBW_BEFORE_BUILD_LINUX: "apt-get update && apt-get install -y libsdl2-dev libopencv-dev pybind11-dev"
+  #     - name: Build wheels
+  #       uses: pypa/cibuildwheel@v2.19.2
+  #       env:
+  #         CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-*"
+  #         # Instruct cibuildwheel to build for x86_64 (auto) and aarch64
+  #         CIBW_ARCHS_LINUX: "auto aarch64"
+  #         CIBW_BEFORE_BUILD_LINUX: "yum install -y SDL2-devel opencv-devel pybind11-devel"
+  #         # CIBW_BEFORE_BUILD_LINUX: "apt-get update && apt-get install -y libsdl2-dev libopencv-dev pybind11-dev"
 
-      - name: Store wheels as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-wheels
-          path: ./wheelhouse/*.whl
-
+  #     - name: Store wheels as artifact
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: linux-wheels
+  #         path: ./wheelhouse/*.whl
 
   # build_macos_wheels:
   #   name: Build wheels for macOS ${{ matrix.macos_version }} (${{ matrix.arch }})
@@ -100,14 +99,42 @@ jobs:
   #         # name: macos-wheels
   #         path: ./wheelhouse/*.whl
           
+  build_windows_wheels:
+    name: Build wheels for Windows
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.19.2
+        env:
+          # Define the Python versions to build for
+          # CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-*"
+          CIBW_BUILD: "cp313-*"
+          # Set the architectures for Windows. 'auto' targets the runner's native arch (AMD64).
+          CIBW_ARCHS_WINDOWS: "auto" # ARM64"
+          # Use choco to install dependencies before the build
+          CIBW_BEFORE_BUILD_WINDOWS: "choco install sdl2 opencv pybind11 -y"
+
+      - name: Store wheels as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-wheels
+          path: ./wheelhouse/*.whl
+
+
   publish_to_pypi:
     name: Publish wheels to PyPI
-    needs: [build_linux_wheels]
+    needs: [build_windows_wheels]
     # needs: [build_macos_wheels, build_linux_wheels]
     runs-on: ubuntu-latest
     if: github.event_name == 'release' && github.event.action == 'created'
 
-    steps: 
+    steps:
       - name: Download all wheels from artifacts
         uses: actions/download-artifact@v4
         with:
