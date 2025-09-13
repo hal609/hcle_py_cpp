@@ -109,13 +109,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup vcpkg and install dependencies
-        run: |
-          git clone https://github.com/Microsoft/vcpkg.git
-          ./vcpkg/bootstrap-vcpkg.bat
-          ./vcpkg/vcpkg install sdl2 pybind11
-        shell: cmd
-
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.19.2
         env:
@@ -126,7 +119,7 @@ jobs:
           # Set the architectures for Windows. 'auto' targets the runner's native arch (AMD64).
           # CIBW_ARCHS_WINDOWS: "auto" # ARM64"
           # Use choco to install dependencies before the build
-          CIBW_ENVIRONMENT: '${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake"'
+          CIBW_BEFORE_BUILD_WINDOWS: ".\vcpkg\vcpkg install"
           
 
       - name: Store wheels as artifact
