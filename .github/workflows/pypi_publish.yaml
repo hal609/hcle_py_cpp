@@ -99,7 +99,7 @@ jobs:
   #         # name: macos-wheels
   #         path: ./wheelhouse/*.whl
           
-build_windows_wheels:
+  build_windows_wheels:
     name: Build wheels for Windows
     runs-on: windows-latest
 
@@ -130,7 +130,6 @@ build_windows_wheels:
         with:
           name: windows-wheels
           path: ./wheelhouse/*.whl
-
 
   publish_to_pypi:
     name: Publish wheels to PyPI
