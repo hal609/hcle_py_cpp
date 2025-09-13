@@ -126,7 +126,7 @@ jobs:
           # Set the architectures for Windows. 'auto' targets the runner's native arch (AMD64).
           # CIBW_ARCHS_WINDOWS: "auto" # ARM64"
           # Use choco to install dependencies before the build
-          CIBW_ENVIRONMENT: '${{ github.workspace }}\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake"'
+          CIBW_ENVIRONMENT: '${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake"'
           
 
       - name: Store wheels as artifact
