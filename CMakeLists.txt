@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.19)
 project(hcle CXX)
 
-set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake)
-
 cmake_policy(SET CMP0148 NEW)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -10,9 +8,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Python COMPONENTS Interpreter Development REQUIRED)
 find_package(pybind11 CONFIG REQUIRED)
-find_package(SDL2 CONFIG REQUIRED)
 find_package(OpenCV CONFIG REQUIRED COMPONENTS core imgproc)
 find_package(ZLIB REQUIRED)
+find_package(SDL2 CONFIG REQUIRED)
 
 set(HCLE_SOURCES
     src/hcle/emucore/nes.cpp
