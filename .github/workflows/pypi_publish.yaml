@@ -112,6 +112,7 @@ jobs:
 
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
+        id: vcpkg
         with:
           # This path is important. It sets the VCPKG_ROOT env var.
           vcpkgDirectory: '${{ github.workspace }}/vcpkg'
@@ -132,7 +133,9 @@ jobs:
           CIBW_BEFORE_BUILD_WINDOWS: >
             vcpkg install
           CIBW_ENVIRONMENT: >
-            CMAKE_TOOLCHAIN_FILE="${{ github.workspace }}\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake"
+            CMAKE_ARGS="-DCMAKE_TOOLCHAIN_FILE=${{ steps.vcpkg.outputs.vcpkg-cmake-path }}"
+          # CIBW_ENVIRONMENT: >
+          #   CMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake"
 
       - name: Store wheels as artifact
         uses: actions/upload-artifact@v4
