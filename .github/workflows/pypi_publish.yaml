@@ -133,9 +133,7 @@ jobs:
           CIBW_BEFORE_BUILD_WINDOWS: >
             vcpkg install
           CIBW_ENVIRONMENT: >
-            CMAKE_ARGS="-DCMAKE_TOOLCHAIN_FILE=${{ steps.vcpkg.outputs.vcpkg-cmake-path }}"
-          # CIBW_ENVIRONMENT: >
-          #   CMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+            CMAKE_TOOLCHAIN_FILE="D:/a/hcle_py_cpp/hcle_py_cpp/vcpkg/scripts/buildsystems/vcpkg.cmake"
 
       - name: Store wheels as artifact
         uses: actions/upload-artifact@v4
