@@ -1,5 +1,7 @@
 {
     "name": "hcle-py",
     "version-string": "0.1.8",
-    "dependencies": []
+    "dependencies": [
+        "pybind11"
+    ]
 }
