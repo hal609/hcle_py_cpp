@@ -123,7 +123,7 @@ jobs:
           CIBW_BEFORE_BUILD_WINDOWS: >
             vcpkg install
           CIBW_ENVIRONMENT: >
-            CMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake
+            CMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake"
 
       - name: Store wheels as artifact
         uses: actions/upload-artifact@v4
