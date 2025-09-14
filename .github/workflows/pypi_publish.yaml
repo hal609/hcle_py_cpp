@@ -116,16 +116,23 @@ jobs:
           # This path is important. It sets the VCPKG_ROOT env var.
           vcpkgDirectory: '${{ github.workspace }}/vcpkg'
 
+      # - name: Build wheels with cibuildwheel
+      #   uses: pypa/cibuildwheel@v2.19.2
+      #   env:
+      #     CIBW_BUILD: "cp312-*"
+      #     CIBW_BEFORE_BUILD_WINDOWS: >
+      #       vcpkg install
+      #     # CMAKE_TOOLCHAIN_FILE: D:/a/hcle_py_cpp/hcle_py_cpp/vcpkg/scripts/buildsystems/vcpkg.cmake
+      #     CIBW_ENVIRONMENT: >
+      #       CMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake"
       - name: Build wheels with cibuildwheel
         uses: pypa/cibuildwheel@v2.19.2
         env:
           CIBW_BUILD: "cp312-*"
           CIBW_BEFORE_BUILD_WINDOWS: >
             vcpkg install
-          # CMAKE_TOOLCHAIN_FILE: D:/a/hcle_py_cpp/hcle_py_cpp/vcpkg/scripts/buildsystems/vcpkg.cmake
           CIBW_ENVIRONMENT: >
-            CMAKE_TOOLCHAIN_FILE='${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake'
-            
+            CMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake"
 
       - name: Store wheels as artifact
         uses: actions/upload-artifact@v4
