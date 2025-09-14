@@ -3,6 +3,8 @@
     "version-string": "0.1.8",
     "dependencies": [
         "pybind11",
-        "opencv4"
+        "opencv4",
+        "sdl2",
+        "zlib"
     ]
 }
