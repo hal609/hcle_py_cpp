@@ -64,12 +64,12 @@ jobs:
             runner: "macos-15"
             arch: "x86_64"
 
-          - macos_version: "26"
-            runner: "macos-26"
-            arch: "arm64"
-          - macos_version: "26"
-            runner: "macos-26"
-            arch: "x86_64"
+          # - macos_version: "26"
+          #   runner: "macos-26"
+          #   arch: "arm64"
+          # - macos_version: "26"
+          #   runner: "macos-26"
+          #   arch: "x86_64"
 
     steps:
       - name: Checkout code
