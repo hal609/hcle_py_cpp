@@ -1,6 +1,6 @@
 {
     "name": "hcle-py",
-    "version-string": "0.1.9",
+    "version-string": "0.1.11",
     "dependencies": [
         "pybind11",
         "opencv4",
