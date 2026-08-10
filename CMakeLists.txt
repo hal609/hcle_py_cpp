@@ -27,8 +27,11 @@ cmake_policy(SET CMP0148 NEW)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Python COMPONENTS Interpreter Development REQUIRED)
-find_package(pybind11 CONFIG REQUIRED)
+# find_package(Python COMPONENTS Interpreter Development REQUIRED)
+set(PYBIND11_FINDPYTHON ON)
+add_subdirectory(
+    ${CMAKE_CURRENT_SOURCE_DIR}/extern/pybind11
+)
 find_package(OpenCV CONFIG REQUIRED COMPONENTS core imgproc)
 find_package(ZLIB REQUIRED)
 find_package(SDL2 CONFIG REQUIRED)
@@ -52,7 +55,6 @@ pybind11_add_module(_hcle_py
 
 target_link_libraries(_hcle_py PRIVATE
     pybind11::module
-    # ${SDL2_LIBS}
     SDL2::SDL2
     SDL2::SDL2main
     ${OpenCV_LIBS}

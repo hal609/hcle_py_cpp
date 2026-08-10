@@ -2,6 +2,25 @@
 requires = ["scikit-build-core>=0.11.0"]
 build-backend = "scikit_build_core.build"
 
+[tool.cibuildwheel]
+build = "cp310-* cp311-* cp312-* cp313-* cp314-*"
+
+[tool.cibuildwheel.linux]
+before-all = """
+if command -v dnf >/dev/null 2>&1; then
+    dnf install -y zip
+elif command -v yum >/dev/null 2>&1; then
+    yum install -y zip
+elif command -v microdnf >/dev/null 2>&1; then
+    microdnf install -y zip
+elif command -v apt-get >/dev/null 2>&1; then
+    apt-get update && apt-get install -y zip
+else
+    echo "No supported package manager found"
+    exit 1
+fi
+"""
+
 [tool.ruff]
 exclude = [
     ".bzr",
@@ -55,7 +74,7 @@ docstring-code-line-length = "dynamic"
 
 [project]
 name = "hcle_py"
-version = "0.1.11"
+version = "0.1.12"
 description = "A High-performance C++ Learning Environment"
 authors = [{ name = "Hal Kolb", email = "hal@kolb.com" }]
 requires-python = ">=3.10"
@@ -68,9 +87,4 @@ wheel.cmake = true
 wheel.packages = ["src/hcle/python/hcle_py"]
 sdist.reproducible = true
 cmake.build-type = "Release"
-cmake.args = [
-    "-DPython_EXECUTABLE:FILEPATH={python_executable}",
-    "-DCMAKE_BUILD_TYPE=Release",
-    "-DCMAKE_TOOLCHAIN_FILE={cmake_source_dir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
-    "--log-level=VERBOSE",
-]
+cmake.args = ["--log-level=VERBOSE"]

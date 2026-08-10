@@ -5,6 +5,7 @@ out
 dist
 build
 build_pgo
+wheelhouse
 
 bfs_logs
 src/apps
