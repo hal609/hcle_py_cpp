@@ -1,4 +1,25 @@
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.24)
+
+# Initialize vcpkg submodule if not present
+if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake")
+    message(STATUS "vcpkg toolchain not found, attempting to initialize git submodule...")
+    find_package(Git REQUIRED)
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        RESULT_VARIABLE GIT_SUBMOD_RESULT
+    )
+    if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+        message(FATAL_ERROR "Failed to initialize vcpkg submodule. Please run 'git submodule update --init' manually.")
+    endif()
+endif()
+
+# Set vcpkg overlay ports
+set(VCPKG_OVERLAY_PORTS "${CMAKE_CURRENT_SOURCE_DIR}/custom-ports" CACHE STRING "Vcpkg overlay ports" FORCE)
+
+# Set vcpkg toolchain
+set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "Vcpkg toolchain" FORCE)
+
 project(hcle CXX)
 
 cmake_policy(SET CMP0148 NEW)

@@ -2,8 +2,17 @@
     "name": "hcle-py",
     "version-string": "0.1.11",
     "dependencies": [
-        "opencv4",
-        "sdl2",
+        {
+            "name": "opencv4",
+            "default-features": false,
+            "features": ["jpeg", "png", "webp"]
+        },
+        "pybind11",
+        {
+            "name": "sdl2",
+            "default-features": false,
+            "features": ["x11", "wayland"]
+        },
         "zlib"
     ]
 }

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["scikit-build-core>=0.11.0", "pybind11"]
+requires = ["scikit-build-core>=0.11.0"]
 build-backend = "scikit_build_core.build"
 
 [tool.ruff]
@@ -71,6 +71,6 @@ cmake.build-type = "Release"
 cmake.args = [
     "-DPython_EXECUTABLE:FILEPATH={python_executable}",
     "-DCMAKE_BUILD_TYPE=Release",
-    # "-DCMAKE_TOOLCHAIN_FILE={cmake_source_dir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
+    "-DCMAKE_TOOLCHAIN_FILE={cmake_source_dir}/vcpkg/scripts/buildsystems/vcpkg.cmake",
     "--log-level=VERBOSE",
 ]
