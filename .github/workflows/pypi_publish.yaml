@@ -10,36 +10,35 @@ on:
   workflow_dispatch:
 
 jobs:
-  # build_linux_wheels:
-  #   name: Build wheels for Linux (x86_64 & aarch64)
-  #   runs-on: ubuntu-latest
+  build_linux_wheels:
+    name: Build wheels for Linux (x86_64 & aarch64)
+    runs-on: ubuntu-latest
 
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
-  #       with:
-  #         # Required for cibuildwheel to get a clean version number.
-  #         fetch-depth: 0
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # Required for cibuildwheel to get a clean version number.
+          fetch-depth: 0
+          submodules: "recursive"
 
-  #     - name: Set up QEMU for ARM builds
-  #       uses: docker/setup-qemu-action@v3
-  #       with:
-  #         platforms: arm64
+      - name: Set up QEMU for ARM builds
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
 
-  #     - name: Build wheels
-  #       uses: pypa/cibuildwheel@v2.19.2
-  #       env:
-  #         CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-*"
-  #         # Instruct cibuildwheel to build for x86_64 (auto) and aarch64
-  #         CIBW_ARCHS_LINUX: "auto aarch64"
-  #         CIBW_BEFORE_BUILD_LINUX: "yum install -y SDL2-devel opencv-devel pybind11-devel"
-  #         # CIBW_BEFORE_BUILD_LINUX: "apt-get update && apt-get install -y libsdl2-dev libopencv-dev pybind11-dev"
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.19.2
+        env:
+          CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-*"
+          # Instruct cibuildwheel to build for x86_64 (auto) and aarch64
+          CIBW_ARCHS_LINUX: "auto aarch64"
 
-  #     - name: Store wheels as artifact
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: linux-wheels
-  #         path: ./wheelhouse/*.whl
+      - name: Store wheels as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-wheels
+          path: ./wheelhouse/*.whl
 
   build_macos_wheels:
     name: Build wheels for macOS ${{ matrix.macos_version }} (${{ matrix.arch }})
@@ -64,30 +63,20 @@ jobs:
             runner: "macos-15"
             arch: "x86_64"
 
-          # - macos_version: "26"
-          #   runner: "macos-26"
-          #   arch: "arm64"
-          # - macos_version: "26"
-          #   runner: "macos-26"
-          #   arch: "x86_64"
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           # Required for cibuildwheel to get a clean version number.
           fetch-depth: 0
+          submodules: "recursive"
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.19.2
         env:
           MACOSX_DEPLOYMENT_TARGET: "${{ matrix.macos_version }}.0"
           CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-*"
-          # CIBW_ARCHS_MACOS: arm64
           CIBW_ARCHS_MACOS: "${{ matrix.arch }}"
-          CIBW_BEFORE_BUILD: >
-            brew install pybind11 opencv &&
-            brew reinstall --build-from-source sdl2
 
       - name: Store wheels as artifact
         uses: actions/upload-artifact@v4
@@ -103,21 +92,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           submodules: "recursive"
-
-      - name: Setup vcpkg
-        uses: lukka/run-vcpkg@v11
-        id: vcpkg
-        with:
-          vcpkgDirectory: "${{ github.workspace }}/vcpkg"
 
       - name: Build wheels with cibuildwheel
         uses: pypa/cibuildwheel@v2.19.2
         env:
-          CIBW_BUILD: "cp310-* cp311-* cp312-*"
-          CIBW_BEFORE_BUILD_WINDOWS: >
-            pip install pybind11 && vcpkg install
-          CIBW_ENVIRONMENT: "CMAKE_TOOLCHAIN_FILE='${{ github.workspace }}\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake'"
+          CIBW_BUILD: "cp310-* cp311-* cp312-* cp313-*"
 
       - name: Store wheels as artifact
         uses: actions/upload-artifact@v4
@@ -127,8 +108,7 @@ jobs:
 
   publish_to_pypi:
     name: Publish wheels to PyPI
-    needs: [build_windows_wheels, build_macos_wheels]
-    # needs: [build_macos_wheels, build_linux_wheels]
+    needs: [build_windows_wheels, build_macos_wheels, build_linux_wheels]
     runs-on: ubuntu-latest
     # if: github.event_name == 'release' && github.event.action == 'created'
 
