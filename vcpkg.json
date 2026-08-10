@@ -5,13 +5,15 @@
         {
             "name": "opencv4",
             "default-features": false,
-            "features": ["jpeg", "png", "webp"]
+            "features": [
+                "jpeg",
+                "png",
+                "webp"
+            ]
         },
         "pybind11",
         {
-            "name": "sdl2",
-            "default-features": false,
-            "features": ["x11", "wayland"]
+            "name": "sdl2"
         },
         "zlib"
     ]
